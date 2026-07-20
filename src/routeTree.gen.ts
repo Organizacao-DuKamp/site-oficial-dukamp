@@ -48,6 +48,7 @@ import { Route as AdminAtualizarValoresRouteImport } from './routes/admin.atuali
 import { Route as AdminAtendimentosRouteImport } from './routes/admin.atendimentos'
 import { Route as AdminAnunciosRouteImport } from './routes/admin.anuncios'
 import { Route as AdminContasIndexRouteImport } from './routes/admin.contas.index'
+import { Route as ApiPublicResignImagesRouteImport } from './routes/api/public/resign-images'
 import { Route as ApiPublicMercadopagoWebhookRouteImport } from './routes/api/public/mercadopago-webhook'
 import { Route as ApiPublicInitAdminRouteImport } from './routes/api/public/init-admin'
 import { Route as AdminVendasPedidosRouteImport } from './routes/admin.vendas.pedidos'
@@ -252,6 +253,11 @@ const AdminContasIndexRoute = AdminContasIndexRouteImport.update({
   path: '/contas/',
   getParentRoute: () => AdminRoute,
 } as any)
+const ApiPublicResignImagesRoute = ApiPublicResignImagesRouteImport.update({
+  id: '/api/public/resign-images',
+  path: '/api/public/resign-images',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicMercadopagoWebhookRoute =
   ApiPublicMercadopagoWebhookRouteImport.update({
     id: '/api/public/mercadopago-webhook',
@@ -329,6 +335,7 @@ export interface FileRoutesByFullPath {
   '/admin/vendas/pedidos': typeof AdminVendasPedidosRoute
   '/api/public/init-admin': typeof ApiPublicInitAdminRoute
   '/api/public/mercadopago-webhook': typeof ApiPublicMercadopagoWebhookRoute
+  '/api/public/resign-images': typeof ApiPublicResignImagesRoute
   '/admin/contas/': typeof AdminContasIndexRoute
 }
 export interface FileRoutesByTo {
@@ -373,6 +380,7 @@ export interface FileRoutesByTo {
   '/admin/vendas/pedidos': typeof AdminVendasPedidosRoute
   '/api/public/init-admin': typeof ApiPublicInitAdminRoute
   '/api/public/mercadopago-webhook': typeof ApiPublicMercadopagoWebhookRoute
+  '/api/public/resign-images': typeof ApiPublicResignImagesRoute
   '/admin/contas': typeof AdminContasIndexRoute
 }
 export interface FileRoutesById {
@@ -421,6 +429,7 @@ export interface FileRoutesById {
   '/admin/vendas/pedidos': typeof AdminVendasPedidosRoute
   '/api/public/init-admin': typeof ApiPublicInitAdminRoute
   '/api/public/mercadopago-webhook': typeof ApiPublicMercadopagoWebhookRoute
+  '/api/public/resign-images': typeof ApiPublicResignImagesRoute
   '/admin/contas/': typeof AdminContasIndexRoute
 }
 export interface FileRouteTypes {
@@ -470,6 +479,7 @@ export interface FileRouteTypes {
     | '/admin/vendas/pedidos'
     | '/api/public/init-admin'
     | '/api/public/mercadopago-webhook'
+    | '/api/public/resign-images'
     | '/admin/contas/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -514,6 +524,7 @@ export interface FileRouteTypes {
     | '/admin/vendas/pedidos'
     | '/api/public/init-admin'
     | '/api/public/mercadopago-webhook'
+    | '/api/public/resign-images'
     | '/admin/contas'
   id:
     | '__root__'
@@ -561,6 +572,7 @@ export interface FileRouteTypes {
     | '/admin/vendas/pedidos'
     | '/api/public/init-admin'
     | '/api/public/mercadopago-webhook'
+    | '/api/public/resign-images'
     | '/admin/contas/'
   fileRoutesById: FileRoutesById
 }
@@ -587,6 +599,7 @@ export interface RootRouteChildren {
   EquipeDeVendasIndexRoute: typeof EquipeDeVendasIndexRoute
   ApiPublicInitAdminRoute: typeof ApiPublicInitAdminRoute
   ApiPublicMercadopagoWebhookRoute: typeof ApiPublicMercadopagoWebhookRoute
+  ApiPublicResignImagesRoute: typeof ApiPublicResignImagesRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -864,6 +877,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminContasIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/api/public/resign-images': {
+      id: '/api/public/resign-images'
+      path: '/api/public/resign-images'
+      fullPath: '/api/public/resign-images'
+      preLoaderRoute: typeof ApiPublicResignImagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/mercadopago-webhook': {
       id: '/api/public/mercadopago-webhook'
       path: '/api/public/mercadopago-webhook'
@@ -1006,6 +1026,7 @@ const rootRouteChildren: RootRouteChildren = {
   EquipeDeVendasIndexRoute: EquipeDeVendasIndexRoute,
   ApiPublicInitAdminRoute: ApiPublicInitAdminRoute,
   ApiPublicMercadopagoWebhookRoute: ApiPublicMercadopagoWebhookRoute,
+  ApiPublicResignImagesRoute: ApiPublicResignImagesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
