@@ -1,0 +1,1 @@
+ALTER TABLE public.sellers ADD COLUMN IF NOT EXISTS cutout_url text;

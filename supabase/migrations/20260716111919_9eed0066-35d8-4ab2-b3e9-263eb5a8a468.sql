@@ -1,0 +1,1 @@
+CREATE TABLE IF NOT EXISTS public._desc_import (code text PRIMARY KEY, descr text NOT NULL); GRANT ALL ON public._desc_import TO service_role, authenticated;
