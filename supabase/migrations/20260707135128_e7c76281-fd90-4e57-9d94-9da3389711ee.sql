@@ -1,0 +1,2 @@
+ALTER TABLE public.institutional_ads ADD COLUMN IF NOT EXISTS media text[] NOT NULL DEFAULT '{}';
+UPDATE public.institutional_ads SET media = ARRAY[image_url] WHERE (media IS NULL OR array_length(media,1) IS NULL) AND image_url IS NOT NULL AND image_url <> '';
