@@ -164,9 +164,16 @@ function Home() {
         const content = (
           <section className="mt-10 min-w-0">
             <div className="flex items-center justify-between mb-3 gap-2">
-              <h2 className="text-lg md:text-xl font-bold uppercase tracking-wide border-l-4 border-primary pl-3 truncate min-w-0">
-                {s.cat.name}
-              </h2>
+              <Link
+                to="/produtos"
+                search={{ categoria: s.cat.slug } as any}
+                className="group/title inline-flex items-center gap-1 border-l-4 border-primary pl-3 hover:text-primary transition-colors min-w-0"
+              >
+                <h2 className="text-lg md:text-xl font-bold uppercase tracking-wide truncate">
+                  {s.cat.name}
+                </h2>
+                <ChevronRight className="h-5 w-5 shrink-0 opacity-60 group-hover/title:opacity-100 group-hover/title:translate-x-0.5 transition-all" />
+              </Link>
               <Button asChild variant="ghost" size="sm" className="shrink-0">
                 <Link to="/produtos" search={{ categoria: s.cat.slug } as any}>
                   Ver todos <ChevronRight className="h-4 w-4" />
