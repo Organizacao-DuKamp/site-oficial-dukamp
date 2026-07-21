@@ -156,15 +156,15 @@ function DesktopItem({ item }: { item: NavItem }) {
                 ) : (
                   <div key={currentSlug} className="animate-fade-in">
                     <div className="flex items-baseline justify-between mb-2 px-1">
-                      <h3 className="text-sm font-semibold text-foreground">{currentCat.label}</h3>
                       <Link
                         to="/produtos"
                         search={{ categoria: currentCat.slug } as any}
-                        className="text-xs font-medium text-primary hover:underline"
+                        className="text-sm font-semibold text-foreground hover:text-primary hover:underline"
                       >
-                        Ver todos →
+                        {currentCat.label}
                       </Link>
                     </div>
+
                     {preview.isLoading ? (
                       <div className="grid grid-cols-4 gap-2">
                         {Array.from({ length: 4 }).map((_, i) => (
