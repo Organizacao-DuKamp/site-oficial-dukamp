@@ -162,7 +162,7 @@ export function QuotesPanel() {
         </Select>
       </div>
 
-      <div className="p-3">
+      <div className="p-3 overflow-y-auto flex-1 min-h-0">
         {isLoading ? (
           <div className="grid gap-3 sm:grid-cols-2">
             {Array.from({ length: 4 }).map((_, i) => (
