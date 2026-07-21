@@ -140,9 +140,15 @@ function Home() {
     <SiteLayout>
       <section className="lg:pb-8">
         <div className="flex items-center justify-between mb-3">
-          <h1 className="text-lg md:text-xl font-bold uppercase tracking-wide border-l-4 border-primary pl-3">
-            Produtos em destaque
-          </h1>
+          <Link
+            to="/produtos"
+            className="group/title inline-flex items-center gap-1 border-l-4 border-primary pl-3 hover:text-primary transition-colors"
+          >
+            <h1 className="text-lg md:text-xl font-bold uppercase tracking-wide">
+              Produtos em destaque
+            </h1>
+            <ChevronRight className="h-5 w-5 opacity-60 group-hover/title:opacity-100 group-hover/title:translate-x-0.5 transition-all" />
+          </Link>
           <Button asChild variant="ghost" size="sm">
             <Link to="/produtos">
               Ver todos <ChevronRight className="h-4 w-4" />
