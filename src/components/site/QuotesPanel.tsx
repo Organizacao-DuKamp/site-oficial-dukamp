@@ -119,7 +119,8 @@ export function QuotesPanel() {
   const [state, setState] = useState("__all__");
 
   return (
-    <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
+    <div className="rounded-xl border bg-card shadow-sm overflow-hidden flex flex-col max-h-[85vh]">
+
       <div className="px-3 py-2 border-b bg-gradient-to-r from-primary/10 via-primary/5 to-transparent flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <Activity className="h-4 w-4 text-primary shrink-0" />
@@ -161,7 +162,7 @@ export function QuotesPanel() {
         </Select>
       </div>
 
-      <div className="p-3">
+      <div className="p-3 overflow-y-auto flex-1 min-h-0">
         {isLoading ? (
           <div className="grid gap-3 sm:grid-cols-2">
             {Array.from({ length: 4 }).map((_, i) => (
