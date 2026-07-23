@@ -521,7 +521,7 @@ const orderSchema = z.object({
   shipping_cost: z.number().nonnegative(),
   shipping_service: z.string().min(1),
   shipping_deadline_days: z.number().int().nonnegative(),
-  payment_method: z.enum(["pix", "card"]).default("pix"),
+  payment_method: z.enum(["pix", "card", "boleto"]).default("pix"),
   card_installments: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional(),
 });
 
