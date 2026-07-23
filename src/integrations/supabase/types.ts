@@ -371,6 +371,7 @@ export type Database = {
       orders: {
         Row: {
           bairro: string
+          card_installments: number | null
           cep: string
           cidade: string
           complemento: string | null
@@ -391,6 +392,8 @@ export type Database = {
           notes: string | null
           numero: string
           order_number: string
+          payment_base_amount: number | null
+          payment_fee: number | null
           payment_method: Database["public"]["Enums"]["payment_method"]
           payment_status: Database["public"]["Enums"]["payment_status"]
           phone: string
@@ -405,6 +408,7 @@ export type Database = {
         }
         Insert: {
           bairro: string
+          card_installments?: number | null
           cep: string
           cidade: string
           complemento?: string | null
@@ -425,6 +429,8 @@ export type Database = {
           notes?: string | null
           numero: string
           order_number?: string
+          payment_base_amount?: number | null
+          payment_fee?: number | null
           payment_method?: Database["public"]["Enums"]["payment_method"]
           payment_status?: Database["public"]["Enums"]["payment_status"]
           phone: string
@@ -439,6 +445,7 @@ export type Database = {
         }
         Update: {
           bairro?: string
+          card_installments?: number | null
           cep?: string
           cidade?: string
           complemento?: string | null
@@ -459,6 +466,8 @@ export type Database = {
           notes?: string | null
           numero?: string
           order_number?: string
+          payment_base_amount?: number | null
+          payment_fee?: number | null
           payment_method?: Database["public"]["Enums"]["payment_method"]
           payment_status?: Database["public"]["Enums"]["payment_status"]
           phone?: string
