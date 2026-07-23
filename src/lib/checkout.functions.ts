@@ -482,11 +482,11 @@ export type CardInstallments = keyof typeof CARD_FEE_TABLE;
 
 export function computePaymentTotals(
   base: number,
-  method: "pix" | "card",
+  method: "pix" | "card" | "boleto",
   installments: CardInstallments | null,
 ) {
   const baseAmount = Number(base.toFixed(2));
-  if (method === "pix") {
+  if (method === "pix" || method === "boleto") {
     return { baseAmount, feePct: 0, feeAmount: 0, total: baseAmount, installments: null as null };
   }
   const inst = (installments ?? 1) as CardInstallments;
