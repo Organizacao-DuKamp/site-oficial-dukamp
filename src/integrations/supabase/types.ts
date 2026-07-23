@@ -873,7 +873,7 @@ export type Database = {
       account_type: "cliente" | "revendedor" | "produtor" | "admin" | "empresa"
       app_role: "admin" | "user"
       delivery_status: "preparando" | "a_caminho" | "entregue"
-      payment_method: "pix" | "card"
+      payment_method: "pix" | "card" | "boleto"
       payment_status:
         | "pending"
         | "in_process"
@@ -1014,7 +1014,7 @@ export const Constants = {
       account_type: ["cliente", "revendedor", "produtor", "admin", "empresa"],
       app_role: ["admin", "user"],
       delivery_status: ["preparando", "a_caminho", "entregue"],
-      payment_method: ["pix", "card"],
+      payment_method: ["pix", "card", "boleto"],
       payment_status: [
         "pending",
         "in_process",
