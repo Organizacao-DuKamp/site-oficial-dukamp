@@ -95,7 +95,7 @@ export function NavbarQuoteTicker() {
       <PopoverContent
         align="end"
         sideOffset={8}
-        className="p-0 w-[min(92vw,720px)] border-0 bg-transparent shadow-none"
+        className="p-0 w-auto border-0 bg-transparent shadow-none"
       >
         <QuotesPanel />
       </PopoverContent>

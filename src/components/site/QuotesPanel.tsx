@@ -1,17 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
-import { Activity, RefreshCw, X } from "lucide-react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-  Cell,
-} from "recharts";
+import { useEffect, useMemo, useState } from "react";
+import { Activity, RefreshCw, X, MapPin } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -19,165 +9,201 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getMarketQuotesByState, type IndicatorRegions } from "@/lib/quotes.functions";
+import { getSpQuotes, type SpQuote } from "@/lib/quotes.functions";
 import { useQuotesPanel } from "@/lib/quotes-panel";
 
-function fmtBRL(n: number | null | undefined) {
+const ROTATION_ORDER = [
+  "boi_gordo",
+  "boi_china",
+  "usd",
+  "soja",
+  "milho",
+  "vaca_gorda",
+  "novilha",
+];
+
+function fmt(n: number | null, unit: string) {
   if (n == null) return "—";
+  const isUsd = unit.includes("US$");
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
     minimumFractionDigits: 2,
+    maximumFractionDigits: isUsd ? 4 : 2,
   }).format(n);
 }
 
-function IndicatorCard({
-  indicator,
-  filterState,
-}: {
-  indicator: IndicatorRegions;
-  filterState: string;
-}) {
-  const rows = useMemo(() => {
-    if (filterState === "__all__") return indicator.rows;
-    return indicator.rows.filter((r) => r.region === filterState);
-  }, [indicator.rows, filterState]);
-
-  const avg = rows.length ? rows.reduce((s, r) => s + r.price, 0) / rows.length : null;
-  const max = rows.length ? Math.max(...rows.map((r) => r.price)) : null;
-  const min = rows.length ? Math.min(...rows.map((r) => r.price)) : null;
-
+function QuoteCard({ item }: { item: SpQuote }) {
   return (
-    <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-      <div className="px-3 py-2 border-b bg-muted/30 flex items-center justify-between gap-2">
+    <div className="rounded-lg border bg-card p-3 shadow-sm animate-fade-in">
+      <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <div className="font-semibold text-sm truncate">{indicator.name}</div>
-          <div className="text-[10px] text-muted-foreground truncate">
-            {indicator.unit} · {indicator.source}
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+            {item.unit}
+          </div>
+          <div className="text-sm font-bold text-foreground leading-tight truncate">
+            {item.name}
+          </div>
+          <div className="mt-0.5 inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+            <MapPin className="h-2.5 w-2.5" /> {item.region}
           </div>
         </div>
-        <div className="text-[10px] text-muted-foreground shrink-0">
-          {rows.length} {rows.length === 1 ? "praça" : "praças"}
-        </div>
+        {item.available && item.media != null && (
+          <div className="text-right">
+            <div className="text-[9px] uppercase text-muted-foreground">Média</div>
+            <div className="text-lg font-extrabold tabular-nums text-primary leading-none">
+              {fmt(item.media, item.unit)}
+            </div>
+          </div>
+        )}
       </div>
 
-      {rows.length === 0 ? (
-        <div className="p-4 text-xs text-muted-foreground text-center">Sem dados.</div>
+      {item.available ? (
+        <div className="mt-3 grid grid-cols-2 gap-1.5">
+          <div className="rounded-md bg-red-500/10 px-2 py-1.5 text-center">
+            <div className="text-[9px] uppercase text-red-700 dark:text-red-400 font-semibold">
+              Mínima
+            </div>
+            <div className="text-xs font-bold tabular-nums text-foreground">
+              {fmt(item.min, item.unit)}
+            </div>
+          </div>
+          <div className="rounded-md bg-emerald-500/10 px-2 py-1.5 text-center">
+            <div className="text-[9px] uppercase text-emerald-700 dark:text-emerald-400 font-semibold">
+              Máxima
+            </div>
+            <div className="text-xs font-bold tabular-nums text-foreground">
+              {fmt(item.max, item.unit)}
+            </div>
+          </div>
+        </div>
       ) : (
-        <>
-          <div className="grid grid-cols-3 gap-1 p-2 border-b bg-background text-center">
-            <div>
-              <div className="text-[9px] uppercase text-muted-foreground">Mín</div>
-              <div className="text-xs font-semibold tabular-nums">{fmtBRL(min)}</div>
-            </div>
-            <div>
-              <div className="text-[9px] uppercase text-muted-foreground">Média</div>
-              <div className="text-xs font-semibold tabular-nums text-primary">{fmtBRL(avg)}</div>
-            </div>
-            <div>
-              <div className="text-[9px] uppercase text-muted-foreground">Máx</div>
-              <div className="text-xs font-semibold tabular-nums">{fmtBRL(max)}</div>
-            </div>
-          </div>
-          <div className="p-2" style={{ height: Math.max(160, rows.length * 24 + 40) }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={rows} layout="vertical" margin={{ top: 4, right: 44, left: 4, bottom: 4 }}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                <XAxis type="number" tick={{ fontSize: 10 }} />
-                <YAxis type="category" dataKey="region" width={120} tick={{ fontSize: 10 }} />
-                <Tooltip formatter={(v: number) => fmtBRL(v)} contentStyle={{ fontSize: 12 }} />
-                <Bar
-                  dataKey="price"
-                  fill="#dc2626"
-                  radius={[0, 4, 4, 0]}
-                  label={{ position: "right", fontSize: 10, formatter: (v: number) => fmtBRL(v) }}
-                >
-                  {rows.map((r) => (
-                    <Cell
-                      key={r.region}
-                      fill={avg != null && r.price >= avg ? "#16a34a" : "#dc2626"}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </>
+        <div className="mt-3 rounded-md bg-muted/50 px-2 py-2 text-center text-[11px] text-muted-foreground">
+          Sem cotação no momento.
+        </div>
       )}
+
+      <div className="mt-2 text-[9px] text-muted-foreground truncate">
+        {item.source}
+        {item.samples > 1 ? ` · ${item.samples} praças` : ""}
+      </div>
     </div>
   );
 }
 
 export function QuotesPanel() {
   const { setExpanded } = useQuotesPanel();
-  const fetchFn = useServerFn(getMarketQuotesByState);
+  const fetchFn = useServerFn(getSpQuotes);
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
-    queryKey: ["quotes-by-state"],
+    queryKey: ["sp-quotes"],
     queryFn: () => fetchFn(),
     staleTime: 5 * 60_000,
   });
-  const [state, setState] = useState("__all__");
+
+  const ordered = useMemo(() => {
+    const items = data?.items ?? [];
+    const map = new Map(items.map((i) => [i.key, i]));
+    const list: SpQuote[] = [];
+    for (const k of ROTATION_ORDER) {
+      const it = map.get(k);
+      if (it) list.push(it);
+    }
+    return list;
+  }, [data]);
+
+  const [selected, setSelected] = useState<string>("__auto__");
+  const [idx, setIdx] = useState(0);
+
+  useEffect(() => {
+    if (selected !== "__auto__" || ordered.length <= 1) return;
+    const t = setInterval(() => setIdx((i) => (i + 1) % ordered.length), 4000);
+    return () => clearInterval(t);
+  }, [selected, ordered.length]);
+
+  useEffect(() => {
+    if (idx >= ordered.length) setIdx(0);
+  }, [ordered.length, idx]);
+
+  const current =
+    selected === "__auto__"
+      ? ordered[idx]
+      : ordered.find((i) => i.key === selected);
 
   return (
-    <div className="rounded-xl border bg-card shadow-sm overflow-hidden flex flex-col max-h-[85vh]">
-
+    <div className="rounded-xl border bg-card shadow-lg overflow-hidden w-[280px]">
       <div className="px-3 py-2 border-b bg-gradient-to-r from-primary/10 via-primary/5 to-transparent flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <Activity className="h-4 w-4 text-primary shrink-0" />
+          <Activity className="h-3.5 w-3.5 text-primary shrink-0" />
           <div className="min-w-0">
-            <div className="font-semibold text-sm leading-tight truncate">Painel de Cotações</div>
-            <div className="text-[10px] text-muted-foreground truncate">Preços por estado</div>
+            <div className="font-semibold text-xs leading-tight truncate">
+              Cotações SP
+            </div>
+            <div className="text-[9px] text-muted-foreground truncate">
+              {selected === "__auto__" ? "rotação automática" : "fixado"}
+            </div>
           </div>
         </div>
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-0.5 shrink-0">
           <button
             onClick={() => refetch()}
             disabled={isFetching}
             aria-label="Atualizar"
-            className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 disabled:opacity-50"
+            className="grid h-6 w-6 place-items-center rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 disabled:opacity-50"
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
+            <RefreshCw className={`h-3 w-3 ${isFetching ? "animate-spin" : ""}`} />
           </button>
           <button
             onClick={() => setExpanded(false)}
-            aria-label="Fechar painel"
-            className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10"
+            aria-label="Fechar"
+            className="grid h-6 w-6 place-items-center rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10"
           >
-            <X className="h-3.5 w-3.5" />
+            <X className="h-3 w-3" />
           </button>
         </div>
       </div>
 
-      <div className="p-3 border-b bg-muted/20">
-        <Select value={state} onValueChange={setState}>
-          <SelectTrigger className="h-8 text-xs">
-            <SelectValue placeholder="Filtrar por estado" />
+      <div className="p-2 border-b bg-muted/20">
+        <Select value={selected} onValueChange={setSelected}>
+          <SelectTrigger className="h-7 text-[11px]">
+            <SelectValue placeholder="Selecionar" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="__all__">Todos os estados</SelectItem>
-            {data?.states.map((s) => (
-              <SelectItem key={s} value={s}>{s}</SelectItem>
+            <SelectItem value="__auto__">Rotação automática (4s)</SelectItem>
+            {ordered.map((i) => (
+              <SelectItem key={i.key} value={i.key}>
+                {i.name}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
 
-      <div className="p-3 overflow-y-auto flex-1 min-h-0">
+      <div className="p-2">
         {isLoading ? (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-56 rounded-xl border bg-muted/30 animate-pulse" />
-            ))}
-          </div>
-        ) : isError || !data ? (
-          <div className="text-xs text-muted-foreground">
+          <div className="h-32 rounded-lg bg-muted/40 animate-pulse" />
+        ) : isError || !current ? (
+          <div className="p-3 text-[11px] text-muted-foreground text-center">
             Não foi possível carregar.{" "}
-            <button className="text-primary hover:underline" onClick={() => refetch()}>Tentar novamente</button>
+            <button
+              className="text-primary hover:underline"
+              onClick={() => refetch()}
+            >
+              Tentar novamente
+            </button>
           </div>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {data.indicators.map((ind) => (
-              <IndicatorCard key={ind.key} indicator={ind} filterState={state} />
+          <QuoteCard item={current} />
+        )}
+
+        {selected === "__auto__" && ordered.length > 1 && (
+          <div className="mt-2 flex items-center justify-center gap-1">
+            {ordered.map((_, i) => (
+              <span
+                key={i}
+                className={`h-1 rounded-full transition-all ${
+                  i === idx ? "w-4 bg-primary" : "w-1 bg-muted-foreground/30"
+                }`}
+              />
             ))}
           </div>
         )}

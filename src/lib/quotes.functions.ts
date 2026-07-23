@@ -273,3 +273,209 @@ export const getMarketQuotesByState = createServerFn({ method: "GET" }).handler(
     fetchedAt: new Date().toISOString(),
   };
 });
+
+// ---------- Simple SP quotes (min/media/max) ----------
+export type SpQuote = {
+  key: string;
+  name: string;
+  unit: string;
+  source: string;
+  sourceUrl: string;
+  min: number | null;
+  media: number | null;
+  max: number | null;
+  samples: number;
+  region: string;
+  updatedAt: string | null;
+  available: boolean;
+};
+
+export type SpQuotesResult = {
+  items: SpQuote[];
+  fetchedAt: string;
+};
+
+const SP_RE = /(\/SP\b|\bSP\s|São\s*Paulo|Sao\s*Paulo|Barretos|Araçatuba|Aracatuba|Presidente\s+Prudente|Bauru|Santos|Piracicaba|Campinas|Sorocaba|Cândido\s+Mota|Candido\s+Mota|Ourinhos|Itapeva|Assis)/i;
+
+function stats(nums: number[]) {
+  if (!nums.length) return { min: null, media: null, max: null, samples: 0 };
+  const min = Math.min(...nums);
+  const max = Math.max(...nums);
+  const media = nums.reduce((a, b) => a + b, 0) / nums.length;
+  return { min, media, max, samples: nums.length };
+}
+
+// Extract all rows: first cell = region label, remaining cells that look like prices
+function extractRows(html: string, headerNeedle: string): { region: string; prices: number[] }[] {
+  const i = html.indexOf(headerNeedle);
+  if (i < 0) return [];
+  const tbodyStart = html.indexOf("<tbody>", i);
+  const tbodyEnd = html.indexOf("</tbody>", tbodyStart);
+  if (tbodyStart < 0 || tbodyEnd < 0) return [];
+  const block = html.slice(tbodyStart, tbodyEnd);
+  const trs = block.split(/<tr[^>]*>/i).slice(1);
+  const rows: { region: string; prices: number[] }[] = [];
+  for (const tr of trs) {
+    const cells: string[] = [];
+    const re = /<td[^>]*>([\s\S]*?)<\/td>/gi;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(tr))) cells.push(m[1].replace(/<[^>]+>/g, "").trim());
+    if (cells.length < 2) continue;
+    const region = cells[0];
+    const prices: number[] = [];
+    for (let j = 1; j < cells.length; j++) {
+      const v = parseBrNumber(cells[j].match(/[\d.,]+/)?.[0]);
+      if (v != null && v > 0 && v < 100000) prices.push(v);
+    }
+    if (region) rows.push({ region, prices });
+  }
+  return rows;
+}
+
+function spStats(rows: { region: string; prices: number[] }[]) {
+  const sp = rows.filter((r) => SP_RE.test(r.region));
+  const pool = sp.length ? sp : [];
+  const nums: number[] = [];
+  for (const r of pool) nums.push(...r.prices);
+  return stats(nums);
+}
+
+export const getSpQuotes = createServerFn({ method: "GET" }).handler(async (): Promise<SpQuotesResult> => {
+  const [dolar, naBoi, naSoja, naMilho, scot] = await Promise.all([
+    fetchDolar(),
+    fetchText("https://www.noticiasagricolas.com.br/cotacoes/boi"),
+    fetchText("https://www.noticiasagricolas.com.br/cotacoes/soja"),
+    fetchText("https://www.noticiasagricolas.com.br/cotacoes/milho"),
+    fetchText("https://www.scotconsultoria.com.br/cotacoes/boi-gordo/"),
+  ]);
+  const now = new Date().toISOString();
+
+  const items: SpQuote[] = [];
+
+  // Boi Gordo — Scot Mercado Físico (SP Barretos + SP Araçatuba, à vista+prazo)
+  {
+    const rows = scot ? extractRows(scot, "Município") : [];
+    // Boi gordo prices are 1st & 2nd numeric columns
+    const spRows = rows.filter((r) => SP_RE.test(r.region));
+    const nums: number[] = [];
+    for (const r of spRows) nums.push(...r.prices.slice(0, 2));
+    const s = stats(nums);
+    items.push({
+      key: "boi_gordo",
+      name: "Boi Gordo",
+      unit: "R$/@",
+      source: "Scot Consultoria (SP)",
+      sourceUrl: "https://www.scotconsultoria.com.br/cotacoes/boi-gordo/",
+      region: "São Paulo",
+      updatedAt: now,
+      available: s.samples > 0,
+      ...s,
+    });
+
+    // Vaca gorda 3rd numeric column
+    const nums2: number[] = [];
+    for (const r of spRows) if (r.prices[2] != null) nums2.push(r.prices[2]);
+    const s2 = stats(nums2);
+    items.push({
+      key: "vaca_gorda",
+      name: "Vaca Gorda",
+      unit: "R$/@",
+      source: "Scot Consultoria (SP)",
+      sourceUrl: "https://www.scotconsultoria.com.br/cotacoes/boi-gordo/",
+      region: "São Paulo",
+      updatedAt: now,
+      available: s2.samples > 0,
+      ...s2,
+    });
+  }
+
+  // Boi China — Scot Boi China a Prazo table, filter SP
+  {
+    if (scot) {
+      const rows = extractRows(scot, "Boi China a Prazo");
+      const s = spStats(rows);
+      items.push({
+        key: "boi_china",
+        name: "Boi China",
+        unit: "R$/@",
+        source: "Scot Consultoria (SP)",
+        sourceUrl: "https://www.scotconsultoria.com.br/cotacoes/boi-gordo/",
+        region: "São Paulo",
+        updatedAt: now,
+        available: s.samples > 0,
+        ...s,
+      });
+    }
+  }
+
+  // Novilha — NA
+  if (naBoi) {
+    const rows = extractRows(naBoi, "Indicador da Novilha");
+    const s = spStats(rows);
+    items.push({
+      key: "novilha",
+      name: "Novilha",
+      unit: "R$/@",
+      source: "Notícias Agrícolas (SP)",
+      sourceUrl: "https://www.noticiasagricolas.com.br/cotacoes/boi",
+      region: "São Paulo",
+      updatedAt: now,
+      available: s.samples > 0,
+      ...s,
+    });
+  }
+
+  // Dólar
+  if (dolar.price != null) {
+    items.push({
+      key: "usd",
+      name: "Dólar Comercial",
+      unit: "R$/US$",
+      source: "melhorcambio",
+      sourceUrl: "https://www.melhorcambio.com/dolar-hoje",
+      region: "Brasil",
+      updatedAt: now,
+      available: true,
+      min: dolar.price as number,
+      media: dolar.price as number,
+      max: dolar.price as number,
+      samples: 1,
+    });
+  }
+
+  // Soja — NA mercado físico SP
+  if (naSoja) {
+    const rows = extractRows(naSoja, "Mercado Físico");
+    const s = spStats(rows);
+    items.push({
+      key: "soja",
+      name: "Soja",
+      unit: "R$/sc 60kg",
+      source: "Notícias Agrícolas (SP)",
+      sourceUrl: "https://www.noticiasagricolas.com.br/cotacoes/soja",
+      region: "São Paulo",
+      updatedAt: now,
+      available: s.samples > 0,
+      ...s,
+    });
+  }
+
+  // Milho — NA mercado físico SP
+  if (naMilho) {
+    const rows = extractRows(naMilho, "Mercado Físico");
+    const s = spStats(rows);
+    items.push({
+      key: "milho",
+      name: "Milho",
+      unit: "R$/sc 60kg",
+      source: "Notícias Agrícolas (SP)",
+      sourceUrl: "https://www.noticiasagricolas.com.br/cotacoes/milho",
+      region: "São Paulo",
+      updatedAt: now,
+      available: s.samples > 0,
+      ...s,
+    });
+  }
+
+  return { items, fetchedAt: now };
+});
