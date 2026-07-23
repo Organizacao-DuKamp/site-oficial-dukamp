@@ -482,11 +482,11 @@ export type CardInstallments = keyof typeof CARD_FEE_TABLE;
 
 export function computePaymentTotals(
   base: number,
-  method: "pix" | "card",
+  method: "pix" | "card" | "boleto",
   installments: CardInstallments | null,
 ) {
   const baseAmount = Number(base.toFixed(2));
-  if (method === "pix") {
+  if (method === "pix" || method === "boleto") {
     return { baseAmount, feePct: 0, feeAmount: 0, total: baseAmount, installments: null as null };
   }
   const inst = (installments ?? 1) as CardInstallments;
@@ -521,7 +521,7 @@ const orderSchema = z.object({
   shipping_cost: z.number().nonnegative(),
   shipping_service: z.string().min(1),
   shipping_deadline_days: z.number().int().nonnegative(),
-  payment_method: z.enum(["pix", "card"]).default("pix"),
+  payment_method: z.enum(["pix", "card", "boleto"]).default("pix"),
   card_installments: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional(),
 });
 
@@ -639,6 +639,82 @@ export const createPixOrder = createServerFn({ method: "POST" })
     if (paymentMethod === "card") {
       // Cartão de crédito é finalizado inline via Card Payment Brick (tokenização no navegador)
       // e cobrança pelo servidor em `processCardPayment`. Aqui só criamos o pedido pendente.
+      return {
+        orderId: order.id,
+        orderNumber: order.order_number,
+        redirectUrl: null as string | null,
+        amount: total,
+      };
+    }
+
+    if (paymentMethod === "boleto") {
+      // Boleto bancário via Mercado Pago (bolbradesco). Vencimento em 3 dias úteis (aprox).
+      const expires = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+      const expiresIso = expires.toISOString().replace("Z", "-00:00");
+
+      const zipCode = onlyDigits(data.cep);
+      const streetNumber = onlyDigits(data.numero) || data.numero;
+
+      const boletoRes = await fetch("https://api.mercadopago.com/v1/payments", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${mpToken}`,
+          "Content-Type": "application/json",
+          "X-Idempotency-Key": order.id,
+        },
+        body: JSON.stringify({
+          transaction_amount: total,
+          description: `Pedido ${order.order_number} - Dukamp`,
+          payment_method_id: "bolbradesco",
+          external_reference: order.id,
+          notification_url,
+          date_of_expiration: expiresIso,
+          payer: {
+            email: data.email,
+            first_name: firstName,
+            last_name: lastName,
+            identification: { type: idType, number: cpf },
+            address: {
+              zip_code: zipCode,
+              street_name: data.rua,
+              street_number: String(streetNumber),
+              neighborhood: data.bairro,
+              city: data.cidade,
+              federal_unit: data.estado.toUpperCase(),
+            },
+          },
+        }),
+      });
+      if (!boletoRes.ok) {
+        const raw = await boletoRes.text();
+        console.error("[MercadoPago] boleto recusado", boletoRes.status, raw);
+        let mpMsg = "";
+        try {
+          const j = JSON.parse(raw) as { message?: string; cause?: Array<{ code?: number; description?: string }> };
+          mpMsg = j.cause?.[0]?.description || j.message || "";
+        } catch {
+          // ignore
+        }
+        throw new Error(mpMsg || "Não foi possível gerar o boleto. Verifique os dados e tente novamente.");
+      }
+      const mpB = (await boletoRes.json()) as {
+        id: number | string;
+        status: string;
+        transaction_details?: { external_resource_url?: string };
+        barcode?: { content?: string };
+      };
+      await supa
+        .from("orders")
+        .update({
+          mp_payment_id: String(mpB.id),
+          mp_qr_code: mpB.barcode?.content || null,
+          mp_qr_code_base64: null,
+          mp_ticket_url: mpB.transaction_details?.external_resource_url || null,
+          mp_expires_at: expires.toISOString(),
+          payment_status: (mpB.status as "pending" | "approved" | "in_process") || "pending",
+        })
+        .eq("id", order.id);
+
       return {
         orderId: order.id,
         orderNumber: order.order_number,

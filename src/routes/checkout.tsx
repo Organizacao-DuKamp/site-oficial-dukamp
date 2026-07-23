@@ -34,6 +34,7 @@ import {
   Phone,
   MessageCircle,
   CheckCircle2,
+  Barcode,
 } from "lucide-react";
 
 export const Route = createFileRoute("/checkout")({
@@ -83,7 +84,7 @@ function CheckoutPage() {
   const [loadingCep, setLoadingCep] = useState(false);
   const [loadingPay, setLoadingPay] = useState(false);
   const [loadingFrete, setLoadingFrete] = useState(false);
-  const [method, setMethod] = useState<"pix" | "card">("pix");
+  const [method, setMethod] = useState<"pix" | "card" | "boleto">("pix");
   const [installments, setInstallments] = useState<CardInstallments>(1);
   const [frete, setFrete] = useState<{ valor: number; prazoDias: number; servico: string; dataMaxima?: string } | null>(null);
   const [freteOpcoes, setFreteOpcoes] = useState<Array<{ valor: number; prazoDias: number; servico: string; dataMaxima?: string }>>([]);
@@ -660,6 +661,25 @@ function CheckoutPage() {
                   </div>
                 </button>
 
+                <button
+                  type="button"
+                  onClick={() => setMethod("boleto")}
+                  className={`w-full flex items-center gap-3 rounded-lg border-2 p-4 text-left transition-all ${
+                    method === "boleto" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+                  }`}
+                >
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-slate-800 text-white">
+                    <Barcode className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold">Boleto bancário</p>
+                    <p className="text-xs text-muted-foreground">Vencimento em 3 dias — compensa em até 2 dias úteis</p>
+                  </div>
+                  <div className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 ${method === "boleto" ? "border-primary" : "border-muted-foreground/40"}`}>
+                    {method === "boleto" && <div className="h-2 w-2 rounded-full bg-primary" />}
+                  </div>
+                </button>
+
                 {method === "card" && baseAmount > 0 && (
                   <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
                     <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
@@ -773,6 +793,17 @@ function CheckoutPage() {
                     >
                       {loadingPay ? <Loader2 className="h-5 w-5 animate-spin" /> : <Lock className="h-4 w-4" />}
                       PAGAR COM PIX
+                    </Button>
+                  ) : method === "boleto" ? (
+                    <Button
+                      type="button"
+                      onClick={handleBuy}
+                      disabled={loadingPay}
+                      size="lg"
+                      className="w-full h-12 text-base font-bold gap-2 mt-2"
+                    >
+                      {loadingPay ? <Loader2 className="h-5 w-5 animate-spin" /> : <Barcode className="h-4 w-4" />}
+                      GERAR BOLETO
                     </Button>
                   ) : (
                     <div className="mt-2 rounded-md bg-muted/40 p-3 text-xs text-muted-foreground">
