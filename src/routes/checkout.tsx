@@ -83,7 +83,7 @@ function CheckoutPage() {
   const [loadingCep, setLoadingCep] = useState(false);
   const [loadingPay, setLoadingPay] = useState(false);
   const [loadingFrete, setLoadingFrete] = useState(false);
-  const [method, setMethod] = useState<"pix" | "card">("pix");
+  const [method, setMethod] = useState<"pix" | "card" | "boleto">("pix");
   const [installments, setInstallments] = useState<CardInstallments>(1);
   const [frete, setFrete] = useState<{ valor: number; prazoDias: number; servico: string; dataMaxima?: string } | null>(null);
   const [freteOpcoes, setFreteOpcoes] = useState<Array<{ valor: number; prazoDias: number; servico: string; dataMaxima?: string }>>([]);
