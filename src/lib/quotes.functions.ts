@@ -295,7 +295,33 @@ export type SpQuotesResult = {
   fetchedAt: string;
 };
 
-const SP_RE = /(\/SP\b|\bSP\s|São\s*Paulo|Sao\s*Paulo|Barretos|Araçatuba|Aracatuba|Presidente\s+Prudente|Bauru|Santos|Piracicaba|Campinas|Sorocaba|Cândido\s+Mota|Candido\s+Mota|Ourinhos|Itapeva|Assis)/i;
+const SP_CITY_RE = /(Barretos|Ara[cç]atuba|Presidente\s+Prudente|Bauru|Santos|Piracicaba|Campinas|Sorocaba|C[âa]ndido\s+Mota|Ourinhos|Itapeva|Assis|Marilia|Marília|Ribeir[aã]o\s+Preto|S[aã]o\s+Jos[eé]\s+do\s+Rio\s+Preto|Andradina|Dracena|Tup[aã])/i;
+const SP_STATE_RE = /(\/SP\b|\bSP\s|\bSP\/|\bSP\)|S[aã]o\s*Paulo)/i;
+
+function decodeEntities(s: string) {
+  return s
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&aacute;/g, "á")
+    .replace(/&eacute;/g, "é")
+    .replace(/&iacute;/g, "í")
+    .replace(/&oacute;/g, "ó")
+    .replace(/&uacute;/g, "ú")
+    .replace(/&atilde;/g, "ã")
+    .replace(/&otilde;/g, "õ")
+    .replace(/&agrave;/g, "à")
+    .replace(/&ccedil;/g, "ç")
+    .replace(/&Aacute;/g, "Á")
+    .replace(/&Eacute;/g, "É")
+    .replace(/&Iacute;/g, "Í")
+    .replace(/&Oacute;/g, "Ó")
+    .replace(/&Uacute;/g, "Ú")
+    .replace(/&Atilde;/g, "Ã")
+    .replace(/&Otilde;/g, "Õ")
+    .replace(/&Ccedil;/g, "Ç")
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(parseInt(n, 10)))
+    .replace(/&[a-z]+;/gi, " ");
+}
 
 function stats(nums: number[]) {
   if (!nums.length) return { min: null, media: null, max: null, samples: 0 };
@@ -305,39 +331,82 @@ function stats(nums: number[]) {
   return { min, media, max, samples: nums.length };
 }
 
-// Extract all rows: first cell = region label, remaining cells that look like prices
+// Extract rows from the first table appearing after headerNeedle.
 function extractRows(html: string, headerNeedle: string): { region: string; prices: number[] }[] {
   const i = html.indexOf(headerNeedle);
   if (i < 0) return [];
-  const tbodyStart = html.indexOf("<tbody>", i);
-  const tbodyEnd = html.indexOf("</tbody>", tbodyStart);
-  if (tbodyStart < 0 || tbodyEnd < 0) return [];
-  const block = html.slice(tbodyStart, tbodyEnd);
+  const tableEnd = html.indexOf("</table>", i);
+  if (tableEnd < 0) return [];
+  const block = html.slice(i, tableEnd);
   const trs = block.split(/<tr[^>]*>/i).slice(1);
   const rows: { region: string; prices: number[] }[] = [];
   for (const tr of trs) {
     const cells: string[] = [];
     const re = /<td[^>]*>([\s\S]*?)<\/td>/gi;
     let m: RegExpExecArray | null;
-    while ((m = re.exec(tr))) cells.push(m[1].replace(/<[^>]+>/g, "").trim());
+    while ((m = re.exec(tr))) {
+      cells.push(decodeEntities(m[1].replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim());
+    }
     if (cells.length < 2) continue;
     const region = cells[0];
+    if (!region || /^\s*$/.test(region)) continue;
+    // skip header rows (no digits anywhere)
+    if (!cells.slice(1).some((c) => /\d/.test(c))) continue;
     const prices: number[] = [];
     for (let j = 1; j < cells.length; j++) {
       const v = parseBrNumber(cells[j].match(/[\d.,]+/)?.[0]);
       if (v != null && v > 0 && v < 100000) prices.push(v);
     }
-    if (region) rows.push({ region, prices });
+    rows.push({ region, prices });
   }
   return rows;
 }
 
-function spStats(rows: { region: string; prices: number[] }[]) {
-  const sp = rows.filter((r) => SP_RE.test(r.region));
-  const pool = sp.length ? sp : [];
+// Pick pool with SP fallback ladder: SP city → SP state → any rows
+function pickPool(rows: { region: string; prices: number[] }[]) {
+  const withPrices = rows.filter((r) => r.prices.length);
+  if (!withPrices.length) return { pool: [], scope: "none" as const };
+  const cities = withPrices.filter((r) => SP_CITY_RE.test(r.region));
+  if (cities.length) return { pool: cities, scope: "sp-city" as const };
+  const state = withPrices.filter((r) => SP_STATE_RE.test(r.region));
+  if (state.length) return { pool: state, scope: "sp-state" as const };
+  return { pool: withPrices, scope: "other" as const };
+}
+
+function scopeLabel(scope: "sp-city" | "sp-state" | "other" | "none", pool: { region: string }[]) {
+  if (scope === "sp-city" || scope === "sp-state") return "São Paulo";
+  if (scope === "other") {
+    const first = pool[0]?.region ?? "Brasil";
+    return `Outros estados (${first.split(/[\s(/,-]/)[0]}…)`;
+  }
+  return "Sem dados";
+}
+
+function buildQuote(
+  key: string,
+  name: string,
+  unit: string,
+  source: string,
+  sourceUrl: string,
+  rows: { region: string; prices: number[] }[],
+  columnPicker: (prices: number[]) => number[],
+  now: string,
+): SpQuote {
+  const { pool, scope } = pickPool(rows);
   const nums: number[] = [];
-  for (const r of pool) nums.push(...r.prices);
-  return stats(nums);
+  for (const r of pool) nums.push(...columnPicker(r.prices));
+  const s = stats(nums);
+  return {
+    key,
+    name,
+    unit,
+    source: scope === "other" ? source.replace(" (SP)", "") : source,
+    sourceUrl,
+    region: scopeLabel(scope, pool),
+    updatedAt: now,
+    available: s.samples > 0,
+    ...s,
+  };
 }
 
 export const getSpQuotes = createServerFn({ method: "GET" }).handler(async (): Promise<SpQuotesResult> => {
@@ -349,80 +418,71 @@ export const getSpQuotes = createServerFn({ method: "GET" }).handler(async (): P
     fetchText("https://www.scotconsultoria.com.br/cotacoes/boi-gordo/"),
   ]);
   const now = new Date().toISOString();
-
   const items: SpQuote[] = [];
 
-  // Boi Gordo — Scot Mercado Físico (SP Barretos + SP Araçatuba, à vista+prazo)
+  // Boi Gordo — Scot "Mercado Físico" (SP Barretos, SP Aracatuba, etc.). Cols 1-2 = à vista/30D.
   {
-    const rows = scot ? extractRows(scot, "Município") : [];
-    // Boi gordo prices are 1st & 2nd numeric columns
-    const spRows = rows.filter((r) => SP_RE.test(r.region));
-    const nums: number[] = [];
-    for (const r of spRows) nums.push(...r.prices.slice(0, 2));
-    const s = stats(nums);
-    items.push({
-      key: "boi_gordo",
-      name: "Boi Gordo",
-      unit: "R$/@",
-      source: "Scot Consultoria (SP)",
-      sourceUrl: "https://www.scotconsultoria.com.br/cotacoes/boi-gordo/",
-      region: "São Paulo",
-      updatedAt: now,
-      available: s.samples > 0,
-      ...s,
-    });
+    const rows = scot ? extractRows(scot, "Mercado F") : [];
+    items.push(
+      buildQuote(
+        "boi_gordo",
+        "Boi Gordo",
+        "R$/@",
+        "Scot Consultoria (SP)",
+        "https://www.scotconsultoria.com.br/cotacoes/boi-gordo/",
+        rows,
+        (p) => p.slice(0, 2),
+        now,
+      ),
+    );
 
-    // Vaca gorda 3rd numeric column
-    const nums2: number[] = [];
-    for (const r of spRows) if (r.prices[2] != null) nums2.push(r.prices[2]);
-    const s2 = stats(nums2);
-    items.push({
-      key: "vaca_gorda",
-      name: "Vaca Gorda",
-      unit: "R$/@",
-      source: "Scot Consultoria (SP)",
-      sourceUrl: "https://www.scotconsultoria.com.br/cotacoes/boi-gordo/",
-      region: "São Paulo",
-      updatedAt: now,
-      available: s2.samples > 0,
-      ...s2,
-    });
+    // Vaca gorda — same table, columns further right
+    items.push(
+      buildQuote(
+        "vaca_gorda",
+        "Vaca Gorda",
+        "R$/@",
+        "Scot Consultoria (SP)",
+        "https://www.scotconsultoria.com.br/cotacoes/boi-gordo/",
+        rows,
+        (p) => (p.length >= 6 ? p.slice(-2) : p.slice(2, 4)),
+        now,
+      ),
+    );
   }
 
-  // Boi China — Scot Boi China a Prazo table, filter SP
-  {
-    if (scot) {
-      const rows = extractRows(scot, "Boi China a Prazo");
-      const s = spStats(rows);
-      items.push({
-        key: "boi_china",
-        name: "Boi China",
-        unit: "R$/@",
-        source: "Scot Consultoria (SP)",
-        sourceUrl: "https://www.scotconsultoria.com.br/cotacoes/boi-gordo/",
-        region: "São Paulo",
-        updatedAt: now,
-        available: s.samples > 0,
-        ...s,
-      });
-    }
+  // Boi China — Scot Boi China a Prazo table
+  if (scot) {
+    const rows = extractRows(scot, "Boi China a Prazo");
+    items.push(
+      buildQuote(
+        "boi_china",
+        "Boi China",
+        "R$/@",
+        "Scot Consultoria (SP)",
+        "https://www.scotconsultoria.com.br/cotacoes/boi-gordo/",
+        rows,
+        (p) => p.slice(0, 2),
+        now,
+      ),
+    );
   }
 
-  // Novilha — NA
+  // Novilha — NA Indicador da Novilha
   if (naBoi) {
     const rows = extractRows(naBoi, "Indicador da Novilha");
-    const s = spStats(rows);
-    items.push({
-      key: "novilha",
-      name: "Novilha",
-      unit: "R$/@",
-      source: "Notícias Agrícolas (SP)",
-      sourceUrl: "https://www.noticiasagricolas.com.br/cotacoes/boi",
-      region: "São Paulo",
-      updatedAt: now,
-      available: s.samples > 0,
-      ...s,
-    });
+    items.push(
+      buildQuote(
+        "novilha",
+        "Novilha",
+        "R$/@",
+        "Notícias Agrícolas (SP)",
+        "https://www.noticiasagricolas.com.br/cotacoes/boi",
+        rows,
+        (p) => p.slice(0, 1),
+        now,
+      ),
+    );
   }
 
   // Dólar
@@ -443,38 +503,38 @@ export const getSpQuotes = createServerFn({ method: "GET" }).handler(async (): P
     });
   }
 
-  // Soja — NA mercado físico SP
+  // Soja — NA Mercado Físico
   if (naSoja) {
     const rows = extractRows(naSoja, "Mercado Físico");
-    const s = spStats(rows);
-    items.push({
-      key: "soja",
-      name: "Soja",
-      unit: "R$/sc 60kg",
-      source: "Notícias Agrícolas (SP)",
-      sourceUrl: "https://www.noticiasagricolas.com.br/cotacoes/soja",
-      region: "São Paulo",
-      updatedAt: now,
-      available: s.samples > 0,
-      ...s,
-    });
+    items.push(
+      buildQuote(
+        "soja",
+        "Soja",
+        "R$/sc 60kg",
+        "Notícias Agrícolas (SP)",
+        "https://www.noticiasagricolas.com.br/cotacoes/soja",
+        rows,
+        (p) => p.slice(0, 1),
+        now,
+      ),
+    );
   }
 
-  // Milho — NA mercado físico SP
+  // Milho — NA Mercado Físico
   if (naMilho) {
     const rows = extractRows(naMilho, "Mercado Físico");
-    const s = spStats(rows);
-    items.push({
-      key: "milho",
-      name: "Milho",
-      unit: "R$/sc 60kg",
-      source: "Notícias Agrícolas (SP)",
-      sourceUrl: "https://www.noticiasagricolas.com.br/cotacoes/milho",
-      region: "São Paulo",
-      updatedAt: now,
-      available: s.samples > 0,
-      ...s,
-    });
+    items.push(
+      buildQuote(
+        "milho",
+        "Milho",
+        "R$/sc 60kg",
+        "Notícias Agrícolas (SP)",
+        "https://www.noticiasagricolas.com.br/cotacoes/milho",
+        rows,
+        (p) => p.slice(0, 1),
+        now,
+      ),
+    );
   }
 
   return { items, fetchedAt: now };
