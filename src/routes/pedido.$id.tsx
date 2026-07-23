@@ -88,7 +88,43 @@ function OrderPage() {
           </div>
         )}
 
-        {!isPaid && !isFailed && order.mp_qr_code_base64 && (
+        {!isPaid && !isFailed && order.payment_method === "boleto" && order.mp_ticket_url && (
+          <div className="border rounded-lg p-6 bg-card space-y-4">
+            <h2 className="font-semibold text-lg text-center">Boleto — {formatBRL(Number(order.total))}</h2>
+            <div className="text-center">
+              <Button asChild size="lg">
+                <a href={order.mp_ticket_url} target="_blank" rel="noopener">Abrir boleto (PDF)</a>
+              </Button>
+            </div>
+            {order.mp_qr_code && (
+              <div>
+                <label className="text-xs text-muted-foreground">Linha digitável:</label>
+                <div className="flex gap-2 mt-1">
+                  <textarea
+                    readOnly
+                    value={order.mp_qr_code}
+                    className="flex-1 text-xs p-2 border rounded font-mono h-16 resize-none"
+                  />
+                  <Button
+                    onClick={() => {
+                      navigator.clipboard.writeText(order.mp_qr_code || "");
+                      toast.success("Linha digitável copiada");
+                    }}
+                    variant="outline"
+                    size="icon"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+            <p className="text-xs text-center text-muted-foreground">
+              Após o pagamento, o boleto leva até 2 dias úteis para ser compensado. Esta página atualiza automaticamente.
+            </p>
+          </div>
+        )}
+
+        {!isPaid && !isFailed && order.payment_method !== "boleto" && order.mp_qr_code_base64 && (
           <div className="border rounded-lg p-6 bg-card space-y-4">
             <h2 className="font-semibold text-lg text-center">Pague com Pix — {formatBRL(Number(order.total))}</h2>
             <img
