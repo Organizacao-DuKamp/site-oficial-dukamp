@@ -20,34 +20,60 @@ function mediaList(ad: Ad): string[] {
   return ad.image_url ? [ad.image_url] : [];
 }
 
-function AdaptiveMedia({ url }: { url: string }) {
+function AdaptiveMedia({ url, onEnded }: { url: string; onEnded?: () => void }) {
   // aspect starts at 4/3 and adapts once we know the natural size
   const [ratio, setRatio] = useState<number>(4 / 3);
   const [loaded, setLoaded] = useState(false);
+  const [muted, setMuted] = useState(true);
   const video = isVideoUrl(url);
-
-
 
   return (
     <div
-      className={`w-full overflow-hidden ${!loaded ? "bg-muted animate-pulse" : "bg-muted"}`}
+      className={`relative w-full overflow-hidden ${!loaded ? "bg-muted animate-pulse" : "bg-muted"}`}
       style={{ aspectRatio: `${ratio}` }}
     >
       {video ? (
-        <video
-          src={url}
-          className="w-full h-full object-contain"
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          onLoadedMetadata={(e) => {
-            const v = e.currentTarget;
-            if (v.videoWidth && v.videoHeight) setRatio(v.videoWidth / v.videoHeight);
-            setLoaded(true);
-          }}
-        />
+        <>
+          <video
+            src={url}
+            className="w-full h-full object-contain"
+            autoPlay
+            muted={muted}
+            playsInline
+            preload="metadata"
+            controls
+            onEnded={onEnded}
+            onLoadedMetadata={(e) => {
+              const v = e.currentTarget;
+              if (v.videoWidth && v.videoHeight) setRatio(v.videoWidth / v.videoHeight);
+              setLoaded(true);
+              // try to unmute programmatically; browsers may block and keep muted
+              v.muted = false;
+              v.play().then(() => setMuted(false)).catch(() => {
+                v.muted = true;
+                setMuted(true);
+              });
+            }}
+          />
+          {muted && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const v = (e.currentTarget.parentElement?.querySelector("video") as HTMLVideoElement | null);
+                if (v) {
+                  v.muted = false;
+                  v.play().catch(() => {});
+                  setMuted(false);
+                }
+              }}
+              className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded"
+            >
+              🔇 Ativar som
+            </button>
+          )}
+        </>
       ) : (
         <img
           src={optimizedImage(url, { width: 400, quality: 65 })}
