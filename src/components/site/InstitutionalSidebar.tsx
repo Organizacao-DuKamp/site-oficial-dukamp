@@ -32,7 +32,7 @@ function AdaptiveMedia({
   // aspect starts at 4/3 and adapts once we know the natural size
   const [ratio, setRatio] = useState<number>(4 / 3);
   const [loaded, setLoaded] = useState(false);
-  const [muted, setMuted] = useState(true);
+  const [needsSoundStart, setNeedsSoundStart] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const finishedRef = useRef(false);
   const video = isVideoUrl(url);
@@ -40,25 +40,54 @@ function AdaptiveMedia({
   useEffect(() => {
     setRatio(4 / 3);
     setLoaded(false);
-    setMuted(true);
+    setNeedsSoundStart(false);
     finishedRef.current = false;
   }, [url]);
 
-  // Try to unmute on first user gesture anywhere on the page
+  const playWithSound = useCallback(async (restartFromBeginning = false) => {
+    const v = videoRef.current;
+    if (!v || !active) return;
+
+    v.muted = false;
+    v.volume = 1;
+
+    if (restartFromBeginning) {
+      try {
+        v.currentTime = 0;
+      } catch {
+        // Some streaming videos may not allow seeking before metadata is fully ready.
+      }
+    }
+
+    try {
+      await v.play();
+      setNeedsSoundStart(false);
+    } catch {
+      v.pause();
+      if (!v.ended) {
+        try {
+          v.currentTime = 0;
+        } catch {
+          // Keep the video paused; the next user gesture will start it with audio.
+        }
+      }
+      setNeedsSoundStart(true);
+    }
+  }, [active]);
+
+  // If the browser blocks autoplay with sound, start from the beginning with audio
+  // on the first user gesture anywhere on the page instead of falling back to muted playback.
   useEffect(() => {
-    if (!video || !active) return;
-    const tryUnmute = () => {
-      const v = videoRef.current;
-      if (!v) return;
-      v.muted = false;
-      v.play().then(() => setMuted(false)).catch(() => {});
+    if (!video || !active || !needsSoundStart) return;
+    const start = () => {
+      void playWithSound(true);
     };
     const events: Array<keyof WindowEventMap> = ["pointerdown", "keydown", "touchstart", "scroll"];
-    events.forEach((ev) => window.addEventListener(ev, tryUnmute, { once: true, passive: true } as AddEventListenerOptions));
+    events.forEach((ev) => window.addEventListener(ev, start, { once: true, passive: true } as AddEventListenerOptions));
     return () => {
-      events.forEach((ev) => window.removeEventListener(ev, tryUnmute));
+      events.forEach((ev) => window.removeEventListener(ev, start));
     };
-  }, [video, active, url]);
+  }, [video, active, needsSoundStart, playWithSound]);
 
   const finishVideo = useCallback(
     (videoEl: HTMLVideoElement) => {
@@ -88,10 +117,10 @@ function AdaptiveMedia({
             src={url}
             className="w-full h-full object-contain"
             autoPlay={active}
-            muted={active ? muted : true}
+            muted={false}
             playsInline
             preload={active ? "auto" : "metadata"}
-            controls={active}
+            controls={false}
             onEnded={(e) => finishVideo(e.currentTarget)}
             onLoadedMetadata={(e) => {
               const v = e.currentTarget;
@@ -104,31 +133,30 @@ function AdaptiveMedia({
                 return;
               }
 
-              // try to unmute programmatically; browsers may block and keep muted
-              v.muted = false;
-              v.play().then(() => setMuted(false)).catch(() => {
-                v.muted = true;
-                setMuted(true);
-              });
+              void playWithSound(true);
+            }}
+            onPlay={(e) => {
+              e.currentTarget.muted = false;
+              e.currentTarget.volume = 1;
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              void playWithSound(needsSoundStart);
             }}
           />
 
-          {active && muted && (
+          {active && needsSoundStart && (
             <button
               type="button"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                const v = (e.currentTarget.parentElement?.querySelector("video") as HTMLVideoElement | null);
-                if (v) {
-                  v.muted = false;
-                  v.play().catch(() => {});
-                  setMuted(false);
-                }
+                void playWithSound(true);
               }}
-              className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded"
+              className="absolute inset-0 flex items-center justify-center bg-black/35 text-white text-xs font-semibold text-center px-4"
             >
-              🔇 Ativar som
+              ▶ Clique para reproduzir com som
             </button>
           )}
         </>
