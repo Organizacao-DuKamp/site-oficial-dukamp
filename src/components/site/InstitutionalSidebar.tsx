@@ -33,6 +33,7 @@ function AdaptiveMedia({
   const [ratio, setRatio] = useState<number>(4 / 3);
   const [loaded, setLoaded] = useState(false);
   const [muted, setMuted] = useState(true);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const finishedRef = useRef(false);
   const video = isVideoUrl(url);
 
@@ -42,6 +43,22 @@ function AdaptiveMedia({
     setMuted(true);
     finishedRef.current = false;
   }, [url]);
+
+  // Try to unmute on first user gesture anywhere on the page
+  useEffect(() => {
+    if (!video || !active) return;
+    const tryUnmute = () => {
+      const v = videoRef.current;
+      if (!v) return;
+      v.muted = false;
+      v.play().then(() => setMuted(false)).catch(() => {});
+    };
+    const events: Array<keyof WindowEventMap> = ["pointerdown", "keydown", "touchstart", "scroll"];
+    events.forEach((ev) => window.addEventListener(ev, tryUnmute, { once: true, passive: true } as AddEventListenerOptions));
+    return () => {
+      events.forEach((ev) => window.removeEventListener(ev, tryUnmute));
+    };
+  }, [video, active, url]);
 
   const finishVideo = useCallback(
     (videoEl: HTMLVideoElement) => {
@@ -67,6 +84,7 @@ function AdaptiveMedia({
         <>
           <video
             key={url}
+            ref={videoRef}
             src={url}
             className="w-full h-full object-contain"
             autoPlay={active}
@@ -94,6 +112,7 @@ function AdaptiveMedia({
               });
             }}
           />
+
           {active && muted && (
             <button
               type="button"
