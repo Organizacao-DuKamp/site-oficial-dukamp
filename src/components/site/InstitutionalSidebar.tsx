@@ -75,12 +75,6 @@ function AdaptiveMedia({
             preload={active ? "auto" : "metadata"}
             controls={active}
             onEnded={(e) => finishVideo(e.currentTarget)}
-            onTimeUpdate={(e) => {
-              const v = e.currentTarget;
-              if (Number.isFinite(v.duration) && v.duration > 0 && v.duration - v.currentTime <= 0.25) {
-                finishVideo(v);
-              }
-            }}
             onLoadedMetadata={(e) => {
               const v = e.currentTarget;
               if (v.videoWidth && v.videoHeight) setRatio(v.videoWidth / v.videoHeight);
