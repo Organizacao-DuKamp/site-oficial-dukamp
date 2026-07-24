@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { isVideoUrl } from "@/components/admin/ImageUpload";
 import { optimizedImage, optimizedSrcset } from "@/lib/image-url";
@@ -20,12 +20,43 @@ function mediaList(ad: Ad): string[] {
   return ad.image_url ? [ad.image_url] : [];
 }
 
-function AdaptiveMedia({ url, onEnded }: { url: string; onEnded?: () => void }) {
+function AdaptiveMedia({
+  url,
+  onEnded,
+  active = true,
+}: {
+  url: string;
+  onEnded?: () => void;
+  active?: boolean;
+}) {
   // aspect starts at 4/3 and adapts once we know the natural size
   const [ratio, setRatio] = useState<number>(4 / 3);
   const [loaded, setLoaded] = useState(false);
   const [muted, setMuted] = useState(true);
+  const finishedRef = useRef(false);
   const video = isVideoUrl(url);
+
+  useEffect(() => {
+    setRatio(4 / 3);
+    setLoaded(false);
+    setMuted(true);
+    finishedRef.current = false;
+  }, [url]);
+
+  const finishVideo = useCallback(
+    (videoEl: HTMLVideoElement) => {
+      if (!active || finishedRef.current) return;
+
+      const duration = videoEl.duration;
+      if (Number.isFinite(duration) && duration > 0 && videoEl.currentTime < duration - 0.35) {
+        return;
+      }
+
+      finishedRef.current = true;
+      onEnded?.();
+    },
+    [active, onEnded],
+  );
 
   return (
     <div
@@ -35,18 +66,32 @@ function AdaptiveMedia({ url, onEnded }: { url: string; onEnded?: () => void }) 
       {video ? (
         <>
           <video
+            key={url}
             src={url}
             className="w-full h-full object-contain"
-            autoPlay
-            muted={muted}
+            autoPlay={active}
+            muted={active ? muted : true}
             playsInline
-            preload="metadata"
-            controls
-            onEnded={onEnded}
+            preload={active ? "auto" : "metadata"}
+            controls={active}
+            onEnded={(e) => finishVideo(e.currentTarget)}
+            onTimeUpdate={(e) => {
+              const v = e.currentTarget;
+              if (Number.isFinite(v.duration) && v.duration > 0 && v.duration - v.currentTime <= 0.25) {
+                finishVideo(v);
+              }
+            }}
             onLoadedMetadata={(e) => {
               const v = e.currentTarget;
               if (v.videoWidth && v.videoHeight) setRatio(v.videoWidth / v.videoHeight);
               setLoaded(true);
+
+              if (!active) {
+                v.pause();
+                v.muted = true;
+                return;
+              }
+
               // try to unmute programmatically; browsers may block and keep muted
               v.muted = false;
               v.play().then(() => setMuted(false)).catch(() => {
@@ -55,7 +100,7 @@ function AdaptiveMedia({ url, onEnded }: { url: string; onEnded?: () => void }) 
               });
             }}
           />
-          {muted && (
+          {active && muted && (
             <button
               type="button"
               onClick={(e) => {
@@ -99,6 +144,7 @@ function AdCard({ ad }: { ad: Ad }) {
   const items = useMemo(() => mediaList(ad), [ad]);
   const [idx, setIdx] = useState(0);
   const timer = useRef<number | null>(null);
+  const itemsKey = items.join("|");
 
   // Preload all images so crossfades never flash white
   useEffect(() => {
@@ -110,17 +156,43 @@ function AdCard({ ad }: { ad: Ad }) {
     });
   }, [items]);
 
-  const advance = () => setIdx((i) => (i + 1) % items.length);
+  useEffect(() => {
+    setIdx((i) => {
+      if (items.length === 0) return 0;
+      return Math.min(i, items.length - 1);
+    });
+  }, [items.length, itemsKey]);
+
+  const advance = useCallback(
+    (expectedUrl?: string) => {
+      setIdx((i) => {
+        if (items.length <= 1) return i;
+        if (expectedUrl && items[i] !== expectedUrl) return i;
+        return (i + 1) % items.length;
+      });
+    },
+    [items],
+  );
 
   useEffect(() => {
+    if (timer.current) {
+      window.clearTimeout(timer.current);
+      timer.current = null;
+    }
+
     if (items.length <= 1) return;
+    const currentItem = items[idx];
     // Only auto-advance on non-video items; videos advance via onEnded
-    if (isVideoUrl(items[idx])) return;
-    timer.current = window.setInterval(advance, 6000);
+    if (!currentItem || isVideoUrl(currentItem)) return;
+
+    timer.current = window.setTimeout(() => advance(currentItem), 6000);
     return () => {
-      if (timer.current) window.clearInterval(timer.current);
+      if (timer.current) {
+        window.clearTimeout(timer.current);
+        timer.current = null;
+      }
     };
-  }, [items, idx]);
+  }, [advance, idx, items]);
 
   const current = items[idx];
   const [prev, setPrev] = useState<string | null>(null);
@@ -144,14 +216,14 @@ function AdCard({ ad }: { ad: Ad }) {
     <div className="rounded-lg border bg-card overflow-hidden hover:shadow-md transition-shadow">
       {current && (
         <div className="relative">
-          <AdaptiveMedia url={current} onEnded={advance} />
+          <AdaptiveMedia url={current} onEnded={() => advance(current)} active />
           {prev && prev !== current && (
             <div
               className={`absolute inset-0 pointer-events-none transition-opacity duration-700 ease-in-out ${
                 fading ? "opacity-0" : "opacity-100"
               }`}
             >
-              <AdaptiveMedia url={prev} />
+              <AdaptiveMedia url={prev} active={false} />
             </div>
           )}
           {items.length > 1 && (
