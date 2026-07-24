@@ -110,15 +110,17 @@ function AdCard({ ad }: { ad: Ad }) {
     });
   }, [items]);
 
+  const advance = () => setIdx((i) => (i + 1) % items.length);
+
   useEffect(() => {
     if (items.length <= 1) return;
-    timer.current = window.setInterval(() => {
-      setIdx((i) => (i + 1) % items.length);
-    }, 6000);
+    // Only auto-advance on non-video items; videos advance via onEnded
+    if (isVideoUrl(items[idx])) return;
+    timer.current = window.setInterval(advance, 6000);
     return () => {
       if (timer.current) window.clearInterval(timer.current);
     };
-  }, [items.length]);
+  }, [items, idx]);
 
   const current = items[idx];
   const [prev, setPrev] = useState<string | null>(null);
