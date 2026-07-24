@@ -144,7 +144,7 @@ function AdCard({ ad }: { ad: Ad }) {
     <div className="rounded-lg border bg-card overflow-hidden hover:shadow-md transition-shadow">
       {current && (
         <div className="relative">
-          <AdaptiveMedia url={current} />
+          <AdaptiveMedia url={current} onEnded={advance} />
           {prev && prev !== current && (
             <div
               className={`absolute inset-0 pointer-events-none transition-opacity duration-700 ease-in-out ${
