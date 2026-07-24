@@ -85,14 +85,16 @@ export function ProductCard({ p, eager = false }: { p: ProductLite; eager?: bool
       </div>
 
 
-      <div className="p-3 flex-1 flex flex-col">
-        <div className="min-h-[0.875rem] text-[10px] uppercase tracking-wider text-muted-foreground">
-          {p.brand ?? ""}
+      <div className="p-3 flex-1 flex flex-col justify-between gap-3">
+        <div>
+          <div className="min-h-[0.875rem] text-[10px] uppercase tracking-wider text-muted-foreground">
+            {p.brand ?? ""}
+          </div>
+          <div className="mt-1 font-medium text-sm leading-[1.3] break-words whitespace-normal line-clamp-3 group-hover:text-primary">
+            {p.name}
+          </div>
         </div>
-        <div className="mt-1 min-h-[4.5rem] font-medium text-sm leading-[1.3] break-words whitespace-normal group-hover:text-primary flex-1">
-          {p.name}
-        </div>
-        <div className="mt-3 space-y-0.5">
+        <div className="space-y-0.5">
           {tierLabel && <div className="text-[10px] uppercase tracking-wider text-primary font-semibold">Preço {tierLabel}</div>}
           <div className="text-xl font-bold text-foreground">{formatBRL(displayPrice)}</div>
           {displayPix != null && (
@@ -104,10 +106,10 @@ export function ProductCard({ p, eager = false }: { p: ProductLite; eager?: bool
             </div>
           )}
         </div>
-        <div className="mt-auto pt-3 space-y-2">
+        <div className="space-y-2">
           <Button
             size="sm"
-            className="relative z-20 w-full h-10 text-base font-semibold"
+            className="relative z-20 w-full h-10 text-base font-semibold bg-[#0f4d2a] hover:bg-[#0c3d21] text-white"
             disabled={p.stock <= 0}
             onClick={(e) => {
               stopNav(e);
@@ -125,13 +127,14 @@ export function ProductCard({ p, eager = false }: { p: ProductLite; eager?: bool
               navigate({ to: "/equipe-de-vendas" });
             }}
             aria-label="Comprar pelo WhatsApp"
-            className="relative z-20 w-full inline-flex items-center justify-center gap-2 rounded-md bg-[#25D366] hover:bg-[#1ebe57] text-white text-sm font-semibold h-10 px-3 shadow-sm hover:shadow-md ring-1 ring-black/5 transition-all"
+            className="relative z-20 w-full inline-flex items-center justify-center gap-2 rounded-md bg-[#00A884] hover:bg-[#008f72] text-white text-sm font-semibold h-10 px-3 shadow-sm hover:shadow-md ring-1 ring-black/5 transition-all"
           >
             <WhatsAppIcon className="h-4 w-4 shrink-0" />
             <span>WhatsApp</span>
           </button>
         </div>
       </div>
+
     </div>
   );
 }
