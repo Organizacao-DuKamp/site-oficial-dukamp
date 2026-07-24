@@ -127,7 +127,7 @@ export function ProductCard({ p, eager = false }: { p: ProductLite; eager?: bool
               navigate({ to: "/equipe-de-vendas" });
             }}
             aria-label="Comprar pelo WhatsApp"
-            className="relative z-20 w-full inline-flex items-center justify-center gap-2 rounded-md bg-[#00A884] hover:bg-[#008f72] text-white text-sm font-semibold h-10 px-3 shadow-sm hover:shadow-md ring-1 ring-black/5 transition-all"
+            className="relative z-20 w-full inline-flex items-center justify-center gap-2 rounded-md bg-[#25D366] hover:bg-[#1DA851] text-white text-sm font-semibold h-10 px-3 shadow-sm hover:shadow-md ring-1 ring-black/5 transition-all"
           >
             <WhatsAppIcon className="h-4 w-4 shrink-0" />
             <span>WhatsApp</span>
