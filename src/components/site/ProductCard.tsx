@@ -21,11 +21,17 @@ export type ProductLite = {
   consumer_pix_price?: number | null;
   reseller_pix_price?: number | null;
   producer_pix_price?: number | null;
+  on_sale?: boolean | null;
+  sale_consumer_price?: number | null;
+  sale_producer_price?: number | null;
+  sale_consumer_pix_price?: number | null;
+  sale_producer_pix_price?: number | null;
   images: string[];
   brand: string | null;
   stock: number;
   installments?: number | null;
 };
+
 
 const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
