@@ -38,6 +38,7 @@ function ProductsAdmin() {
         
         { key: "producer_price", label: "Produtor Rural", format: (v) => v != null ? Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—" },
 
+        { key: "on_sale", label: "Promoção", format: (v) => v ? "Sim" : "—" },
         { key: "category_position", label: "Posição", format: (v) => v ?? "—" },
         { key: "stock", label: "Estoque" },
         { key: "active", label: "Ativo", format: (v) => v ? "Sim" : "Não" },
@@ -53,11 +54,17 @@ function ProductsAdmin() {
         { name: "consumer_price", label: "Preço — Consumidor", type: "number", step: "0.01", required: true, defaultValue: 0 },
         
         { name: "producer_price", label: "Preço — Produtor Rural", type: "number", step: "0.01" },
+        { name: "on_sale", label: "Produto em promoção", type: "boolean", defaultValue: false },
+        { name: "sale_consumer_price", label: "PROMOÇÃO — Preço Consumidor", type: "number", step: "0.01", showIf: (v) => !!v.on_sale },
+        { name: "sale_producer_price", label: "PROMOÇÃO — Preço Produtor Rural", type: "number", step: "0.01", showIf: (v) => !!v.on_sale },
+        { name: "sale_consumer_pix_price", label: "PROMOÇÃO — PIX Consumidor", type: "number", step: "0.01", showIf: (v) => !!v.on_sale },
+        { name: "sale_producer_pix_price", label: "PROMOÇÃO — PIX Produtor Rural", type: "number", step: "0.01", showIf: (v) => !!v.on_sale },
         { name: "price", label: "Preço base (legado)", type: "number", step: "0.01", defaultValue: 0 },
         { name: "pix_price", label: "Preço PIX (legado)", type: "number", step: "0.01" },
         { name: "consumer_pix_price", label: "PIX — Consumidor", type: "number", step: "0.01" },
         
         { name: "producer_pix_price", label: "PIX — Produtor Rural", type: "number", step: "0.01" },
+
         { name: "installments", label: "Parcelas", type: "number", defaultValue: 1 },
         { name: "stock", label: "Estoque", type: "number", defaultValue: 0 },
         { name: "peso", label: "Peso (kg)", type: "number", step: "0.001" },

@@ -24,7 +24,10 @@ export type FieldDef = {
   required?: boolean;
   defaultValue?: any;
   step?: string;
+  /** Mostra o campo apenas quando a condição for verdadeira (baseado nos valores atuais do form). */
+  showIf?: (values: any) => boolean;
 };
+
 
 export type ColumnDef = {
   key: string;
@@ -257,7 +260,7 @@ function ResourceForm({ fields, initial, onSubmit, submitting }: {
   return (
     <form onSubmit={submit} className="space-y-3">
       <div className="grid sm:grid-cols-2 gap-3">
-        {fields.map((f) => (
+        {fields.filter((f) => !f.showIf || f.showIf(values)).map((f) => (
           <div key={f.name} className={f.type === "textarea" || f.type === "image" || f.type === "imageList" || f.type === "mediaList" ? "sm:col-span-2" : ""}>
             <Label>{f.label}</Label>
             {f.type === "textarea" ? (
