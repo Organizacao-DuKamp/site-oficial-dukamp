@@ -96,19 +96,61 @@ export function useAuth() {
   return c;
 }
 
-/** Resolve price field based on user account type. Falls back to consumer/legacy. */
-export function priceForAccount(p: { price?: number | null; consumer_price?: number | null; producer_price?: number | null }, t: AccountType): number {
+type PriceFields = {
+  price?: number | null;
+  consumer_price?: number | null;
+  producer_price?: number | null;
+  on_sale?: boolean | null;
+  sale_consumer_price?: number | null;
+  sale_producer_price?: number | null;
+};
+
+type PixFields = {
+  pix_price?: number | null;
+  consumer_pix_price?: number | null;
+  producer_pix_price?: number | null;
+  on_sale?: boolean | null;
+  sale_consumer_pix_price?: number | null;
+  sale_producer_pix_price?: number | null;
+};
+
+/** Preço "cheio" (sem promoção) conforme o tipo de conta. */
+export function regularPriceForAccount(p: PriceFields, t: AccountType): number {
   if (t === "produtor" && p.producer_price != null) return Number(p.producer_price);
   return Number(p.consumer_price ?? p.price ?? 0);
 }
 
+/** Resolve price field based on user account type. Falls back to consumer/legacy. */
+export function priceForAccount(p: PriceFields, t: AccountType): number {
+  if (p.on_sale) {
+    const sale = t === "produtor"
+      ? (p.sale_producer_price ?? p.sale_consumer_price)
+      : p.sale_consumer_price;
+    if (sale != null) return Number(sale);
+  }
+  return regularPriceForAccount(p, t);
+}
+
+/** True quando o produto está em promoção e tem preço promocional válido para a conta. */
+export function isOnSaleForAccount(p: PriceFields, t: AccountType): boolean {
+  if (!p.on_sale) return false;
+  const sale = t === "produtor"
+    ? (p.sale_producer_price ?? p.sale_consumer_price)
+    : p.sale_consumer_price;
+  return sale != null && Number(sale) < regularPriceForAccount(p, t);
+}
+
 /** Resolve PIX price for the user's account type. Returns null if no PIX configured for that tier. */
-export function pixPriceForAccount(
-  p: { pix_price?: number | null; consumer_pix_price?: number | null; producer_pix_price?: number | null },
-  t: AccountType,
-): number | null {
+export function pixPriceForAccount(p: PixFields, t: AccountType): number | null {
+  if (p.on_sale) {
+    const sale = t === "produtor"
+      ? (p.sale_producer_pix_price ?? p.sale_consumer_pix_price)
+      : p.sale_consumer_pix_price;
+    if (sale != null) return Number(sale);
+  }
   let v: number | null | undefined;
   if (t === "produtor") v = p.producer_pix_price;
   else v = p.consumer_pix_price ?? p.pix_price;
   return v != null ? Number(v) : null;
 }
+
