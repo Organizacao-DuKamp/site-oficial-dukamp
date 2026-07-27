@@ -32,7 +32,10 @@ function AdaptiveMedia({
   // aspect starts at 4/3 and adapts once we know the natural size
   const [ratio, setRatio] = useState<number>(4 / 3);
   const [loaded, setLoaded] = useState(false);
-  const [needsSoundStart, setNeedsSoundStart] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const userPausedRef = useRef(false);
+  const userMutedRef = useRef(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const finishedRef = useRef(false);
   const video = isVideoUrl(url);
@@ -40,54 +43,91 @@ function AdaptiveMedia({
   useEffect(() => {
     setRatio(4 / 3);
     setLoaded(false);
-    setNeedsSoundStart(false);
+    setMuted(false);
+    setPaused(false);
+    userPausedRef.current = false;
+    userMutedRef.current = false;
     finishedRef.current = false;
   }, [url]);
 
-  const playWithSound = useCallback(async (restartFromBeginning = false) => {
+  // Autoplay: try with sound first; if the browser blocks it, keep the video
+  // playing muted so the user always sees it, and unmute on the first gesture.
+  const startPlayback = useCallback(async (restartFromBeginning = false) => {
     const v = videoRef.current;
-    if (!v || !active) return;
-
-    v.muted = false;
-    v.volume = 1;
+    if (!v || !active || userPausedRef.current) return;
 
     if (restartFromBeginning) {
       try {
         v.currentTime = 0;
       } catch {
-        // Some streaming videos may not allow seeking before metadata is fully ready.
+        // Some streaming videos may not allow seeking before metadata is ready.
       }
     }
 
+    if (!userMutedRef.current) {
+      v.muted = false;
+      v.volume = 1;
+      try {
+        await v.play();
+        setMuted(false);
+        setPaused(false);
+        return;
+      } catch {
+        // Autoplay with sound blocked - fall back to muted playback below.
+      }
+    }
+
+    v.muted = true;
+    setMuted(true);
     try {
       await v.play();
-      setNeedsSoundStart(false);
+      setPaused(false);
     } catch {
-      v.pause();
-      if (!v.ended) {
-        try {
-          v.currentTime = 0;
-        } catch {
-          // Keep the video paused; the next user gesture will start it with audio.
-        }
-      }
-      setNeedsSoundStart(true);
+      setPaused(true);
     }
   }, [active]);
 
-  // If the browser blocks autoplay with sound, start from the beginning with audio
-  // on the first user gesture anywhere on the page instead of falling back to muted playback.
+  // Unmute automatically on the first user interaction anywhere on the page.
   useEffect(() => {
-    if (!video || !active || !needsSoundStart) return;
-    const start = () => {
-      void playWithSound(true);
+    if (!video || !active || !muted || userMutedRef.current) return;
+    const unmute = () => {
+      const v = videoRef.current;
+      if (!v || userMutedRef.current) return;
+      v.muted = false;
+      v.volume = 1;
+      setMuted(false);
+      if (!userPausedRef.current) void v.play().catch(() => undefined);
     };
     const events: Array<keyof WindowEventMap> = ["pointerdown", "keydown", "touchstart", "scroll"];
-    events.forEach((ev) => window.addEventListener(ev, start, { once: true, passive: true } as AddEventListenerOptions));
+    events.forEach((ev) => window.addEventListener(ev, unmute, { once: true, passive: true } as AddEventListenerOptions));
     return () => {
-      events.forEach((ev) => window.removeEventListener(ev, start));
+      events.forEach((ev) => window.removeEventListener(ev, unmute));
     };
-  }, [video, active, needsSoundStart, playWithSound]);
+  }, [video, active, muted]);
+
+  const toggleMute = useCallback(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    const next = !v.muted;
+    v.muted = next;
+    if (!next) v.volume = 1;
+    userMutedRef.current = next;
+    setMuted(next);
+  }, []);
+
+  const togglePlay = useCallback(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    if (v.paused) {
+      userPausedRef.current = false;
+      void v.play().catch(() => undefined);
+      setPaused(false);
+    } else {
+      userPausedRef.current = true;
+      v.pause();
+      setPaused(true);
+    }
+  }, []);
 
   const finishVideo = useCallback(
     (videoEl: HTMLVideoElement) => {
@@ -117,11 +157,13 @@ function AdaptiveMedia({
             src={url}
             className="w-full h-full object-contain"
             autoPlay={active}
-            muted={false}
             playsInline
             preload={active ? "auto" : "metadata"}
             controls={false}
             onEnded={(e) => finishVideo(e.currentTarget)}
+            onPause={() => setPaused(true)}
+            onPlaying={() => setPaused(false)}
+            onVolumeChange={(e) => setMuted(e.currentTarget.muted)}
             onLoadedMetadata={(e) => {
               const v = e.currentTarget;
               if (v.videoWidth && v.videoHeight) setRatio(v.videoWidth / v.videoHeight);
@@ -133,31 +175,37 @@ function AdaptiveMedia({
                 return;
               }
 
-              void playWithSound(true);
-            }}
-            onPlay={(e) => {
-              e.currentTarget.muted = false;
-              e.currentTarget.volume = 1;
-            }}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              void playWithSound(needsSoundStart);
+              void startPlayback(true);
             }}
           />
 
-          {active && needsSoundStart && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                void playWithSound(true);
-              }}
-              className="absolute inset-0 flex items-center justify-center bg-black/35 text-white text-xs font-semibold text-center px-4"
-            >
-              ▶ Clique para reproduzir com som
-            </button>
+          {active && (
+            <div className="absolute bottom-1.5 right-1.5 flex items-center gap-1">
+              <button
+                type="button"
+                aria-label={paused ? "Reproduzir vídeo" : "Pausar vídeo"}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  togglePlay();
+                }}
+                className="h-7 w-7 rounded-full bg-black/55 text-white text-xs flex items-center justify-center hover:bg-black/75 transition-colors"
+              >
+                {paused ? "▶" : "❚❚"}
+              </button>
+              <button
+                type="button"
+                aria-label={muted ? "Ativar som" : "Desativar som"}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleMute();
+                }}
+                className="h-7 w-7 rounded-full bg-black/55 text-white text-xs flex items-center justify-center hover:bg-black/75 transition-colors"
+              >
+                {muted ? "🔇" : "🔊"}
+              </button>
+            </div>
           )}
         </>
       ) : (
@@ -179,6 +227,7 @@ function AdaptiveMedia({
     </div>
   );
 }
+
 
 
 function AdCard({ ad }: { ad: Ad }) {
