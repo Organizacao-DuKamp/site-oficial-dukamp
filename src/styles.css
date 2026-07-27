@@ -25,6 +25,8 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-promotion: var(--promotion);
+  --color-promotion-foreground: var(--promotion-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
