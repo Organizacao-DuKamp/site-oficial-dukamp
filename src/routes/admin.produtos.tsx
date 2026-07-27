@@ -38,6 +38,7 @@ function ProductsAdmin() {
         
         { key: "producer_price", label: "Produtor Rural", format: (v) => v != null ? Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—" },
 
+        { key: "on_sale", label: "Promoção", format: (v) => v ? "Sim" : "—" },
         { key: "category_position", label: "Posição", format: (v) => v ?? "—" },
         { key: "stock", label: "Estoque" },
         { key: "active", label: "Ativo", format: (v) => v ? "Sim" : "Não" },
