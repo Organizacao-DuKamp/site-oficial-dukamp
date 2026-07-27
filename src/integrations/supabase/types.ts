@@ -502,6 +502,7 @@ export type Database = {
           installments: number
           largura: number | null
           name: string
+          on_sale: boolean
           peso: number | null
           pix_price: number | null
           price: number
@@ -509,6 +510,10 @@ export type Database = {
           producer_price: number | null
           reseller_pix_price: number | null
           reseller_price: number | null
+          sale_consumer_pix_price: number | null
+          sale_consumer_price: number | null
+          sale_producer_pix_price: number | null
+          sale_producer_price: number | null
           slug: string
           stock: number
           updated_at: string
@@ -533,6 +538,7 @@ export type Database = {
           installments?: number
           largura?: number | null
           name: string
+          on_sale?: boolean
           peso?: number | null
           pix_price?: number | null
           price?: number
@@ -540,6 +546,10 @@ export type Database = {
           producer_price?: number | null
           reseller_pix_price?: number | null
           reseller_price?: number | null
+          sale_consumer_pix_price?: number | null
+          sale_consumer_price?: number | null
+          sale_producer_pix_price?: number | null
+          sale_producer_price?: number | null
           slug: string
           stock?: number
           updated_at?: string
@@ -564,6 +574,7 @@ export type Database = {
           installments?: number
           largura?: number | null
           name?: string
+          on_sale?: boolean
           peso?: number | null
           pix_price?: number | null
           price?: number
@@ -571,6 +582,10 @@ export type Database = {
           producer_price?: number | null
           reseller_pix_price?: number | null
           reseller_price?: number | null
+          sale_consumer_pix_price?: number | null
+          sale_consumer_price?: number | null
+          sale_producer_pix_price?: number | null
+          sale_producer_price?: number | null
           slug?: string
           stock?: number
           updated_at?: string
