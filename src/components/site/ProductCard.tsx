@@ -71,12 +71,12 @@ export function ProductCard({ p, eager = false }: { p: ProductLite; eager?: bool
       className={
         "group relative h-full rounded-lg bg-card overflow-hidden flex flex-col transition-shadow " +
         (onSale
-          ? "border-2 border-destructive shadow-md shadow-destructive/20 hover:shadow-lg hover:shadow-destructive/30"
+          ? "border-2 border-promotion shadow-md shadow-promotion/20 hover:shadow-lg hover:shadow-promotion/30"
           : "border hover:shadow-lg")
       }
     >
       {onSale && (
-        <div className="absolute top-2 left-2 z-20 rounded-full bg-destructive px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-destructive-foreground shadow">
+        <div className="absolute top-2 left-2 z-20 rounded-full bg-promotion px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-promotion-foreground shadow">
           Promoção{discountPct > 0 ? ` -${discountPct}%` : ""}
         </div>
       )}
@@ -120,7 +120,7 @@ export function ProductCard({ p, eager = false }: { p: ProductLite; eager?: bool
           {onSale && (
             <div className="text-xs text-muted-foreground line-through">{formatBRL(regularPrice)}</div>
           )}
-          <div className={"text-xl font-bold " + (onSale ? "text-destructive" : "text-foreground")}>{formatBRL(displayPrice)}</div>
+          <div className={"text-xl font-bold " + (onSale ? "text-promotion" : "text-foreground")}>{formatBRL(displayPrice)}</div>
           {displayPix != null && (
             <div className="text-xs text-primary font-medium">ou {formatBRL(displayPix)} no PIX</div>
           )}
