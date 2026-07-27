@@ -30,7 +30,7 @@ export const Route = createFileRoute("/")({
 });
 
 const PRODUCT_COLS =
-  "id,name,slug,code,price,consumer_price,reseller_price,producer_price,pix_price,consumer_pix_price,reseller_pix_price,producer_pix_price,images,brand,stock,installments,catalog_id,featured,created_at,category_position";
+  "id,name,slug,code,price,consumer_price,reseller_price,producer_price,pix_price,consumer_pix_price,reseller_pix_price,producer_pix_price,on_sale,sale_consumer_price,sale_producer_price,sale_consumer_pix_price,sale_producer_pix_price,images,brand,stock,installments,catalog_id,featured,created_at,category_position";
 
 const INITIAL_ROWS = 3;
 const ROWS_INCREMENT = 3;
