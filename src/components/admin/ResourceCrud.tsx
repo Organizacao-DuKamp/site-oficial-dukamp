@@ -24,7 +24,10 @@ export type FieldDef = {
   required?: boolean;
   defaultValue?: any;
   step?: string;
+  /** Mostra o campo apenas quando a condição for verdadeira (baseado nos valores atuais do form). */
+  showIf?: (values: any) => boolean;
 };
+
 
 export type ColumnDef = {
   key: string;
