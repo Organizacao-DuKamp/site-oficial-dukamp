@@ -1,0 +1,1519 @@
+DESCRIÇÕES DE PRODUTOS — DUKAMP
+Pesquisa e organização: 28/07/2026
+Formato: blocos HTML prontos para cadastro em campo de descrição
+
+ATENÇÃO:
+1. Os códigos entre parênteses são códigos internos fornecidos pelo solicitante, não números de registro no MAPA.
+2. Medicamentos, antiparasitários, hormônios e produtos tóxicos devem ser usados somente conforme a bula que acompanha o lote e, quando aplicável, sob orientação de médico-veterinário.
+3. Fórmulas, indicações, doses, carências, titulares de registro e apresentações podem ser alterados. Antes da publicação e da venda, confronte as informações com o rótulo físico do estoque.
+4. Quando o nome cadastrado não permitiu identificar marca, medida, modelo ou bula de modo inequívoco, a limitação foi registrada no próprio texto. Não complete esses campos por suposição.
+5. Este arquivo contém descrições comerciais e técnicas; não substitui diagnóstico, prescrição, projeto estrutural, FISPQ ou manual do fabricante.
+
+================================================================================
+
+<!-- PRODUTO 01 -->
+<p>Produto: ACIENDEL PLUS LT (054984)</p>
+
+<p><strong>Código interno:</strong><br>054984</p>
+
+<p><strong>Fabricante:</strong><br>Biogénesis Bagó.</p>
+
+<p><strong>Classificação:</strong><br>Antiparasitário externo pour-on, bernicida, carrapaticida, mosquicida, sarnicida e piolhicida de uso veterinário.</p>
+
+<p><strong>Descrição do produto:</strong><br>Aciendel Plus é uma solução antiparasitária de aplicação dorsal, pronta para uso, que associa um piretroide, um organofosforado e um sinergista. A combinação proporciona ação inseticida, acaricida, repelente e efeito residual contra ectoparasitas.<br><br>É destinado ao controle e tratamento de bernes, carrapatos, mosca-dos-chifres, sarnas, piolhos e outros insetos sugadores em bovinos, equinos, ovinos e caprinos, conforme a bula do fabricante.</p>
+
+<p><strong>Forma física e apresentação:</strong><br>Solução líquida para uso externo por via pour-on. O cadastro indica apresentação de 1 litro.</p>
+
+<p><strong>Composição:</strong><br>Cada 100 ml contém:<br>Cipermetrina: 5 g.<br>Clorpirifós: 2,5 g.<br>Butóxido de piperonila: 1 g.<br>Excipientes q.s.p.: 100 ml.</p>
+
+<p><strong>Princípios ativos:</strong><br>Cipermetrina, clorpirifós e butóxido de piperonila.</p>
+
+<p><strong>Modo de usar e dosagem:</strong><br>Administrar exclusivamente por via pour-on, com cânula ou frasco dosador, distribuindo o produto do pescoço até a anca e nos flancos.<br><br>Bovinos: dose única de 10 ml para cada 100 kg de peso corporal.<br><br>Equinos: 10 ml em animais jovens e 20 ml em adultos, distribuindo metade nas laterais do pescoço e metade nos flancos.<br><br>Para ovinos e caprinos, conferir obrigatoriamente a dose no rótulo da apresentação comercial em uso, pois materiais públicos do produto apresentam informação que deve ser validada antes da aplicação.</p>
+
+<p><strong>Período de carência:</strong><br>Bovinos, ovinos e caprinos — abate: 2 dias; leite: 6 horas. Equinos — abate: 2 dias. Confirmar sempre o texto da bula que acompanha o lote adquirido.</p>
+
+<p><strong>Advertências e conservação:</strong><br>Produto de uso exclusivamente veterinário e externo. Utilizar luvas, evitar contato com pele, olhos e mucosas e não permitir que o produto alcance cursos d’água.<br><br>Não aplicar em animais debilitados, com lesões extensas ou fora das espécies e condições autorizadas sem orientação médico-veterinária. Conservar na embalagem original, fechada, protegida de calor, umidade e luz direta.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Bula e BioVademécum oficiais da Biogénesis Bagó.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 02 -->
+<p>Produto: ACURA MAX 25 ML (027898)</p>
+
+<p><strong>Código interno:</strong><br>027898</p>
+
+<p><strong>Fabricante:</strong><br>Vetoquinol.</p>
+
+<p><strong>Classificação:</strong><br>Antimicrobiano e anti-inflamatório não esteroidal injetável de uso veterinário.</p>
+
+<p><strong>Descrição do produto:</strong><br>Acura Max é uma suspensão injetável que associa ceftiofur, antibiótico da classe das cefalosporinas, ao meloxicam, anti-inflamatório não esteroidal.<br><br>A associação foi desenvolvida para combater infecções bacterianas sensíveis ao ceftiofur e, simultaneamente, auxiliar na redução de inflamação, dor e febre.</p>
+
+<p><strong>Forma física e embalagem:</strong><br>Suspensão injetável estéril, acondicionada em frasco de 25 ml.</p>
+
+<p><strong>Composição:</strong><br>Cada 100 ml contém:<br>Cloridrato de ceftiofur: 6,3 g.<br>Meloxicam: 1,0 g.<br>Veículo q.s.p.: 100 ml.</p>
+
+<p><strong>Princípios ativos:</strong><br>Ceftiofur, na forma de cloridrato, e meloxicam.</p>
+
+<p><strong>Espécies e indicações:</strong><br>Indicado para bovinos, equinos e cães nas infecções e processos inflamatórios especificados na bula. A indicação exata deve considerar o diagnóstico, a sensibilidade do agente e a avaliação do médico-veterinário.</p>
+
+<p><strong>Modo de usar e dosagem:</strong><br>Administrar pela via intramuscular, na dose geral indicada de 1 ml para cada 20 kg de peso corporal. O número de aplicações e o intervalo variam conforme espécie, enfermidade e prescrição; não extrapolar o protocolo da bula.</p>
+
+<p><strong>Contraindicações e precauções:</strong><br>Não utilizar em animais com hipersensibilidade conhecida a cefalosporinas, penicilinas, meloxicam ou outros anti-inflamatórios não esteroidais.<br><br>Usar com cautela em animais desidratados ou com alterações renais, hepáticas, gastrointestinais ou de coagulação. Não associar a outro AINE ou corticosteroide sem orientação profissional.</p>
+
+<p><strong>Período de carência:</strong><br>Para leite bovino, a referência consultada informa 3 dias. O período para abate e as restrições das demais espécies devem ser obrigatoriamente conferidos na bula atual da embalagem.</p>
+
+<p><strong>Conservação:</strong><br>Conservar conforme a faixa de temperatura indicada no rótulo, protegido da luz e fora do alcance de crianças e animais. Agitar antes do uso quando indicado.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Página e materiais técnicos oficiais da Vetoquinol, complementados por ficha de bula veterinária.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 03 -->
+<p>Produto: AGULHA VET/HOPP/FAZ/KAB/TRI (043621)</p>
+
+<p><strong>Código interno:</strong><br>043621</p>
+
+<p><strong>Marca/fabricante:</strong><br>Cadastro agrupado com referências abreviadas a diferentes marcas ou linhas. O fabricante exato, a medida e o modelo devem ser selecionados no estoque.</p>
+
+<p><strong>Classificação:</strong><br>Agulha hipodérmica veterinária para aplicação ou coleta, conforme calibre e comprimento.</p>
+
+<p><strong>Descrição do produto:</strong><br>Agulha destinada ao manejo veterinário, fabricada normalmente com cânula metálica biselada e canhão de conexão para seringa. Pode existir em versão descartável estéril ou reutilizável; essa característica não deve ser presumida sem verificar a embalagem.</p>
+
+<p><strong>Especificações essenciais:</strong><br>Antes da venda ou uso, confirmar: diâmetro/calibre, comprimento, tipo de conexão, material, esterilidade, quantidade por embalagem, espécie e via de aplicação compatíveis.</p>
+
+<p><strong>Modo de usar:</strong><br>Selecionar a medida apropriada para a espécie, idade, local, via, viscosidade e volume do produto. Fazer antissepsia, utilizar técnica asséptica e descartar imediatamente as agulhas descartáveis em coletor rígido para perfurocortantes.</p>
+
+<p><strong>Advertências:</strong><br>Não reutilizar agulha identificada como descartável. Não usar produto torto, oxidado, sem proteção, com bisel danificado ou embalagem estéril violada. A escolha incorreta pode causar dor, lesões, quebra da agulha ou aplicação inadequada.</p>
+
+<p><strong>Observação para cadastro:</strong><br>Recomenda-se desmembrar este item por marca e medida. O nome atual não permite informar com segurança calibre, comprimento, esterilidade ou compatibilidade.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Especificações técnicas usuais de agulhas veterinárias; não foi localizada ficha inequívoca para o cadastro abreviado informado.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 04 -->
+<p>Produto: ALHO EM PO PRUDENFOS BALDE 10KG (034878)</p>
+
+<p><strong>Código interno:</strong><br>034878</p>
+
+<p><strong>Fabricante/marca:</strong><br>Prudenfos, conforme o nome cadastrado.</p>
+
+<p><strong>Classificação:</strong><br>Ingrediente ou suplemento em pó destinado à alimentação animal, sujeito às instruções do rótulo.</p>
+
+<p><strong>Descrição do produto:</strong><br>Alho em pó apresentado em balde de 10 kg, utilizado em formulações de alimentação animal como ingrediente palatabilizante ou funcional. Não deve ser tratado como ração completa nem como medicamento veterinário.</p>
+
+<p><strong>Forma física e embalagem:</strong><br>Pó seco acondicionado em balde de 10 kg.</p>
+
+<p><strong>Composição e níveis de garantia:</strong><br>Não foram localizados, em fonte pública inequívoca, a composição completa, os níveis de garantia, os aditivos, a espécie-alvo e a dose deste item específico. Esses dados devem ser copiados diretamente do rótulo oficial do fabricante.</p>
+
+<p><strong>Modo de usar:</strong><br>Misturar uniformemente à ração, suplemento ou núcleo somente na proporção indicada pelo fabricante ou por nutricionista/médico-veterinário. Evitar fornecimento empírico em grande quantidade.</p>
+
+<p><strong>Conservação:</strong><br>Manter o balde bem fechado, em local seco, fresco, ventilado e protegido da luz, umidade, pragas e contaminação cruzada. Não usar produto com mofo, odor anormal ou embalagem violada.</p>
+
+<p><strong>Observação para cadastro:</strong><br>Antes de publicar dosagem, benefícios zootécnicos ou espécies, conferir fotografia legível do rótulo e registro do produto. O nome comercial isolado não permite validar essas informações.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Registro comercial encontrado para o nome do item e referências técnicas gerais de ingredientes em pó para alimentação animal.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 05 -->
+<p>Produto: ARAME GALV. EMBALAGEM 1KG N.14 (054690)</p>
+
+<p><strong>Código interno:</strong><br>054690</p>
+
+<p><strong>Classificação:</strong><br>Arame de aço galvanizado para amarrações e aplicações gerais.</p>
+
+<p><strong>Descrição do produto:</strong><br>Arame metálico protegido por camada de zinco, o que melhora a resistência à oxidação em comparação com arame polido sem revestimento. É indicado para amarrações, pequenos reparos, artesanato, cercamentos leves e usos rurais compatíveis com sua resistência.</p>
+
+<p><strong>Especificações:</strong><br>Bitola comercial nº 14, geralmente próxima de 2,1 mm, em embalagem de 1 kg. O comprimento total, a tolerância dimensional e a massa por metro dependem do fabricante.</p>
+
+<p><strong>Material:</strong><br>Aço com revestimento galvanizado.</p>
+
+<p><strong>Modo de usar:</strong><br>Cortar com alicate apropriado, dimensionar a carga e realizar a amarração sem dobras excessivamente fechadas que possam fragilizar o fio.</p>
+
+<p><strong>Advertências:</strong><br>As pontas são perfurantes. Utilizar luvas e proteção ocular. Não empregar como elemento estrutural, cabo de içamento, condutor elétrico ou contenção de alta carga sem projeto e especificação apropriados.</p>
+
+<p><strong>Conservação:</strong><br>Armazenar em local seco e protegido de produtos corrosivos. Mesmo galvanizado, o arame pode oxidar se o revestimento for danificado ou permanecer em ambiente agressivo.</p>
+
+<p><strong>Observação para cadastro:</strong><br>Confirmar no rótulo a bitola em milímetros, o tipo de galvanização e o fabricante.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Fichas comerciais de arame galvanizado nº 14 em rolo de 1 kg.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 06 -->
+<p>Produto: ARRUELA LISA POLIDA 3/8 (036773)</p>
+
+<p><strong>Código interno:</strong><br>036773</p>
+
+<p><strong>Classificação:</strong><br>Elemento de fixação metálico — arruela lisa.</p>
+
+<p><strong>Descrição do produto:</strong><br>Arruela plana utilizada entre a cabeça do parafuso ou a porca e a superfície de apoio. Ajuda a distribuir a carga, reduzir marcas no material e melhorar o assentamento da união roscada.</p>
+
+<p><strong>Especificação nominal:</strong><br>Compatível com parafuso de diâmetro nominal 3/8". As dimensões externa, interna e espessura devem ser verificadas conforme a norma e o fabricante.</p>
+
+<p><strong>Material e acabamento:</strong><br>Aço com acabamento polido, salvo indicação diferente na embalagem.</p>
+
+<p><strong>Aplicações:</strong><br>Montagens mecânicas, estruturas leves, reparos, máquinas, implementos e instalações compatíveis com a classe de resistência.</p>
+
+<p><strong>Modo de usar:</strong><br>Posicionar a arruela sob a porca ou cabeça do parafuso e aplicar o torque adequado ao conjunto. Para ambientes externos ou úmidos, avaliar versão galvanizada ou inoxidável.</p>
+
+<p><strong>Advertências:</strong><br>Não usar em união estrutural crítica sem conhecer norma, dimensões, material e resistência. Substituir peças deformadas, trincadas ou excessivamente corroídas.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Especificações técnicas usuais de arruelas lisas; fabricante e norma não foram identificados no nome cadastrado.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 07 -->
+<p>Produto: BACTROVET PRATA AM 500ML (025461)</p>
+
+<p><strong>Código interno:</strong><br>025461</p>
+
+<p><strong>Fabricante:</strong><br>König do Brasil.</p>
+
+<p><strong>Classificação:</strong><br>Aerossol veterinário larvicida, repelente, cicatrizante, hemostático e antisséptico.</p>
+
+<p><strong>Descrição do produto:</strong><br>Bactrovet Prata AM é um produto de uso tópico indicado para tratamento e prevenção de miíases, além da proteção de feridas acidentais e cirúrgicas.<br><br>A sulfadiazina de prata auxilia no controle microbiano; o alumínio forma uma película protetora e favorece a proteção da área; DDVP e cipermetrina atuam contra larvas e insetos. A válvula multidirecional facilita a aplicação em regiões de difícil acesso.</p>
+
+<p><strong>Forma física e embalagem:</strong><br>Aerossol de uso externo. Frasco de 500 ml, com conteúdo líquido aproximado indicado pelo fabricante na embalagem.</p>
+
+<p><strong>Composição:</strong><br>Cada 100 g do concentrado contém:<br>Sulfadiazina de prata: 0,10 g.<br>Alumínio: 5,00 g.<br>DDVP: 1,60 g.<br>Cipermetrina: 0,40 g.<br>Excipiente q.s.p.: 100 g.</p>
+
+<p><strong>Indicações e espécies:</strong><br>Uso em animais conforme a bula, especialmente para feridas e miíases em bovinos. Como materiais comerciais divergem sobre a extensão a outras espécies, conferir o rótulo atual antes de usar em equinos, ovinos, caprinos, suínos ou animais de companhia.</p>
+
+<p><strong>Modo de usar:</strong><br>Quando houver bicheira, remover larvas e tecidos desvitalizados, limpar a área e pulverizar abundantemente, a cerca de 10 cm, garantindo que o produto alcance a ferida e suas bordas. Repetir somente conforme a bula ou orientação veterinária.</p>
+
+<p><strong>Advertências:</strong><br>Uso exclusivamente externo e veterinário. Evitar olhos, mucosas, inalação do aerossol e lambedura da área recém-tratada.<br><br>Em feridas extensas, o uso excessivo pode aumentar a absorção sistêmica dos componentes. Procurar orientação veterinária. Produto inflamável/pressurizado: não perfurar, queimar ou expor a calor.</p>
+
+<p><strong>Período de carência:</strong><br>Conferir obrigatoriamente na bula e no rótulo do lote, pois o período depende da espécie e das condições autorizadas de uso.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Página oficial da König Brasil e bula veterinária do Bactrovet Prata AM.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 08 -->
+<p>Produto: BANAMINE INJ. 50 ML (025470)</p>
+
+<p><strong>Código interno:</strong><br>025470</p>
+
+<p><strong>Fabricante:</strong><br>MSD Saúde Animal.</p>
+
+<p><strong>Classificação:</strong><br>Analgésico, anti-inflamatório não esteroidal e antitérmico injetável de uso veterinário.</p>
+
+<p><strong>Descrição do produto:</strong><br>Banamine Injetável contém flunixina meglumina, AINE que reduz a formação de mediadores inflamatórios. Auxilia no controle de dor, inflamação e febre em condições previstas na bula para grandes animais.</p>
+
+<p><strong>Forma física e embalagem:</strong><br>Solução injetável estéril em frasco de 50 ml.</p>
+
+<p><strong>Princípio ativo:</strong><br>Flunixina meglumina.</p>
+
+<p><strong>Indicações:</strong><br>A bula contempla situações como processos inflamatórios e dolorosos do aparelho locomotor, dor visceral/cólica em equinos e terapia auxiliar em condições infecciosas ou inflamatórias de bovinos. A indicação, via e duração variam por espécie.</p>
+
+<p><strong>Modo de usar e dosagem:</strong><br>Administrar somente pela via autorizada para a espécie e sob orientação médico-veterinária.<br><br>Em equinos, materiais oficiais indicam, para distúrbios musculoesqueléticos, aproximadamente 1 ml para cada 45 kg de peso corporal, uma vez ao dia. Em cólicas, a repetição só deve ocorrer após reavaliação dos sinais.<br><br>Não aplicar o mesmo esquema a bovinos ou outras espécies sem consultar a bula, pois doses, vias e intervalos diferem.</p>
+
+<p><strong>Contraindicações e precauções:</strong><br>Não usar em animais com hipersensibilidade, úlcera gastrointestinal, hemorragia, desidratação importante ou disfunção renal/hepática sem avaliação profissional. Não associar a outro AINE, corticosteroide ou fármaco nefrotóxico sem prescrição.</p>
+
+<p><strong>Reações adversas:</strong><br>AINEs podem causar irritação ou ulceração gastrointestinal, alterações renais, sangramento e reação no local. Suspender e procurar o médico-veterinário diante de sinais adversos.</p>
+
+<p><strong>Período de carência:</strong><br>Para animais produtores de alimentos, respeitar rigorosamente os períodos de abate e leite da bula correspondente à espécie e apresentação. Não transferir carência de uma versão do produto para outra.</p>
+
+<p><strong>Conservação:</strong><br>Manter na embalagem original, protegido da luz e dentro da temperatura indicada no rótulo. Utilizar material estéril e não contaminar o frasco.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Página oficial de produtos pecuários da MSD Saúde Animal e materiais de bula do Banamine Injetável.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 09 -->
+<p>Produto: BARRAGE 20 ML (026018)</p>
+
+<p><strong>Código interno:</strong><br>026018</p>
+
+<p><strong>Fabricante:</strong><br>Zoetis.</p>
+
+<p><strong>Classificação:</strong><br>Carrapaticida e mosquicida concentrado emulsionável para uso externo em bovinos.</p>
+
+<p><strong>Descrição do produto:</strong><br>Barrage é um ectoparasiticida à base de cipermetrina, destinado ao controle de carrapatos e mosca-dos-chifres em bovinos por banho de aspersão, conforme bula.</p>
+
+<p><strong>Forma física e embalagem:</strong><br>Concentrado emulsionável em frasco de 20 ml, que deve ser diluído antes da aplicação.</p>
+
+<p><strong>Composição:</strong><br>Cipermetrina: 150 g por litro, equivalente a 15% p/v, além de componentes de formulação.</p>
+
+<p><strong>Modo de usar e dosagem:</strong><br>Diluir 20 ml do produto em 20 litros de água limpa, seguindo a ordem de mistura e a agitação indicadas no rótulo. Aplicar por pulverização, molhando adequadamente o corpo do bovino, inclusive regiões de maior concentração de parasitas.</p>
+
+<p><strong>Ação residual:</strong><br>Materiais do fabricante indicam efeito residual aproximado de 8 a 14 dias, condicionado à infestação, clima, manejo e correta aplicação.</p>
+
+<p><strong>Advertências:</strong><br>Uso externo. Não aplicar o concentrado puro. Utilizar equipamentos de proteção, evitar deriva e contato com pele, olhos, alimentos, rações, utensílios de ordenha e cursos d’água. A cipermetrina é perigosa para organismos aquáticos.</p>
+
+<p><strong>Período de carência:</strong><br>Conferir no rótulo e na bula do lote antes do tratamento, especialmente para abate e leite.</p>
+
+<p><strong>Conservação:</strong><br>Guardar fechado, em local ventilado, protegido de calor e luz, separado de alimentos, medicamentos e rações.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Materiais de produto e bula da Zoetis para Barrage.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 10 -->
+<p>Produto: BASTAO DE CERA VERMELHO (031046)</p>
+
+<p><strong>Código interno:</strong><br>031046</p>
+
+<p><strong>Classificação:</strong><br>Bastão marcador de cera para identificação visual temporária.</p>
+
+<p><strong>Descrição do produto:</strong><br>Bastão de cera pigmentada na cor vermelha, normalmente utilizado no manejo rural para marcações temporárias em animais, superfícies ou materiais, conforme a finalidade indicada pelo fabricante.</p>
+
+<p><strong>Forma física:</strong><br>Bastão sólido de cera pigmentada.</p>
+
+<p><strong>Aplicações:</strong><br>Identificação temporária de animais em procedimentos de manejo, apartação, vacinação, reprodução ou conferência, desde que o rótulo confirme o uso animal.</p>
+
+<p><strong>Modo de usar:</strong><br>Aplicar com pressão moderada sobre pelos secos e limpos, em área visível. A permanência da marca depende de chuva, atrito, tipo de pelagem e formulação.</p>
+
+<p><strong>Advertências:</strong><br>Não aplicar em olhos, mucosas, feridas, úbere ou regiões que possam contaminar leite e alimentos. Não utilizar para marcação permanente nem presumir atoxicidade sem verificar o fabricante.</p>
+
+<p><strong>Conservação:</strong><br>Manter em local fresco, seco, protegido do sol e do calor para evitar amolecimento ou deformação.</p>
+
+<p><strong>Observação para cadastro:</strong><br>Marca, peso, composição, duração da marca e autorização específica para uso em animais não foram informados. Conferir a embalagem antes de incluir alegações adicionais.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Referências técnicas de bastões marcadores de cera para manejo; produto exato não foi identificado pelo nome do cadastro.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 11 -->
+<p>Produto: BERTAC LIQUIDO 1 LT (027596)</p>
+
+<p><strong>Código interno:</strong><br>027596</p>
+
+<p><strong>Fabricante/titular:</strong><br>Produto da linha Pearson Saúde Animal; bulas e cadastros históricos também o relacionam à Eurofarma. Conferir o titular impresso no lote atual.</p>
+
+<p><strong>Classificação:</strong><br>Larvicida e antisséptico tópico de uso veterinário.</p>
+
+<p><strong>Descrição do produto:</strong><br>Bertac Líquido é indicado para prevenção e tratamento de miíases cutâneas, superficiais ou profundas, e como auxiliar na proteção de feridas, umbigo de recém-nascidos e áreas resultantes de procedimentos como castração e descorna.</p>
+
+<p><strong>Forma física e embalagem:</strong><br>Solução líquida de uso tópico, em lata ou frasco de 1 litro.</p>
+
+<p><strong>Composição:</strong><br>Cada 100 ml contém:<br>Triclorfon: 2,0 g.<br>Diclorvós — DDVP: 1,0 g.<br>Violeta de genciana: 0,5 g.<br>Veículo q.s.p.: 100 ml.</p>
+
+<p><strong>Indicações e espécies:</strong><br>Bulas históricas citam bovinos, ovinos, caprinos, equinos, suínos e cães. Algumas páginas atuais apresentam escopo mais restrito; portanto, a espécie deve ser confirmada no rótulo vigente.</p>
+
+<p><strong>Modo de usar:</strong><br>Uso tópico externo. Limpar a lesão, retirar larvas e tecidos desvitalizados quando houver miíase e aplicar diretamente na região afetada, cobrindo a ferida e bordas. A frequência deve seguir a bula e a evolução clínica.</p>
+
+<p><strong>Contraindicações e precauções:</strong><br>Contém organofosforados. Não usar em animais debilitados, intoxicados, com grande área de pele lesionada ou simultaneamente com outros organofosforados/carbamatos sem orientação. Evitar contato humano, inalação e contaminação ambiental.</p>
+
+<p><strong>Período de carência:</strong><br>Uma bula consultada informa, para bovinos, 3 dias para abate e 12 horas para leite. Como o produto possui registros e apresentações históricas, validar obrigatoriamente esses prazos na embalagem comercial atual.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Página Pearson Saúde Animal, Bulário Vet/VetSmart e bula histórica do Bertac.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 12 -->
+<p>Produto: BIOXAN 500ML (055050)</p>
+
+<p><strong>Código interno:</strong><br>055050</p>
+
+<p><strong>Fabricante:</strong><br>MSD Saúde Animal, linha Vallée.</p>
+
+<p><strong>Classificação:</strong><br>Solução polivitamínica, hidratante, reconstituinte, antitóxica e energética de uso veterinário.</p>
+
+<p><strong>Descrição do produto:</strong><br>Bioxan Composto Vallée fornece dextrose, eletrólitos, vitaminas do complexo B, aminoácidos e componentes lipotrópicos. É utilizado como terapia de suporte em desidratação, esgotamento, fraqueza e convalescença, sem substituir o tratamento específico da causa.</p>
+
+<p><strong>Forma física e embalagem:</strong><br>Solução injetável para infusão, em frasco plástico de 500 ml, normalmente acompanhado de equipo conforme apresentação.</p>
+
+<p><strong>Composição resumida:</strong><br>A formulação contém vitaminas B1, B2, B6 e B12, nicotinamida, dextrose, cloretos de sódio, potássio, cálcio e magnésio, DL-metionina, cloreto de colina e veículo aquoso. Conferir as quantidades completas na bula do lote.</p>
+
+<p><strong>Espécies e indicações:</strong><br>Indicado como suporte para grandes e pequenos animais nas condições previstas na bula. A necessidade de fluidoterapia e o volume devem ser avaliados por médico-veterinário.</p>
+
+<p><strong>Modo de usar e dosagem:</strong><br>Administrar lentamente por via intravenosa e com técnica asséptica.<br><br>Em bovinos e equinos adultos, a referência oficial consultada indica 1.000 a 2.000 ml; em bezerros e potros, 500 ml, por até três dias consecutivos com intervalo de 24 horas. Esses volumes exigem avaliação clínica, especialmente em animais com alterações cardíacas ou renais.</p>
+
+<p><strong>Advertências:</strong><br>Infusão muito rápida ou volume inadequado pode causar complicações. Não utilizar se a solução estiver turva, com partículas, vazamento ou embalagem violada. O frasco não substitui avaliação de eletrólitos e hidratação.</p>
+
+<p><strong>Carência:</strong><br>Conferir a bula atual para a espécie produtora de alimentos; não inferir ausência de carência apenas por se tratar de solução de suporte.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Página oficial da MSD Saúde Animal para Bioxan Composto Vallée e materiais técnicos de formulação.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 13 -->
+<p>Produto: BLOTROL 150ML (075922)</p>
+
+<p><strong>Código interno:</strong><br>075922</p>
+
+<p><strong>Nome comercial correto:</strong><br>Blo-Trol® 150 ml.</p>
+
+<p><strong>Fabricante:</strong><br>Zoetis.</p>
+
+<p><strong>Classificação:</strong><br>Antiespumante e antiflatulento oral/intraruminal para ruminantes.</p>
+
+<p><strong>Descrição do produto:</strong><br>Blo-Trol é composto por acetilbutileno, tecnicamente um éster tributílico do ácido 2-acetoxi-1,2,3-propanotricarboxílico. Atua reduzindo a estabilidade da espuma ruminal, permitindo a liberação dos gases no timpanismo espumoso.</p>
+
+<p><strong>Forma física e embalagem:</strong><br>Líquido de administração oral ou intrarruminal, em frasco de 150 ml.</p>
+
+<p><strong>Composição:</strong><br>Acetil tributil acetato: 150 ml na apresentação de produto puro, conforme a nomenclatura da bula.</p>
+
+<p><strong>Indicações e espécies:</strong><br>Tratamento do timpanismo ou empanzinamento espumoso em bovinos, ovinos e caprinos.</p>
+
+<p><strong>Modo de usar e dosagem:</strong><br>Bovinos: 20 a 30 ml. Ovinos e caprinos: 5 a 10 ml. Administrar por via oral, sonda ou intrarruminal conforme avaliação profissional. A dose pode ser repetida após 6 a 10 horas se necessário e se autorizado pela bula/veterinário.</p>
+
+<p><strong>Advertências:</strong><br>Timpanismo pode evoluir rapidamente para dificuldade respiratória e morte. Casos graves exigem atendimento veterinário imediato e podem necessitar descompressão, não apenas medicamento. Evitar administração forçada com risco de aspiração.</p>
+
+<p><strong>Conservação:</strong><br>Manter o frasco fechado, protegido de calor e luz, fora do alcance de crianças.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Página oficial e bula da Zoetis para Blo-Trol.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 14 -->
+<p>Produto: BOIA P/ CAIXA DAGUA 1" MIX (047228)</p>
+
+<p><strong>Código interno:</strong><br>047228</p>
+
+<p><strong>Classificação:</strong><br>Torneira de boia para controle automático do nível de água.</p>
+
+<p><strong>Descrição do produto:</strong><br>Dispositivo mecânico instalado na entrada da caixa d’água. Quando o nível sobe, a boia movimenta a haste e fecha a válvula; quando o nível baixa, a válvula reabre, ajudando a manter o reservatório abastecido.</p>
+
+<p><strong>Conexão:</strong><br>Rosca nominal de 1". Confirmar se a rosca é macho ou fêmea e o padrão compatível com a instalação.</p>
+
+<p><strong>Marca/modelo:</strong><br>O cadastro indica “Mix”, mas não foi localizada ficha inequívoca que permita confirmar material, pressão máxima, vazão, diâmetro da esfera ou norma.</p>
+
+<p><strong>Instalação:</strong><br>Fechar o abastecimento, instalar com vedação adequada à rosca, regular a haste/boia para o nível desejado e testar o fechamento sem forçar o mecanismo.</p>
+
+<p><strong>Advertências:</strong><br>A pressão da rede deve ser compatível com o produto. Instalação incorreta pode causar vazamento, transbordamento ou quebra. Não usar em água quente ou fluidos químicos sem autorização do fabricante.</p>
+
+<p><strong>Manutenção:</strong><br>Inspecionar periodicamente vedação, haste, boia e obstruções. Substituir componentes ressecados, trincados ou com fechamento irregular.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Referências técnicas de torneiras de boia de 1 polegada; especificações do modelo exato precisam ser confirmadas no rótulo.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 15 -->
+<p>Produto: BOVITAM INJ. 500ML (025399)</p>
+
+<p><strong>Código interno:</strong><br>025399</p>
+
+<p><strong>Fabricante:</strong><br>Dispec do Brasil.</p>
+
+<p><strong>Classificação:</strong><br>Suplemento vitamínico, mineral e aminoacídico injetável de uso veterinário.</p>
+
+<p><strong>Descrição do produto:</strong><br>Bovitam reúne aminoácidos, minerais e vitaminas associados ao metabolismo energético e proteico. É empregado como reconstituinte e auxiliar em deficiências nutricionais, convalescença e períodos de maior exigência, sem substituir dieta equilibrada ou tratamento específico.</p>
+
+<p><strong>Forma física e embalagem:</strong><br>Solução injetável, frasco de 500 ml.</p>
+
+<p><strong>Composição resumida:</strong><br>Contém monoglutamato de sódio, lisina, glicina, metionina, leucina, histidina, triptofano, valina, arginina, cobalto, cobre, iodo, zinco, sódio, cálcio, magnésio e vitaminas, incluindo B12. Os níveis completos devem ser mantidos conforme o rótulo oficial.</p>
+
+<p><strong>Modo de usar e dosagem:</strong><br>Administrar por via subcutânea. Referências de bula comercial indicam: bovinos adultos, 10 ml; bezerros e novilhas, 5 ml; ovinos, caprinos e suínos, 2 ml. A frequência e necessidade de repetição devem seguir o fabricante e a orientação profissional.</p>
+
+<p><strong>Advertências:</strong><br>Não aplicar por via intravenosa ou intramuscular sem autorização da bula. Utilizar seringa e agulha estéreis, evitar contaminação do frasco e não exceder a dose sob a ideia de acelerar resultados.</p>
+
+<p><strong>Período de carência:</strong><br>Materiais comerciais consultados informam ausência de carência, mas esse dado deve ser confirmado no rótulo atual antes do uso em animais produtores de alimentos.</p>
+
+<p><strong>Conservação:</strong><br>Manter em temperatura e condições indicadas na embalagem, protegido de luz e fora do alcance de crianças.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Bula comercial do Bovitam e fichas técnicas de distribuidores com reprodução da composição da Dispec.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 16 -->
+<p>Produto: BUTOX CE 20 ML (025321)</p>
+
+<p><strong>Código interno:</strong><br>025321</p>
+
+<p><strong>Fabricante:</strong><br>MSD Saúde Animal.</p>
+
+<p><strong>Classificação:</strong><br>Carrapaticida, mosquicida e sarnicida concentrado emulsionável de uso externo.</p>
+
+<p><strong>Descrição do produto:</strong><br>Butox P CE 25 é um ectoparasiticida à base de deltametrina, utilizado diluído em água para banhos de aspersão em animais e situações autorizadas na bula.</p>
+
+<p><strong>Forma física e embalagem:</strong><br>Concentrado emulsionável em frasco de 20 ml.</p>
+
+<p><strong>Composição:</strong><br>Deltametrina: 25 g por litro, além de solventes e emulsificantes.</p>
+
+<p><strong>Indicações:</strong><br>Controle de carrapatos, moscas e ácaros/sarnas nas espécies previstas na bula, especialmente bovinos. Há protocolos específicos para equinos; não aplicar indiscriminadamente a outras espécies.</p>
+
+<p><strong>Modo de usar e dosagem:</strong><br>Bovinos: para carrapatos, diluir 10 ml em 10 litros de água.<br><br>Equinos: referências de bula indicam diluição de 10 ml em 5 litros de água para carrapato corporal, utilizando volume de calda suficiente para molhar o animal.<br><br>Preparar apenas a calda necessária, homogeneizar e aplicar com pulverizador adequado. Seguir os intervalos do programa sanitário e da bula.</p>
+
+<p><strong>Advertências:</strong><br>Produto tóxico se ingerido ou inalado e perigoso para peixes, abelhas e outros organismos aquáticos. Usar EPI, evitar vento, não pulverizar olhos, mucosas, alimentos, leite, utensílios ou água.</p>
+
+<p><strong>Período de carência:</strong><br>Confirmar os prazos de abate e leite na bula da apresentação vigente antes do uso.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Página de produtos pecuários da MSD Saúde Animal e bula do Butox P CE 25.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 17 -->
+<p>Produto: CADEADO PADO 45MM (036285)</p>
+
+<p><strong>Código interno:</strong><br>036285</p>
+
+<p><strong>Fabricante:</strong><br>Pado.</p>
+
+<p><strong>Classificação:</strong><br>Cadeado mecânico de 45 mm para fechamento e controle de acesso.</p>
+
+<p><strong>Descrição do produto:</strong><br>Cadeado de uso geral indicado para portões, correntes, armários, depósitos e outros pontos compatíveis com o diâmetro e vão da haste.</p>
+
+<p><strong>Especificação:</strong><br>Largura nominal do corpo: 45 mm. A linha Pado oferece variantes com segredos diferentes ou iguais; o código exato da embalagem é necessário para identificar o modelo.</p>
+
+<p><strong>Materiais:</strong><br>Nos cadeados convencionais da linha LT, o corpo costuma ser de latão e a haste de aço. Confirmar material, acabamento, diâmetro e altura da haste no item recebido.</p>
+
+<p><strong>Modo de usar:</strong><br>Inserir a haste no ponto de fechamento, pressionar até travar e testar. Lubrificar o mecanismo apenas com produto apropriado para fechaduras quando necessário.</p>
+
+<p><strong>Advertências:</strong><br>A segurança real depende do conjunto formado por cadeado, corrente, porta e fixadores. Não indicar nível de resistência a arrombamento ou uso externo severo sem ficha técnica do modelo.</p>
+
+<p><strong>Conservação:</strong><br>Evitar exposição prolongada a agentes corrosivos. Manter chaves identificadas e fora do alcance de pessoas não autorizadas.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Catálogo de parceiros Pado, que confirma a disponibilidade da linha no tamanho 45 mm.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 18 -->
+<p>Produto: CATRACA P/ ESTICAR ARAME LISO BUFALO (055280)</p>
+
+<p><strong>Código interno:</strong><br>055280</p>
+
+<p><strong>Marca:</strong><br>Búfalo, conforme cadastro.</p>
+
+<p><strong>Classificação:</strong><br>Catraca tensionadora para arame liso de cerca.</p>
+
+<p><strong>Descrição do produto:</strong><br>Acessório instalado na linha de cerca para enrolar e tensionar arame liso, facilitando regulagens posteriores e reduzindo a necessidade de desmontar o trecho.</p>
+
+<p><strong>Material:</strong><br>Normalmente fabricada em chapa de aço galvanizado para maior resistência ao ambiente externo. Confirmar espessura, capacidade e acabamento no fabricante.</p>
+
+<p><strong>Aplicações:</strong><br>Cercas rurais de arame liso, respeitando o número de fios, vãos, postes e esforços previstos no projeto.</p>
+
+<p><strong>Modo de usar:</strong><br>Fixar a catraca no ponto indicado, passar o arame pelo mecanismo e tensionar gradualmente com ferramenta compatível. Distribuir a tensão e conferir postes e ancoragens.</p>
+
+<p><strong>Advertências:</strong><br>Arame tensionado armazena energia e pode chicotear se romper ou escapar. Usar luvas, proteção ocular e manter pessoas afastadas. Não exceder a capacidade do acessório.</p>
+
+<p><strong>Conservação:</strong><br>Inspecionar corrosão, deformações, folgas e desgaste. Substituir a catraca danificada antes de retensionar.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Fichas comerciais de catracas Búfalo para esticar arame liso.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 19 -->
+<p>Produto: DIFLY S3 300GR (036633)</p>
+
+<p><strong>Código interno:</strong><br>036633</p>
+
+<p><strong>Fabricante:</strong><br>Champion Saúde Animal.</p>
+
+<p><strong>Classificação:</strong><br>Antiparasitário oral de uso contínuo na alimentação de bovinos, regulador de crescimento de insetos.</p>
+
+<p><strong>Descrição do produto:</strong><br>Difly S3 contém diflubenzuron, substância que interfere na formação de quitina das larvas. Ao ser fornecido aos bovinos, atua nas fezes e reduz o desenvolvimento de formas imaturas de carrapatos e moscas, ajudando a quebrar o ciclo ambiental.</p>
+
+<p><strong>Forma física e embalagem:</strong><br>Pó para mistura em sal mineral, suplemento ou ração, em embalagem de 300 g.</p>
+
+<p><strong>Composição:</strong><br>Diflubenzuron: 30 g por kg de produto, equivalente a 3%.</p>
+
+<p><strong>Indicações:</strong><br>Auxílio no controle do carrapato dos bovinos e da mosca-dos-chifres, além de contribuir para redução de larvas de mosca-dos-estábulos e mosca doméstica que se desenvolvem nas fezes.</p>
+
+<p><strong>Modo de usar e dosagem:</strong><br>Misturar de forma homogênea ao suplemento para fornecer aproximadamente 30 mg de diflubenzuron por bovino/dia.<br><br>Exemplos de mistura divulgados: cerca de 10 g de Difly S3 por kg de sal quando o consumo é de 80 a 100 g/dia; cerca de 17 g/kg quando o consumo é de 60 a 80 g/dia. O cálculo deve ser ajustado ao consumo real do lote.</p>
+
+<p><strong>Advertências:</strong><br>Não fornecer puro. Monitorar consumo, homogeneidade da mistura e acesso de todos os animais. O produto atua nas fases imaturas e deve integrar um programa de controle, não sendo solução imediata para infestações adultas intensas.</p>
+
+<p><strong>Carência:</strong><br>Conferir no rótulo oficial e no programa de uso. Não assumir carência de outro produto com diflubenzuron.</p>
+
+<p><strong>Conservação:</strong><br>Guardar fechado, seco, protegido de umidade e separado de alimentos humanos.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Materiais técnicos e fichas do Difly S3 da Champion Saúde Animal.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 20 -->
+<p>Produto: ECTOSULES 6% POUR ON 1LT (055565)</p>
+
+<p><strong>Código interno:</strong><br>055565</p>
+
+<p><strong>Fabricante:</strong><br>Laboratorios Microsules.</p>
+
+<p><strong>Classificação:</strong><br>Ectoparasiticida pour-on à base de cipermetrina para uso veterinário.</p>
+
+<p><strong>Descrição do produto:</strong><br>Ectosules 6% é uma solução de aplicação dorsal que exerce ação inseticida e acaricida contra ectoparasitas sensíveis. A aplicação pour-on simplifica o manejo por dispensar diluição em água.</p>
+
+<p><strong>Forma física e embalagem:</strong><br>Solução líquida pronta para uso externo, em frasco de 1 litro.</p>
+
+<p><strong>Composição:</strong><br>Cada 100 ml contém cipermetrina 6 g, além de veículo q.s.p.</p>
+
+<p><strong>Espécies e indicações:</strong><br>Indicado para bovinos, ovinos e suínos no controle de moscas, mosquitos e demais ectoparasitas descritos na bula. A lista de parasitas e dose variam por espécie.</p>
+
+<p><strong>Modo de usar:</strong><br>Aplicar diretamente sobre a pele, na linha dorsal, do pescoço em direção à cauda, utilizando o dosador e a quantidade correspondente ao peso e à espécie. Não diluir nem aplicar em mucosas.</p>
+
+<p><strong>Dosagem:</strong><br>A dose exata por faixa de peso deve ser retirada do rótulo graduado/bula da apresentação de 1 litro. Não foi possível validar uma única tabela pública sem risco de misturar versões comerciais.</p>
+
+<p><strong>Período de carência:</strong><br>Referência do fabricante consultada: 48 horas para abate e 48 horas para leite. Confirmar no rótulo brasileiro vigente antes do tratamento.</p>
+
+<p><strong>Advertências:</strong><br>Usar EPI, evitar contato e contaminação de água. Não aplicar em animais molhados, debilitados ou com pele muito lesionada sem orientação.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Página oficial da Laboratorios Microsules e fichas de produto Ectosules 6%.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 21 -->
+<p>Produto: ENXADA P/CULTIVADOR N.10 (041777)</p>
+
+<p><strong>Código interno:</strong><br>041777</p>
+
+<p><strong>Classificação:</strong><br>Enxada ou lâmina de reposição para cultivador, tamanho nº 10.</p>
+
+<p><strong>Descrição do produto:</strong><br>Peça de trabalho destinada a cultivadores manuais ou implementos, utilizada para revolver superficialmente o solo, capinar, romper crostas e manejar ervas daninhas.</p>
+
+<p><strong>Material:</strong><br>Normalmente produzida em aço carbono com tratamento térmico. Material, espessura, furação e acabamento precisam ser confirmados no fabricante.</p>
+
+<p><strong>Compatibilidade:</strong><br>O número 10 não garante encaixe universal. Conferir largura, comprimento, formato, distância entre furos, parafusos e modelo do cultivador.</p>
+
+<p><strong>Modo de usar:</strong><br>Instalar com os fixadores corretos, apertar uniformemente e trabalhar em solo compatível, mantendo postura e distância segura de outras pessoas.</p>
+
+<p><strong>Manutenção e segurança:</strong><br>Limpar e secar após o uso, remover terra aderida, proteger contra ferrugem e reapertar fixadores. Não usar peça trincada, torta ou solta. Utilizar botas, luvas e proteção ocular.</p>
+
+<p><strong>Observação para cadastro:</strong><br>Marca e medidas não informadas. Recomenda-se acrescentar fotografia e dimensões para reduzir devoluções por incompatibilidade.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Especificações usuais de lâminas/enxadas para cultivador; produto exato não identificado pelo nome cadastrado.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 22 -->
+<p>Produto: ENXADA P/CULTIVADOR N.12 (041769)</p>
+
+<p><strong>Código interno:</strong><br>041769</p>
+
+<p><strong>Classificação:</strong><br>Enxada ou lâmina de reposição para cultivador, tamanho nº 12.</p>
+
+<p><strong>Descrição do produto:</strong><br>Peça destinada ao cultivo e capina superficial, acoplada a cultivador compatível. O tamanho nº 12 geralmente representa uma medida maior que a nº 10, mas a nomenclatura não é padronizada entre fabricantes.</p>
+
+<p><strong>Material:</strong><br>Usualmente aço carbono temperado ou tratado termicamente. Confirmar material, espessura, acabamento e dureza.</p>
+
+<p><strong>Compatibilidade:</strong><br>Verificar largura, comprimento, curvatura, furação, distância entre centros e tipo de fixação. Não indicar como universal sem ficha técnica.</p>
+
+<p><strong>Modo de usar:</strong><br>Montar no sentido correto, com parafusos e porcas adequados; reapertar após o primeiro uso. Evitar pedras, raízes grossas e impactos que excedam a aplicação da peça.</p>
+
+<p><strong>Manutenção e segurança:</strong><br>Limpar, secar e proteger contra corrosão. Usar EPI e manter mãos e pés afastados da lâmina. Substituir se houver trinca, deformação ou desgaste excessivo.</p>
+
+<p><strong>Observação para cadastro:</strong><br>Incluir marca e desenho dimensional para diferenciar corretamente este item da versão nº 10.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Especificações usuais de componentes para cultivadores; não foi localizada ficha inequívoca do item sem marca.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 23 -->
+<p>Produto: EQUEST (019372)</p>
+
+<p><strong>Código interno:</strong><br>019372</p>
+
+<p><strong>Fabricante:</strong><br>Zoetis.</p>
+
+<p><strong>Classificação:</strong><br>Endectocida oral em gel/pasta para equinos.</p>
+
+<p><strong>Descrição do produto:</strong><br>Equest contém moxidectina, lactona macrocíclica com ação contra diversos parasitas internos e algumas formas larvais em equinos. A formulação oral permite ajuste da dose pelo peso do animal.</p>
+
+<p><strong>Forma física e apresentação:</strong><br>Gel ou pasta oral em seringa dosadora. O cadastro não informa o peso da seringa; a apresentação clássica pesquisada é suficiente para um equino de até aproximadamente 500 kg, conforme graduação.</p>
+
+<p><strong>Princípio ativo:</strong><br>Moxidectina.</p>
+
+<p><strong>Indicações:</strong><br>Tratamento e controle de nematódeos gastrintestinais, formas larvais e outros parasitas de equinos descritos na bula. A eficácia depende da espécie parasitária e da resistência presente na propriedade.</p>
+
+<p><strong>Modo de usar:</strong><br>Pesar ou estimar corretamente o animal, ajustar o anel da seringa à faixa correspondente, introduzir no espaço interdental e depositar o produto sobre a parte posterior da língua. Confirmar que o animal engoliu.</p>
+
+<p><strong>Advertências:</strong><br>Não subdosar, pois isso favorece resistência. Respeitar idade mínima, condição corporal, espécie e intervalos da bula. Não utilizar em outras espécies; moxidectina pode apresentar margem de segurança diferente entre animais.</p>
+
+<p><strong>Carência:</strong><br>Equinos destinados ao consumo humano devem seguir o período de carência da bula brasileira. Não comercializar a descrição sem confirmar esse prazo na apresentação do estoque.</p>
+
+<p><strong>Conservação:</strong><br>Manter a seringa fechada, protegida de calor e luz. Não usar embalagem violada ou produto vencido.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Bula e materiais de produto da Zoetis para Equest.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 24 -->
+<p>Produto: EQVALAN GOLD 7,74 GR (032891)</p>
+
+<p><strong>Código interno:</strong><br>032891</p>
+
+<p><strong>Fabricante:</strong><br>Boehringer Ingelheim Saúde Animal.</p>
+
+<p><strong>Classificação:</strong><br>Vermífugo oral de amplo espectro para equinos, com ação contra nematódeos e cestódeos.</p>
+
+<p><strong>Descrição do produto:</strong><br>Eqvalan Gold associa ivermectina e praziquantel. A ivermectina age sobre diversos vermes redondos e larvas; o praziquantel amplia o espectro para tênias, permitindo tratamento combinado em uma única pasta oral.</p>
+
+<p><strong>Forma física e embalagem:</strong><br>Pasta oral semissólida em seringa dosadora contendo 7,74 g.</p>
+
+<p><strong>Princípios ativos:</strong><br>Ivermectina e praziquantel.</p>
+
+<p><strong>Indicações:</strong><br>Controle dos principais parasitas internos dos equinos sensíveis aos princípios ativos, incluindo estrôngilos, ascarídeos, oxiúros, larvas de gastrófilos e tênias citadas na bula.</p>
+
+<p><strong>Modo de usar:</strong><br>Ajustar a seringa ao peso corporal, administrar no espaço interdental e depositar a pasta no fundo da língua. Manter a cabeça elevada por alguns segundos e verificar a deglutição.</p>
+
+<p><strong>Advertências:</strong><br>Determinar o peso com precisão e seguir o programa de vermifugação orientado por exame de fezes e médico-veterinário. Evitar subdosagem e repetição desnecessária, que favorecem resistência parasitária.</p>
+
+<p><strong>Carência:</strong><br>Conferir a bula brasileira para equinos destinados ao abate. Não utilizar em animais produtores de leite para consumo humano salvo autorização expressa do rótulo.</p>
+
+<p><strong>Conservação:</strong><br>Armazenar conforme rótulo, protegido de calor e luz, fora do alcance de crianças.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Página oficial da Boehringer Ingelheim para Eqvalan Gold e materiais de bula.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 25 -->
+<p>Produto: FACAO P/ CANA 30CM GAVILAN (056332)</p>
+
+<p><strong>Código interno:</strong><br>056332</p>
+
+<p><strong>Marca:</strong><br>Gavilán, conforme cadastro.</p>
+
+<p><strong>Classificação:</strong><br>Facão manual para corte de cana e vegetação.</p>
+
+<p><strong>Descrição do produto:</strong><br>Ferramenta de corte com lâmina de aproximadamente 30 cm, destinada à colheita e limpeza de cana, capim, talos e vegetação compatível com o desenho da lâmina.</p>
+
+<p><strong>Material e construção:</strong><br>Normalmente possui lâmina em aço carbono e cabo rebitado ou injetado. O modelo exato, espessura, formato da ponta e material do cabo devem ser confirmados na embalagem.</p>
+
+<p><strong>Modo de usar:</strong><br>Inspecionar o cabo e a lâmina, manter área livre, utilizar golpes controlados e cortar sempre para longe do corpo. Usar bainha ou proteção no transporte.</p>
+
+<p><strong>Manutenção:</strong><br>Limpar e secar após o uso, aplicar fina proteção anticorrosiva adequada, afiar mantendo o ângulo original e guardar em local seco.</p>
+
+<p><strong>Advertências:</strong><br>Ferramenta cortante. Utilizar luvas anticorte, botas, perneira e proteção ocular. Não usar com cabo solto, lâmina trincada ou em direção a pessoas e animais.</p>
+
+<p><strong>Observação para cadastro:</strong><br>Confirmar se 30 cm se refere ao comprimento da lâmina ou ao tamanho comercial total.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Referências comerciais de facões Gavilán para cana; ficha exata não foi identificada pelo nome abreviado.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 26 -->
+<p>Produto: FACAO P/ MATO 20" TRAMONTINA (063380)</p>
+
+<p><strong>Código interno:</strong><br>063380</p>
+
+<p><strong>Fabricante:</strong><br>Tramontina.</p>
+
+<p><strong>Classificação:</strong><br>Facão para corte de mato e capim, tamanho 20 polegadas.</p>
+
+<p><strong>Descrição do produto:</strong><br>Ferramenta manual projetada para limpeza de vegetação, corte de mato e capim. A linha Tramontina utiliza lâmina de aço carbono com tratamento térmico para dureza e retenção do fio.</p>
+
+<p><strong>Especificações:</strong><br>Lâmina de 20", em aço carbono, com camada protetiva de verniz nas versões consultadas. A espessura da linha é normalmente de cerca de 2 mm. O cabo pode variar entre madeira e polipropileno conforme a referência; conferir o SKU do estoque.</p>
+
+<p><strong>Modo de usar:</strong><br>Segurar firmemente pelo cabo, manter distância de pessoas e animais, usar golpes controlados e nunca cortar em direção ao corpo.</p>
+
+<p><strong>Manutenção:</strong><br>Lavar quando necessário, secar completamente e aplicar fina camada de óleo apropriado. Não usar solventes ou abrasivos; guardar em local seco e, preferencialmente, com bainha.</p>
+
+<p><strong>Advertências:</strong><br>Utilizar luvas, botas, perneira e proteção ocular. Não utilizar se o cabo estiver solto, rachado ou se a lâmina apresentar trincas.</p>
+
+<p><strong>Garantia:</strong><br>A página oficial da linha consultada informa 90 dias para vícios ou defeitos de fabricação; confirmar para o SKU de 20 polegadas.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Página oficial Tramontina da linha Facão para Mato, disponível em tamanhos até 20 polegadas.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 27 -->
+<p>Produto: FARMARON POMADA 200 GR (027391)</p>
+
+<p><strong>Código interno:</strong><br>027391</p>
+
+<p><strong>Fabricante:</strong><br>Vetoquinol.</p>
+
+<p><strong>Classificação:</strong><br>Dermocosmético veterinário emoliente e protetor da pele.</p>
+
+<p><strong>Descrição do produto:</strong><br>Farmaron Premium é uma pomada desenvolvida para manter a pele dos animais hidratada e protegida. Sua principal aplicação é nos tetos de vacas em lactação, ajudando a prevenir ressecamento e rachaduras associados ao manejo e à ordenha.</p>
+
+<p><strong>Forma física e embalagem:</strong><br>Pomada de uso tópico em pote de 200 g.</p>
+
+<p><strong>Composição qualitativa:</strong><br>Vitamina E, cloreto de benzalcônio, polissorbato 80, galato de propila, corante, óleo mineral, propilenoglicol, álcool benzílico e vaselina branca USP.</p>
+
+<p><strong>Espécies e aplicações:</strong><br>Pode ser utilizada em diferentes espécies para manutenção da pele saudável, conforme orientação do fabricante. Não deve ser apresentada como antibiótico ou tratamento isolado de mastite.</p>
+
+<p><strong>Modo de usar:</strong><br>Higienizar e secar a região. Aplicar fina camada e massagear suavemente, seguindo a frequência do rótulo. Antes da ordenha, observar as orientações de higiene e remoção de resíduos aplicáveis.</p>
+
+<p><strong>Advertências:</strong><br>Uso externo. Não aplicar em olhos, mucosas ou feridas profundas/infectadas sem avaliação veterinária. Suspender em caso de irritação. Mastite, lesões dolorosas ou alterações no leite exigem diagnóstico.</p>
+
+<p><strong>Conservação:</strong><br>Conservar entre 15 °C e 30 °C, em local seco, protegido da luz e com a embalagem fechada.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Página oficial da Vetoquinol e ficha técnica do Farmaron Premium 200 g.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 28 -->
+<p>Produto: FEBRAX 50ML (036196)</p>
+
+<p><strong>Código interno:</strong><br>036196</p>
+
+<p><strong>Fabricante:</strong><br>Lema Biologic, conforme registros comerciais consultados.</p>
+
+<p><strong>Classificação:</strong><br>Analgésico, antitérmico e antiespasmódico injetável de uso veterinário.</p>
+
+<p><strong>Descrição do produto:</strong><br>Febrax é uma solução injetável à base de dipirona sódica, utilizada para redução de febre e alívio de dor e espasmos, inclusive em quadros de cólica e alterações de motilidade gastrintestinal nas espécies autorizadas.</p>
+
+<p><strong>Forma física e embalagem:</strong><br>Solução injetável em frasco-ampola de vidro âmbar contendo 50 ml.</p>
+
+<p><strong>Princípio ativo:</strong><br>Dipirona sódica, em formulação injetável concentrada. A concentração exata deve ser conferida na bula do lote, pois fontes públicas apresentam transcrições inconsistentes.</p>
+
+<p><strong>Espécies e indicações:</strong><br>Uso em animais de pequeno e grande porte conforme bula, especialmente como analgésico, antitérmico e antiespasmódico. A causa da febre ou dor deve ser diagnosticada.</p>
+
+<p><strong>Modo de usar e dosagem:</strong><br>A via, a dose por quilograma e o intervalo devem ser retirados da bula atual ou prescritos pelo médico-veterinário. Não foi incluída uma tabela numérica porque as fontes públicas localizadas não permitiram validar, com segurança, uma única posologia da apresentação de 50 ml.</p>
+
+<p><strong>Contraindicações e precauções:</strong><br>Evitar em animais com hipersensibilidade à dipirona, alterações hematológicas, hipotensão grave, doença renal/hepática ou desidratação sem avaliação. Administração intravenosa deve ser lenta e profissional.</p>
+
+<p><strong>Carência:</strong><br>Confirmar os períodos de abate e leite na bula vigente antes do uso em animais produtores de alimentos.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Bulas comerciais e registros de produto Febrax 50 ml; dados inconsistentes foram deliberadamente omitidos.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 29 -->
+<p>Produto: FENILBUTAZONA SYNTEC INJ. 100 ML (070874)</p>
+
+<p><strong>Código interno:</strong><br>070874</p>
+
+<p><strong>Fabricante:</strong><br>Syntec.</p>
+
+<p><strong>Classificação:</strong><br>Anti-inflamatório não esteroidal, analgésico e antitérmico injetável para equinos.</p>
+
+<p><strong>Descrição do produto:</strong><br>Fenilbutazona Syntec é indicada para reduzir dor, inflamação e febre associadas principalmente a afecções musculoesqueléticas de equinos.</p>
+
+<p><strong>Forma física e embalagem:</strong><br>Solução injetável estéril em frasco de 100 ml.</p>
+
+<p><strong>Composição:</strong><br>Cada 100 ml contém fenilbutazona 20 g, equivalente a 200 mg/ml, além de veículo.</p>
+
+<p><strong>Espécie:</strong><br>Equinos.</p>
+
+<p><strong>Modo de usar e dosagem:</strong><br>Administrar exclusivamente por via intravenosa lenta.<br><br>Dose: 2,2 mg/kg a cada 12 horas, equivalente a 1,1 ml para cada 100 kg; ou 4,4 mg/kg a cada 24 horas, equivalente a 2,2 ml para cada 100 kg.<br><br>O tratamento não deve exceder 5 dias, salvo decisão expressa do médico-veterinário.</p>
+
+<p><strong>Contraindicações:</strong><br>Não utilizar por via intramuscular ou subcutânea. Não administrar em animais com úlcera gastrintestinal, distúrbios de coagulação ou medula óssea, doença renal/hepática, hipersensibilidade, gestação/lactação ou idade abaixo da autorizada na bula.</p>
+
+<p><strong>Reações adversas:</strong><br>Pode causar irritação gastrintestinal, úlceras, alterações renais, edema, distúrbios sanguíneos e reação no local. Aumenta o risco quando associada a outros AINEs, corticosteroides ou fármacos nefrotóxicos.</p>
+
+<p><strong>Período de carência:</strong><br>Não utilizar em equinos destinados ao consumo humano, salvo se a bula vigente estabelecer uso e carência específicos.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Bula e ficha técnica da Fenilbutazona Syntec.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 30 -->
+<p>Produto: GRAMPO P/ CERCA 3,04X0,25 (068071)</p>
+
+<p><strong>Código interno:</strong><br>068071</p>
+
+<p><strong>Classificação:</strong><br>Grampo metálico em formato de U para fixação de arame em mourões de madeira.</p>
+
+<p><strong>Descrição do produto:</strong><br>Grampo para cerca utilizado para prender arame liso, farpado ou tela à madeira, permitindo montagem e manutenção de cercamentos rurais.</p>
+
+<p><strong>Dimensão cadastrada:</strong><br>3,04 x 0,25. A notação parece incompleta ou potencialmente invertida; é necessário confirmar se corresponde ao diâmetro do fio e ao comprimento do grampo, por exemplo 3,04 mm x 25 mm.</p>
+
+<p><strong>Material e acabamento:</strong><br>Normalmente fabricado em aço polido ou galvanizado, com pontas cortadas para facilitar a penetração. O acabamento não foi informado.</p>
+
+<p><strong>Modo de usar:</strong><br>Posicionar sobre o arame e cravar alternadamente, deixando folga suficiente quando o projeto exigir movimentação do fio. Utilizar martelo adequado e manter os dedos afastados.</p>
+
+<p><strong>Advertências:</strong><br>Usar luvas e proteção ocular. Não cravar até esmagar o arame, pois isso pode danificar a galvanização ou criar ponto de ruptura. Dimensionar espaçamento e fixação conforme o tipo de cerca.</p>
+
+<p><strong>Observação para cadastro:</strong><br>Conferir e corrigir a unidade da segunda medida antes de publicar a especificação.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Especificações usuais de grampos para cerca; cadastro não contém fabricante ou unidade completa.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 31 -->
+<p>Produto: K-OTHRINE SC 30 ML (026921)</p>
+
+<p><strong>Código interno:</strong><br>026921</p>
+
+<p><strong>Fabricante:</strong><br>Envu, antiga linha Bayer Environmental Science.</p>
+
+<p><strong>Classificação:</strong><br>Inseticida domissanitário concentrado em suspensão, à base de deltametrina.</p>
+
+<p><strong>Descrição do produto:</strong><br>K-Othrine SC é um inseticida residual diluível em água para controle de insetos rasteiros e voadores em ambientes, especialmente baratas, formigas e moscas.</p>
+
+<p><strong>Forma física e embalagem:</strong><br>Suspensão concentrada à base de água em frasco de 30 ml.</p>
+
+<p><strong>Princípio ativo:</strong><br>Deltametrina.</p>
+
+<p><strong>Modo de usar e diluição:</strong><br>Para moscas, a referência oficial indica 6 ml por litro de água; para baratas e formigas, 8 ml por litro. Um litro de calda cobre aproximadamente 20 m². Aplicar apenas nos pontos e superfícies indicados no rótulo.</p>
+
+<p><strong>Cuidados durante a aplicação:</strong><br>Retirar pessoas e animais, cobrir ou remover alimentos, utensílios, aquários e bebedouros. Aplicar com ventilação adequada e permitir o retorno somente após a secagem completa.</p>
+
+<p><strong>Advertências:</strong><br>Não aplicar sobre alimentos, rações, camas, roupas, brinquedos, animais ou superfícies de contato direto sem autorização. Muito tóxico para organismos aquáticos e gatos podem ser especialmente sensíveis a piretroides quando expostos diretamente.</p>
+
+<p><strong>Conservação e descarte:</strong><br>Guardar trancado, na embalagem original, separado de alimentos e medicamentos. Não reutilizar a embalagem e seguir a destinação indicada no rótulo.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Página e ficha técnica oficiais da Envu para K-Othrine SC.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 32 -->
+<p>Produto: LIMA KF 8" CHATA (028401)</p>
+
+<p><strong>Código interno:</strong><br>028401</p>
+
+<p><strong>Marca:</strong><br>KF, conforme cadastro.</p>
+
+<p><strong>Classificação:</strong><br>Lima manual chata de 8 polegadas para desbaste e acabamento de metais.</p>
+
+<p><strong>Descrição do produto:</strong><br>Ferramenta abrasiva dentada com faces planas, utilizada para remover material, corrigir rebarbas, ajustar peças e dar acabamento em superfícies e arestas.</p>
+
+<p><strong>Especificação:</strong><br>Comprimento nominal da parte útil: 8". O tipo de picado — bastardo, murça ou segundo corte — e a presença de cabo devem ser conferidos na embalagem.</p>
+
+<p><strong>Material:</strong><br>Normalmente aço alto carbono temperado.</p>
+
+<p><strong>Modo de usar:</strong><br>Fixar a peça, instalar cabo apropriado na espiga e empurrar a lima no sentido de corte com pressão uniforme, aliviando no retorno.</p>
+
+<p><strong>Segurança e manutenção:</strong><br>Nunca usar lima sem cabo, como alavanca ou ferramenta de impacto. Utilizar óculos de proteção. Limpar os dentes com escova própria e manter seca para evitar corrosão.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Especificações técnicas usuais de limas chatas de 8 polegadas; ficha do modelo KF não foi localizada.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 33 -->
+<p>Produto: LIMA P/ MOTOSERRA 3/16 KF (054038)</p>
+
+<p><strong>Código interno:</strong><br>054038</p>
+
+<p><strong>Marca:</strong><br>KF, conforme cadastro.</p>
+
+<p><strong>Classificação:</strong><br>Lima redonda para afiação de corrente de motosserra.</p>
+
+<p><strong>Descrição do produto:</strong><br>Lima cilíndrica usada para restaurar o perfil do gume dos cortadores da corrente, mantendo ângulo e diâmetro compatíveis com o conjunto de corte.</p>
+
+<p><strong>Especificação:</strong><br>Diâmetro nominal: 3/16", aproximadamente 4,8 mm. Frequentemente utilizada em determinadas correntes de passo .325", mas a compatibilidade final depende do modelo e do fabricante da corrente.</p>
+
+<p><strong>Modo de usar:</strong><br>Desligar a motosserra, acionar o freio da corrente, fixar o sabre, usar guia/porta-lima e respeitar o ângulo, altura e número uniforme de passadas em todos os dentes.</p>
+
+<p><strong>Advertências:</strong><br>Consultar o manual da corrente antes de escolher a lima. Diâmetro incorreto altera o perfil do cortador e reduz segurança e desempenho. Usar luvas e proteção ocular.</p>
+
+<p><strong>Conservação:</strong><br>Manter seca, separada de outras ferramentas que possam danificar os dentes e substituir quando perder capacidade de corte.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Tabelas técnicas usuais de afiação de correntes; compatibilidade deve ser confirmada no manual da corrente.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 34 -->
+<p>Produto: LIMA P/ MOTOSERRA 7/32 KF (054020)</p>
+
+<p><strong>Código interno:</strong><br>054020</p>
+
+<p><strong>Marca:</strong><br>KF, conforme cadastro.</p>
+
+<p><strong>Classificação:</strong><br>Lima redonda para afiação de corrente de motosserra.</p>
+
+<p><strong>Descrição do produto:</strong><br>Ferramenta cilíndrica destinada ao recondicionamento manual dos dentes de corte da corrente.</p>
+
+<p><strong>Especificação:</strong><br>Diâmetro nominal: 7/32", aproximadamente 5,5 mm. É comum em algumas correntes de passo 3/8" ou .404", dependendo do perfil e da fase de desgaste.</p>
+
+<p><strong>Modo de usar:</strong><br>Bloquear a corrente, usar porta-lima compatível, marcar o dente de referência e afiar todos os cortadores com o mesmo ângulo e quantidade de passadas. Verificar também os limitadores de profundidade com ferramenta específica.</p>
+
+<p><strong>Advertências:</strong><br>Não escolher apenas pelo passo nominal; consultar a tabela do fabricante da corrente. Usar EPI e jamais afiar com o motor em funcionamento.</p>
+
+<p><strong>Conservação:</strong><br>Guardar limpa, seca e protegida contra impactos. Não utilizar como punção ou alavanca.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Tabelas técnicas usuais de afiação; produto KF exato não localizado em ficha pública.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 35 -->
+<p>Produto: MASTER LP INJ. LT (075264)</p>
+
+<p><strong>Código interno:</strong><br>075264</p>
+
+<p><strong>Fabricante:</strong><br>Ourofino Saúde Animal.</p>
+
+<p><strong>Classificação:</strong><br>Endectocida injetável de longa ação para bovinos.</p>
+
+<p><strong>Descrição do produto:</strong><br>Master LP é um antiparasitário injetável à base de ivermectina em alta concentração e formulação de liberação prolongada. Atua contra diversos parasitas internos e externos sensíveis em bovinos.</p>
+
+<p><strong>Forma física e embalagem:</strong><br>Solução injetável, apresentação de 1 litro.</p>
+
+<p><strong>Composição:</strong><br>Ivermectina 4%, conforme a linha Master LP.</p>
+
+<p><strong>Indicações:</strong><br>Controle de nematódeos gastrintestinais, bernes, carrapatos e outros parasitas descritos na bula. O espectro e os períodos de persistência variam por parasita.</p>
+
+<p><strong>Modo de usar:</strong><br>Administrar exclusivamente por via subcutânea, em local e dose definidos na bula. A dose exata por peso deve ser conferida no rótulo do frasco de 1 litro; não aplicar protocolos de ivermectina 1% ou 3,5% a esta formulação 4%.</p>
+
+<p><strong>Contraindicações e precauções:</strong><br>Uso exclusivo em bovinos nas categorias autorizadas. Não administrar por via intravenosa ou intramuscular. Utilizar material estéril e dividir volumes grandes conforme orientação.</p>
+
+<p><strong>Período de carência:</strong><br>Abate: 133 dias após a última aplicação, conforme material oficial consultado. Não utilizar em fêmeas bovinas lactantes produzindo leite destinado ao consumo humano. Confirmar no rótulo vigente.</p>
+
+<p><strong>Advertências ambientais:</strong><br>Ivermectina pode afetar organismos não alvo presentes nas fezes e no ambiente. Evitar descarte em água e seguir a destinação de embalagens e resíduos.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Página e bula da Ourofino Saúde Animal para Master LP.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 36 -->
+<p>Produto: MATABICHEIRA LEPECID BR SPRAY 400 ML (027634)</p>
+
+<p><strong>Código interno:</strong><br>027634</p>
+
+<p><strong>Fabricante:</strong><br>Ourofino Saúde Animal.</p>
+
+<p><strong>Classificação:</strong><br>Ectoparasiticida aerossol para tratamento de miíases em bovinos.</p>
+
+<p><strong>Descrição do produto:</strong><br>Lepecid BR Spray é um mata-bicheira de aplicação tópica que contém clorpirifós. Atua sobre larvas presentes em feridas de bovinos e auxilia na proteção da área tratada.</p>
+
+<p><strong>Forma física e embalagem:</strong><br>Aerossol em lata de 400 ml, com conteúdo líquido informado pelo fabricante na embalagem.</p>
+
+<p><strong>Composição:</strong><br>Cada 100 ml contém clorpirifós 5 g, além de veículo. A lata contém propelentes butano/propano.</p>
+
+<p><strong>Indicação:</strong><br>Tratamento de miíases cutâneas em bovinos causadas por larvas sensíveis.</p>
+
+<p><strong>Modo de usar:</strong><br>Agitar a embalagem. Limpar a ferida e remover larvas e tecido desvitalizado quando possível. Pulverizar a uma distância aproximada de 10 a 20 cm, cobrindo toda a lesão e a região ao redor. Normalmente uma aplicação é suficiente, mas a ferida deve ser acompanhada.</p>
+
+<p><strong>Período de carência:</strong><br>Materiais do fabricante informam carência zero para abate e leite nas condições autorizadas. Confirmar no rótulo do lote.</p>
+
+<p><strong>Advertências:</strong><br>Uso externo e exclusivo em bovinos. Aerossol inflamável e pressurizado: não perfurar, queimar ou expor acima da temperatura indicada. Evitar inalação, olhos e mucosas; usar EPI.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Página e bula da Ourofino Saúde Animal para Lepecid BR Spray.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 37 -->
+<p>Produto: MERCEPTON INJ. 100 ML (027324)</p>
+
+<p><strong>Código interno:</strong><br>027324</p>
+
+<p><strong>Fabricante:</strong><br>Laboratório Bravet.</p>
+
+<p><strong>Classificação:</strong><br>Hepatoprotetor, antitóxico, energético e reconstituinte injetável de uso veterinário.</p>
+
+<p><strong>Descrição do produto:</strong><br>Mercepton Injetável associa metionina, colina, vitaminas do complexo B, arginina e glicose. É usado como terapia de suporte em intoxicações, distúrbios hepáticos, inapetência e convalescença, sem substituir a remoção do agente tóxico ou o tratamento específico.</p>
+
+<p><strong>Forma física e embalagem:</strong><br>Solução injetável em frasco de 100 ml.</p>
+
+<p><strong>Composição:</strong><br>Cada 100 ml contém:<br>Acetil-DL-metionina: 5 g.<br>Cloreto de colina: 2 g.<br>Vitamina B1: 1 g.<br>Vitamina B6: 0,04 g.<br>Cloridrato de L-arginina: 0,6 g.<br>Vitamina B2: 0,02 g.<br>Nicotinamida: 0,5 g.<br>Pantotenato de cálcio: 0,2 g.<br>Glicose: 20 g.<br>Veículo q.s.p.: 100 ml.</p>
+
+<p><strong>Modo de usar:</strong><br>Administrar por via intramuscular ou intravenosa, conforme espécie e avaliação profissional. Em bovinos adultos, materiais do fabricante indicam 20 a 100 ml/dia; em bezerros, 10 a 30 ml/dia. Outras espécies possuem doses próprias.</p>
+
+<p><strong>Advertências:</strong><br>A administração intravenosa deve ser lenta. Intoxicações podem ser emergências; não atrasar atendimento veterinário. Não misturar na mesma seringa com outros produtos sem compatibilidade comprovada.</p>
+
+<p><strong>Carência:</strong><br>Conferir na bula vigente para animais produtores de alimentos.</p>
+
+<p><strong>Conservação:</strong><br>Manter protegido da luz, em temperatura indicada no rótulo, usando seringa e agulha estéreis.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Página e materiais oficiais do Laboratório Bravet para Mercepton.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 38 -->
+<p>Produto: MILHO ENSACADO MOIDO 25KG (076570)</p>
+
+<p><strong>Código interno:</strong><br>076570</p>
+
+<p><strong>Classificação:</strong><br>Ingrediente energético vegetal para alimentação animal.</p>
+
+<p><strong>Descrição do produto:</strong><br>Milho moído obtido pela trituração do grão, fonte principalmente de amido e energia. Pode compor rações e suplementos para diferentes espécies, desde que a formulação seja balanceada.</p>
+
+<p><strong>Forma física e embalagem:</strong><br>Milho triturado/moído, ensacado em embalagem de 25 kg.</p>
+
+<p><strong>Composição e garantias:</strong><br>O produto é matéria-prima, não ração completa. Teor de umidade, granulometria, proteína, fibra, impurezas e limites de micotoxinas dependem do fornecedor e devem constar no rótulo ou laudo.</p>
+
+<p><strong>Modo de usar:</strong><br>Incorporar à dieta nas proporções formuladas por nutricionista ou médico-veterinário, considerando espécie, idade, finalidade produtiva e os demais ingredientes.</p>
+
+<p><strong>Advertências:</strong><br>Não fornecer como dieta exclusiva. Alterações rápidas na quantidade de concentrado podem causar distúrbios digestivos, especialmente em ruminantes. Não usar milho mofado, aquecido, empedrado, com insetos ou odor anormal.</p>
+
+<p><strong>Conservação:</strong><br>Armazenar sobre estrados, em local seco, ventilado, protegido de chuva, roedores, aves, insetos e contato com paredes. Aplicar controle de estoque por validade.</p>
+
+<p><strong>Observação para cadastro:</strong><br>Fabricante, granulometria e níveis de garantia não foram informados. Esses dados devem ser inseridos a partir do saco real.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Referências técnicas gerais de milho moído na alimentação animal; sem marca específica no cadastro.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 39 -->
+<p>Produto: MONOVIM B12 INJ. 20 ML (027359)</p>
+
+<p><strong>Código interno:</strong><br>027359</p>
+
+<p><strong>Identificação do produto:</strong><br>O nome pesquisado que corresponde à apresentação é MONOVIN B12, do Laboratório Bravet. O cadastro contém “MONOVIM”; conferir a embalagem antes de alterar ou publicar.</p>
+
+<p><strong>Fabricante:</strong><br>Laboratório Bravet, caso confirmado como Monovin B12.</p>
+
+<p><strong>Classificação:</strong><br>Vitamina B12 injetável de uso veterinário.</p>
+
+<p><strong>Descrição do produto:</strong><br>Monovin B12 é uma solução de cianocobalamina indicada como auxiliar no tratamento e prevenção de estados carenciais de vitamina B12 e anemias relacionadas à deficiência, especialmente em bovinos.</p>
+
+<p><strong>Forma física e embalagem:</strong><br>Solução injetável em frasco de 20 ml.</p>
+
+<p><strong>Composição:</strong><br>Material oficial ilustrado informa vitamina B12 — cianocobalamina — 10 mg por 100 ml. Como uma página textual apresentou transcrição divergente, conferir a concentração no rótulo antes de usar.</p>
+
+<p><strong>Modo de usar e dosagem:</strong><br>Via intramuscular. Bovinos adultos: 5 ml a cada 2 ou 3 dias; bezerros: 1 a 2 ml a cada 2 ou 3 dias, conforme orientação do fabricante e do médico-veterinário.</p>
+
+<p><strong>Advertências:</strong><br>Diagnosticar a causa da anemia; vitamina B12 não substitui tratamento de parasitoses, hemorragias, deficiências minerais ou doenças infecciosas. Utilizar material estéril.</p>
+
+<p><strong>Carência e conservação:</strong><br>Conferir carência, validade após abertura e temperatura no rótulo da apresentação vigente.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Página oficial e material de produto do Laboratório Bravet para Monovin B12.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 40 -->
+<p>Produto: MONOVIN K INJ. 20 ML (025569)</p>
+
+<p><strong>Código interno:</strong><br>025569</p>
+
+<p><strong>Fabricante:</strong><br>Laboratório Bravet.</p>
+
+<p><strong>Classificação:</strong><br>Vitamina K injetável com ação anti-hemorrágica de uso veterinário.</p>
+
+<p><strong>Descrição do produto:</strong><br>Monovin K contém menadiona, vitamina K3, que participa da síntese de fatores de coagulação. É utilizado em estados hemorrágicos associados à deficiência de vitamina K e como auxílio pré ou pós-operatório quando indicado.</p>
+
+<p><strong>Forma física e embalagem:</strong><br>Solução injetável em frasco de 20 ml.</p>
+
+<p><strong>Composição:</strong><br>A apresentação de 20 ml contém 30 mg de vitamina K3/menadiona, conforme material do fabricante.</p>
+
+<p><strong>Espécies e indicações:</strong><br>Grandes animais, especialmente bovinos, conforme bula. A causa do sangramento deve ser investigada; hemorragia é uma condição potencialmente emergencial.</p>
+
+<p><strong>Modo de usar e dosagem:</strong><br>Administrar por via intramuscular ou intravenosa. Bovinos adultos: 10 a 20 ml. Bezerros: 5 a 10 ml. A dose pode ser reavaliada após 24 horas sob orientação veterinária.</p>
+
+<p><strong>Advertências:</strong><br>Aplicação intravenosa deve ser lenta. Não usar como substituto de atendimento em hemorragia intensa, intoxicação por anticoagulante ou trauma. Evitar superdosagem.</p>
+
+<p><strong>Carência e conservação:</strong><br>Conferir períodos de carência e condições de armazenamento na bula do lote.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Página e ficha oficial do Laboratório Bravet para Monovin K.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 41 -->
+<p>Produto: OCITOCINA BIOFARM 100 ML (068691)</p>
+
+<p><strong>Código interno:</strong><br>068691</p>
+
+<p><strong>Fabricante:</strong><br>Biofarm.</p>
+
+<p><strong>Classificação:</strong><br>Hormônio ocitócico injetável de uso veterinário.</p>
+
+<p><strong>Descrição do produto:</strong><br>Ocitocina Biofarm contém ocitocina sintética. Estimula contrações da musculatura uterina e a ejeção do leite por contração das células mioepiteliais da glândula mamária.</p>
+
+<p><strong>Forma física e embalagem:</strong><br>Solução injetável em frasco de 100 ml.</p>
+
+<p><strong>Composição:</strong><br>O material consultado informa 500 UI de ocitocina por 100 ml, equivalente a 5 UI/ml. Confirmar no rótulo antes de calcular qualquer dose.</p>
+
+<p><strong>Espécies e indicações:</strong><br>Indicada para bovinos, equinos, suínos, ovinos e caprinos em situações como auxílio ao parto quando não há obstrução, atonia uterina, retenção de placenta e auxílio à ejeção do leite, conforme avaliação veterinária.</p>
+
+<p><strong>Modo de usar:</strong><br>Administrar por via intramuscular ou intravenosa na dose específica da espécie e indicação. A aplicação intravenosa exige maior cautela e administração profissional.</p>
+
+<p><strong>Contraindicações e advertências:</strong><br>Não usar para acelerar parto sem confirmar dilatação e ausência de obstrução, posição fetal anormal ou desproporção feto-pélvica. Contrações intensas podem causar ruptura uterina, sofrimento fetal ou lesões.<br><br>Uso hormonal deve ser prescrito pelo médico-veterinário. Não repetir doses por conta própria.</p>
+
+<p><strong>Carência:</strong><br>A referência comercial consultada indica ausência de carência nas condições autorizadas, mas confirmar no rótulo atual para cada espécie.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Ficha de produto e bula comercial da Ocitocina Biofarm.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 42 -->
+<p>Produto: PARASULES 40 1 LT (028797)</p>
+
+<p><strong>Código interno:</strong><br>028797</p>
+
+<p><strong>Fabricante:</strong><br>Laboratorios Microsules.</p>
+
+<p><strong>Classificação:</strong><br>Anti-helmíntico injetável para bovinos.</p>
+
+<p><strong>Descrição do produto:</strong><br>Parasules 40 é uma solução antiparasitária à base de sulfóxido de albendazol, metabólito ativo com ação contra nematódeos gastrintestinais e pulmonares sensíveis.</p>
+
+<p><strong>Forma física e embalagem:</strong><br>Solução injetável para uso subcutâneo em frasco de 1 litro.</p>
+
+<p><strong>Composição:</strong><br>Cada 100 ml contém sulfóxido de albendazol 13,6 g, além de veículo.</p>
+
+<p><strong>Espécie e indicações:</strong><br>Bovinos. Indicado contra parasitas internos especificados na bula, incluindo formas adultas e algumas formas larvais, conforme dose.</p>
+
+<p><strong>Modo de usar e dosagem:</strong><br>Administrar por via subcutânea.<br><br>Dose usual: 1 ml para cada 40 kg de peso corporal, equivalente a 3,4 mg/kg.<br><br>Para ostertagiose inibida, a referência consultada indica 1 ml para cada 18 kg, equivalente a aproximadamente 7,5 mg/kg.<br><br>Volumes iguais ou superiores a 10 ml devem ser divididos em mais de um local.</p>
+
+<p><strong>Período de carência:</strong><br>Abate: 14 dias. Leite: 36 horas, equivalentes a três ordenhas, conforme material consultado. Confirmar na bula brasileira vigente.</p>
+
+<p><strong>Advertências:</strong><br>Pesar os animais, evitar subdosagem e integrar o uso a exames e manejo de resistência. Respeitar restrições para fêmeas em fases reprodutivas indicadas na bula.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Página e materiais técnicos da Laboratorios Microsules para Parasules 40.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 43 -->
+<p>Produto: PILHA DURACEL GRANDE C/02 (053317)</p>
+
+<p><strong>Código interno:</strong><br>053317</p>
+
+<p><strong>Fabricante:</strong><br>Duracell.</p>
+
+<p><strong>Classificação:</strong><br>Pilha alcalina descartável tamanho D, cartela com 2 unidades.</p>
+
+<p><strong>Descrição do produto:</strong><br>Pilha cilíndrica de grande porte indicada para equipamentos de maior consumo ou autonomia, como lanternas, rádios e dispositivos compatíveis.</p>
+
+<p><strong>Especificações:</strong><br>Tamanho D; tensão nominal de 1,5 V por pilha; química alcalina; não recarregável.</p>
+
+<p><strong>Modo de usar:</strong><br>Conferir polaridade e tamanho no aparelho. Inserir sem forçar e substituir todas as pilhas do conjunto ao mesmo tempo.</p>
+
+<p><strong>Advertências:</strong><br>Não recarregar, desmontar, perfurar, aquecer, soldar ou lançar ao fogo. Não misturar pilhas novas e usadas, marcas, tamanhos ou químicas. Retirar de aparelhos sem uso prolongado.</p>
+
+<p><strong>Armazenamento e descarte:</strong><br>Guardar em local seco, fresco e fora do alcance de crianças. Encaminhar pilhas usadas a pontos de coleta conforme a logística reversa; não descartar no fogo.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Especificações gerais da linha alcalina Duracell tamanho D.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 44 -->
+<p>Produto: PILHA DURACEL MEDIA C/02 (053309)</p>
+
+<p><strong>Código interno:</strong><br>053309</p>
+
+<p><strong>Fabricante:</strong><br>Duracell.</p>
+
+<p><strong>Classificação:</strong><br>Pilha alcalina descartável tamanho C, cartela com 2 unidades.</p>
+
+<p><strong>Descrição do produto:</strong><br>Pilha cilíndrica tamanho C para lanternas, brinquedos, rádios e demais equipamentos que especifiquem esse formato.</p>
+
+<p><strong>Especificações:</strong><br>Tamanho C; 1,5 V por unidade; química alcalina; não recarregável.</p>
+
+<p><strong>Modo de usar:</strong><br>Respeitar a polaridade, substituir o conjunto completo e verificar sinais de corrosão no compartimento.</p>
+
+<p><strong>Advertências:</strong><br>Não recarregar nem expor a fogo ou calor. Não misturar modelos, marcas, pilhas usadas e novas ou alcalinas com recarregáveis.</p>
+
+<p><strong>Armazenamento e descarte:</strong><br>Manter em local seco e fresco, fora do alcance de crianças. Descartar em ponto de coleta de pilhas e baterias.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Especificações gerais da linha alcalina Duracell tamanho C.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 45 -->
+<p>Produto: PILHA DURACEL PALITO C/02 (053287)</p>
+
+<p><strong>Código interno:</strong><br>053287</p>
+
+<p><strong>Fabricante:</strong><br>Duracell.</p>
+
+<p><strong>Classificação:</strong><br>Pilha alcalina descartável tamanho AAA, cartela com 2 unidades.</p>
+
+<p><strong>Descrição do produto:</strong><br>Pilha “palito” indicada para controles remotos, termômetros, lanternas compactas, brinquedos e aparelhos que utilizem formato AAA.</p>
+
+<p><strong>Especificações:</strong><br>Tamanho AAA; tensão nominal de 1,5 V por unidade; química alcalina; não recarregável.</p>
+
+<p><strong>Modo de usar:</strong><br>Instalar observando os polos positivo e negativo. Trocar todas as pilhas do aparelho ao mesmo tempo.</p>
+
+<p><strong>Advertências:</strong><br>Pequena e passível de ingestão. Manter longe de crianças e animais. Não recarregar, abrir, aquecer, perfurar ou colocar no fogo.</p>
+
+<p><strong>Armazenamento e descarte:</strong><br>Conservar em ambiente seco e fresco. Retirar de equipamentos guardados por longos períodos e encaminhar as usadas para coleta apropriada.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Especificações gerais da linha alcalina Duracell AAA.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 46 -->
+<p>Produto: PORCA SEXTAVADA POLIDA 3/8" (036714)</p>
+
+<p><strong>Código interno:</strong><br>036714</p>
+
+<p><strong>Classificação:</strong><br>Porca sextavada de aço para união roscada.</p>
+
+<p><strong>Descrição do produto:</strong><br>Elemento de fixação com seis faces, apertado por chave, destinado a formar conjunto com parafuso, prisioneiro ou barra roscada compatível.</p>
+
+<p><strong>Especificação nominal:</strong><br>Rosca de diâmetro nominal 3/8". O passo pode ser UNC, UNF ou outro; precisa ser confirmado antes da venda.</p>
+
+<p><strong>Material e acabamento:</strong><br>Aço com acabamento polido, salvo indicação diferente do fabricante.</p>
+
+<p><strong>Modo de usar:</strong><br>Combinar com rosca de mesmo diâmetro, passo e padrão. Aplicar arruela e torque adequados ao projeto.</p>
+
+<p><strong>Advertências:</strong><br>Não forçar porca incompatível nem reutilizar peça com rosca espanada, deformada ou corroída. Em aplicações estruturais, identificar classe de resistência e norma.</p>
+
+<p><strong>Conservação:</strong><br>Guardar seco e separado por medida/passo para evitar mistura.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Especificações usuais de porcas sextavadas; fabricante, passo e classe não informados.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 47 -->
+<p>Produto: PREGO GERDAU 10 X 10 (035963)</p>
+
+<p><strong>Código interno:</strong><br>035963</p>
+
+<p><strong>Fabricante:</strong><br>Gerdau.</p>
+
+<p><strong>Classificação:</strong><br>Prego com cabeça para madeira e aplicações gerais.</p>
+
+<p><strong>Descrição do produto:</strong><br>Prego de corpo liso, cabeça cônica/axadrezada e ponta tipo diamante, destinado a fixações em madeira, caixarias, marcenaria e reparos leves.</p>
+
+<p><strong>Dimensão:</strong><br>10 x 10 no padrão JPxLPP, equivalente comercialmente a aproximadamente 7/8 x 17. A tabela oficial informa cerca de 3.052 unidades por kg.</p>
+
+<p><strong>Material/acabamento:</strong><br>Aço. A tabela Gerdau indica disponibilidade dessa medida em versão polida e também em linha galvanizada; confirmar o acabamento do item do estoque.</p>
+
+<p><strong>Modo de usar:</strong><br>Escolher comprimento compatível com as peças, posicionar perpendicularmente e cravar com martelo adequado, evitando proximidade excessiva da borda da madeira.</p>
+
+<p><strong>Advertências:</strong><br>Usar proteção ocular. Não utilizar como fixador estrutural calculado sem especificação de projeto. Pregos empenados, corroídos ou mal dimensionados podem comprometer a união.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Tabela oficial Gerdau de pregos com cabeça e pregos galvanizados.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 48 -->
+<p>Produto: PREGO GERDAU 15 X 15 (032093)</p>
+
+<p><strong>Código interno:</strong><br>032093</p>
+
+<p><strong>Fabricante:</strong><br>Gerdau.</p>
+
+<p><strong>Classificação:</strong><br>Prego com cabeça para madeira, construção e marcenaria.</p>
+
+<p><strong>Descrição do produto:</strong><br>Prego de corpo liso com cabeça e ponta para penetração em madeira, usado em ripas, telhados, caixarias, móveis e montagens rurais compatíveis.</p>
+
+<p><strong>Dimensão:</strong><br>15 x 15 no padrão JPxLPP, equivalente a aproximadamente 1 1/4 x 13. A tabela oficial informa cerca de 777 unidades por kg.</p>
+
+<p><strong>Material/acabamento:</strong><br>Aço; essa dimensão aparece em versões conforme a linha e acabamento. Confirmar se o pacote é polido ou galvanizado.</p>
+
+<p><strong>Modo de usar:</strong><br>Selecionar tamanho e quantidade conforme a espessura da madeira e o esforço. Cravar com martelo adequado e, em madeiras propensas a rachar, avaliar pré-furo.</p>
+
+<p><strong>Advertências:</strong><br>Utilizar óculos de proteção e manter mãos afastadas da trajetória. Para estruturas, seguir projeto e normas aplicáveis.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Catálogo/tabela oficial Gerdau de pregos.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 49 -->
+<p>Produto: PREGO GERDAU 22 X 42 (032107)</p>
+
+<p><strong>Código interno:</strong><br>032107</p>
+
+<p><strong>Fabricante:</strong><br>Gerdau.</p>
+
+<p><strong>Classificação:</strong><br>Prego com cabeça de grande dimensão para madeira e construção pesada.</p>
+
+<p><strong>Descrição do produto:</strong><br>Prego robusto indicado para caixarias, estruturas temporárias, porteiras, pontes rurais, mata-burros e outras montagens de madeira em que o dimensionamento permita seu uso.</p>
+
+<p><strong>Dimensão:</strong><br>22 x 42 no padrão JPxLPP, equivalente a aproximadamente 3 3/4 x 5. A tabela oficial de prego galvanizado indica cerca de 58 unidades por kg.</p>
+
+<p><strong>Material/acabamento:</strong><br>Aço. Confirmar se o item cadastrado é polido ou galvanizado; o nome fornecido não especifica.</p>
+
+<p><strong>Modo de usar:</strong><br>Avaliar espessura e condição da madeira, realizar pré-furo quando necessário para evitar rachadura e utilizar martelo adequado ao porte do prego.</p>
+
+<p><strong>Advertências:</strong><br>Fixações estruturais devem ser definidas por profissional habilitado. Não usar madeira deteriorada nem prego corroído ou deformado.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Página e tabela oficial Gerdau de pregos com cabeça/galvanizados.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 50 -->
+<p>Produto: PROVERME 28 GR (027154)</p>
+
+<p><strong>Código interno:</strong><br>027154</p>
+
+<p><strong>Fabricante/marca:</strong><br>Proverme, em apresentação tradicional associada a laboratórios veterinários nacionais; confirmar fabricante no sachê.</p>
+
+<p><strong>Classificação:</strong><br>Vermífugo oral solúvel à base de piperazina para animais.</p>
+
+<p><strong>Descrição do produto:</strong><br>Proverme é um anti-helmíntico em pó solúvel destinado ao controle de vermes sensíveis à piperazina, especialmente áscaris e oxiúros, nas espécies descritas na bula.</p>
+
+<p><strong>Forma física e embalagem:</strong><br>Pó solúvel em sachê de 28 g.</p>
+
+<p><strong>Composição:</strong><br>Citrato de piperazina tetraidratado: 28 g por sachê, equivalente a aproximadamente 36% de piperazina base, conforme referência de bula consultada.</p>
+
+<p><strong>Espécies e indicações:</strong><br>Bovinos, equinos, suínos e aves aparecem em referências do produto. A indicação específica e o preparo variam por espécie.</p>
+
+<p><strong>Modo de usar e dosagem:</strong><br>Em suínos, a referência consultada indica 1 sachê misturado em 2 kg de alimento para cada 80 kg de peso vivo, após jejum de 10 a 12 horas. Para bovinos, equinos e aves, usar exclusivamente a tabela do sachê atual; não extrapolar a dose suína.</p>
+
+<p><strong>Advertências:</strong><br>Não usar em animais debilitados, com obstrução intestinal, doença renal/hepática ou fora das espécies autorizadas sem avaliação. Garantir consumo integral e uniforme quando administrado no alimento ou água.</p>
+
+<p><strong>Carência:</strong><br>Conferir no rótulo atual os períodos de abate, leite e ovos.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Bula comercial e fichas do Proverme 28 g; fabricante deve ser confirmado na unidade em estoque.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 51 -->
+<p>Produto: QUEROSENE 900ML (063096)</p>
+
+<p><strong>Código interno:</strong><br>063096</p>
+
+<p><strong>Classificação:</strong><br>Destilado de petróleo inflamável para usos autorizados no rótulo.</p>
+
+<p><strong>Descrição do produto:</strong><br>Líquido combustível e solvente derivado de petróleo, comercializado em frasco de 900 ml. Pode ser destinado a limpeza pesada, remoção de resíduos ou equipamentos compatíveis, conforme a marca.</p>
+
+<p><strong>Composição:</strong><br>Mistura de hidrocarbonetos de petróleo. A composição, ponto de fulgor e classificação de risco devem ser consultados na FISPQ do fabricante.</p>
+
+<p><strong>Modo de usar:</strong><br>Usar somente na finalidade autorizada, em pequena quantidade e ambiente muito ventilado. Testar previamente em superfície discreta, pois pode danificar plásticos, borrachas, pinturas e revestimentos.</p>
+
+<p><strong>Advertências:</strong><br>Produto inflamável e nocivo. Manter longe de chamas, faíscas, calor, cigarros e equipamentos que produzam ignição.<br><br>Não ingerir, não provocar vômito em caso de ingestão e não usar em pessoas ou animais. A aspiração para os pulmões pode ser grave. Evitar contato prolongado com pele e inalação de vapores.</p>
+
+<p><strong>Armazenamento:</strong><br>Manter na embalagem original, bem fechada, em local fresco e ventilado, fora do alcance de crianças e separado de alimentos, rações e medicamentos.</p>
+
+<p><strong>Observação para cadastro:</strong><br>A marca não foi informada. Inserir fabricante, composição e orientações da FISPQ específica antes da publicação.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Princípios de segurança para querosene e destilados de petróleo; ficha exata depende da marca.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 52 -->
+<p>Produto: RATICIDA MAKI SOFT BAIT 10 G (073164)</p>
+
+<p><strong>Código interno:</strong><br>073164</p>
+
+<p><strong>Fabricante/marca:</strong><br>Maki Soft Bait; fabricante/titular deve ser confirmado no rótulo comercial.</p>
+
+<p><strong>Classificação:</strong><br>Raticida anticoagulante pronto para uso em isca macia.</p>
+
+<p><strong>Descrição do produto:</strong><br>Maki Soft Bait é uma isca de alta palatabilidade acondicionada em sachês de 10 g para controle de ratos e camundongos. O princípio ativo anticoagulante provoca hemorragias após a ingestão.</p>
+
+<p><strong>Princípio ativo:</strong><br>Bromadiolona.</p>
+
+<p><strong>Forma física e embalagem:</strong><br>Isca pastosa/macia em sachê de 10 g. O sachê normalmente deve ser colocado fechado, sem ser aberto, conforme a ficha técnica.</p>
+
+<p><strong>Modo de usar:</strong><br>Colocar em porta-iscas resistentes e protegidos, nos trajetos, tocas e pontos com sinais de roedores. A referência técnica indica de 5 a 20 sachês, total de 50 a 200 g, a cada 4 a 9 metros, ajustando à infestação e ao rótulo.</p>
+
+<p><strong>Monitoramento:</strong><br>Inspecionar os pontos, repor iscas consumidas ou deterioradas e recolher carcaças. Manter até cessarem os sinais, sem deixar isca permanentemente exposta de forma indiscriminada.</p>
+
+<p><strong>Advertências:</strong><br>Produto tóxico. Manter totalmente inacessível a crianças, animais domésticos, aves e fauna não alvo. Nunca colocar solto em áreas de alimentos, rações ou água.<br><br>Em suspeita de ingestão, procurar imediatamente atendimento médico ou veterinário e levar o rótulo. A vitamina K1 é o antídoto usado por profissionais; não administrar por conta própria.</p>
+
+<p><strong>Conservação e descarte:</strong><br>Guardar trancado, na embalagem original. Descartar iscas, carcaças e embalagens conforme o rótulo e a legislação, evitando contaminação ambiental.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Ficha técnica e FISPQ do Maki Soft Bait.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 53 -->
+<p>Produto: SERRA STARRET METALICA 300MM 24T (028568)</p>
+
+<p><strong>Código interno:</strong><br>028568</p>
+
+<p><strong>Fabricante:</strong><br>Starrett.</p>
+
+<p><strong>Classificação:</strong><br>Lâmina para arco de serra manual para metais.</p>
+
+<p><strong>Descrição do produto:</strong><br>Lâmina serrilhada de 300 mm indicada para cortes manuais em perfis, tubos, barras e chapas metálicas compatíveis com o passo dos dentes.</p>
+
+<p><strong>Especificações:</strong><br>Comprimento: 300 mm. Dentição: 24 dentes por polegada — 24 TPI. A construção pode ser bimetálica ou rígida conforme a referência Starrett; o SKU é necessário para confirmar.</p>
+
+<p><strong>Aplicações:</strong><br>A dentição de 24 TPI é adequada, em geral, a materiais de espessura fina a média, mantendo vários dentes em contato durante o corte.</p>
+
+<p><strong>Modo de usar:</strong><br>Instalar no arco de 300 mm com os dentes orientados no sentido de corte, tensionar corretamente, fixar a peça e serrar com movimentos longos e pressão moderada.</p>
+
+<p><strong>Advertências:</strong><br>Utilizar óculos e luvas. Não dobrar, torcer ou tensionar excessivamente. Selecionar passo mais adequado quando houver menos de aproximadamente três dentes em contato com a seção.</p>
+
+<p><strong>Conservação:</strong><br>Guardar seca e protegida contra impacto e corrosão. Substituir quando houver dentes quebrados, perda de corte ou trinca.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Referências técnicas de lâminas Starrett de 300 mm e 24 TPI; confirmar o código exato para definir a construção.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 54 -->
+<p>Produto: TANICID 2KG (066770)</p>
+
+<p><strong>Código interno:</strong><br>066770</p>
+
+<p><strong>Fabricante:</strong><br>Não confirmado de forma inequívoca pelo nome do cadastro.</p>
+
+<p><strong>Classificação:</strong><br>Ectoparasiticida veterinário em pó para uso tópico.</p>
+
+<p><strong>Descrição do produto:</strong><br>Tanicid é comercializado como pó para aplicação externa no controle de ectoparasitas e proteção de áreas afetadas, com referências de uso em carrapatos de orelha de equinos e miíases.</p>
+
+<p><strong>Forma física e embalagem:</strong><br>Pó de uso tópico em pote/balde de 2 kg.</p>
+
+<p><strong>Princípio ativo:</strong><br>Fontes comerciais apontam cipermetrina, mas não apresentaram de forma consistente a base exata da concentração. A composição deve ser transcrita do rótulo, sem suposição.</p>
+
+<p><strong>Indicações:</strong><br>Aplicações citadas incluem ectoparasitas externos e bicheiras em espécies autorizadas. A lista completa de espécies e parasitas deve seguir a bula atual.</p>
+
+<p><strong>Modo de usar:</strong><br>Limpar a região e polvilhar quantidade suficiente para cobrir a área, conforme rótulo. Em miíases, a remoção de larvas e tecido desvitalizado deve ser feita com orientação veterinária.</p>
+
+<p><strong>Advertências:</strong><br>Não inalar o pó nem aplicar em olhos, mucosas ou grandes áreas sem orientação. Usar luvas e máscara adequada. Não utilizar em espécie ou categoria não prevista.</p>
+
+<p><strong>Carência:</strong><br>Obrigatório conferir abate e leite na embalagem; não foi possível validar uma bula oficial inequívoca para o item cadastrado.</p>
+
+<p><strong>Observação para cadastro:</strong><br>Antes da publicação, fotografar frente e verso do pote e confirmar fabricante, composição, registro, espécies, dose e carência.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Fichas comerciais do Tanicid 2 kg; informações não consistentes foram sinalizadas e não tratadas como bula definitiva.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 55 -->
+<p>Produto: TANIDIL 2 KG (027472)</p>
+
+<p><strong>Código interno:</strong><br>027472</p>
+
+<p><strong>Fabricante:</strong><br>Elanco.</p>
+
+<p><strong>Classificação:</strong><br>Mata-bicheira veterinário em pó para uso tópico.</p>
+
+<p><strong>Descrição do produto:</strong><br>Tanidil é indicado para prevenção e tratamento de miíases em bovinos e equinos causadas por larvas de Cochliomyia hominivorax. A formulação em pó permite cobrir fendas e feridas após a higienização.</p>
+
+<p><strong>Forma física e embalagem:</strong><br>Pó de uso tópico em pote plástico de 2 kg.</p>
+
+<p><strong>Composição:</strong><br>Cada 100 g contém:<br>Coumafós: 3 g.<br>Propoxur: 2 g.<br>Excipiente q.s.p.: 100 g.</p>
+
+<p><strong>Espécies e indicações:</strong><br>Bovinos e equinos. A bula também pode contemplar controle de carrapato da orelha em equinos; verificar a indicação impressa na apresentação atual.</p>
+
+<p><strong>Modo de usar:</strong><br>Prevenção: polvilhar sobre fendas ou áreas de risco até cobri-las completamente.<br><br>Tratamento de miíases ativas: limpar a ferida com antisséptico apropriado, remover larvas e tecidos mortos e cobrir com Tanidil.</p>
+
+<p><strong>Advertências:</strong><br>Contém inseticidas anticolinesterásicos. Usar EPI, evitar inalação e contato. Não associar a outros organofosforados ou carbamatos sem orientação. Não aplicar em olhos ou mucosas.</p>
+
+<p><strong>Carência:</strong><br>A página atual destaca “descarte zero”, mas os períodos de abate e leite devem ser conferidos no rótulo/bula do lote, pois a expressão comercial não substitui a informação legal de carência.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Página oficial da Elanco para Tanidil.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 56 -->
+<p>Produto: TESOURA PARA CRINA 12 (075310)</p>
+
+<p><strong>Código interno:</strong><br>075310</p>
+
+<p><strong>Classificação:</strong><br>Tesoura longa para aparo e manutenção de crina e cauda.</p>
+
+<p><strong>Descrição do produto:</strong><br>Ferramenta de corte de aproximadamente 12 polegadas, projetada para aparar pelos de crina e cauda em equinos e outros procedimentos de manejo compatíveis.</p>
+
+<p><strong>Material:</strong><br>Normalmente confeccionada em aço com lâminas longas e cabo de formato apropriado. Marca, tipo de aço, ponta e acabamento não foram informados.</p>
+
+<p><strong>Modo de usar:</strong><br>Conter o animal com segurança, pentear e separar pequenas mechas, manter as lâminas afastadas da pele e cortar gradualmente. Preferir auxílio de pessoa experiente.</p>
+
+<p><strong>Advertências:</strong><br>Movimentos repentinos do animal podem causar ferimentos. Não usar próximo aos olhos, orelhas, pele ou cauda sem contenção adequada. Manter fora do alcance de crianças.</p>
+
+<p><strong>Manutenção:</strong><br>Limpar os fios, secar, aplicar pequena quantidade de óleo na articulação e guardar fechada em estojo seco. Afiar com profissional quando necessário.</p>
+
+<p><strong>Observação para cadastro:</strong><br>Confirmar se “12” significa 12 polegadas, o formato da ponta e se o produto acompanha estojo.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Referências de tesouras de manejo de crina; produto exato sem marca não foi identificado.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 57 -->
+<p>Produto: THUYA AVICOLA 90ML (037311)</p>
+
+<p><strong>Código interno:</strong><br>037311</p>
+
+<p><strong>Fabricante:</strong><br>ProvetS Simões Laboratório.</p>
+
+<p><strong>Classificação:</strong><br>Produto veterinário oral à base de tintura de Thuya occidentalis, auxiliar no tratamento da bouba aviária.</p>
+
+<p><strong>Descrição do produto:</strong><br>Thuya Avícola Simões é indicada como tratamento auxiliar de bouba, também chamada varíola aviária, pipoca ou epitelioma contagioso, e de verrugas em aves.</p>
+
+<p><strong>Forma física e embalagem:</strong><br>Solução oral em frasco de 90 ml.</p>
+
+<p><strong>Composição:</strong><br>Tintura de Thuya occidentalis a 20%, conforme bula.</p>
+
+<p><strong>Espécies e indicações:</strong><br>Galinhas, perus, patos, marrecos, pombos, pássaros de gaiola e viveiro, em diferentes fases da criação.</p>
+
+<p><strong>Modo de usar e dosagem:</strong><br>Adicionar 5 ml do produto em cada litro de água dos bebedouros, diariamente, durante 2 semanas. Preparar água fresca, garantir ingestão e seguir as práticas sanitárias recomendadas.</p>
+
+<p><strong>Advertências:</strong><br>Bouba aviária é viral e contagiosa. Isolamento de aves doentes, controle de mosquitos, higiene e vacinação quando indicada continuam essenciais. Casos com lesões na boca, dificuldade respiratória ou mortalidade exigem veterinário.</p>
+
+<p><strong>Conservação:</strong><br>Conservar bem fechado, entre 15 °C e 30 °C, protegido da luz solar e umidade, fora do alcance de crianças e animais domésticos.</p>
+
+<p><strong>Carência:</strong><br>Conferir na bula/rótulo atual as orientações para carne e ovos.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Bula oficial da ProvetS Simões para Thuya Avícola.</p>
+
+<!-- ====================================================================== -->
+
+<!-- PRODUTO 58 -->
+<p>Produto: TIGUVON SPOT-ON 1 LT (027480)</p>
+
+<p><strong>Código interno:</strong><br>027480</p>
+
+<p><strong>Fabricante:</strong><br>Elanco.</p>
+
+<p><strong>Classificação:</strong><br>Ectoparasiticida sistêmico spot-on para bovinos.</p>
+
+<p><strong>Descrição do produto:</strong><br>Tiguvon Spot-On contém fentiom e é aplicado em um único ponto sobre a pele. Após absorção, atua de forma sistêmica contra bernes e auxilia no controle de bicheiras, piolhos e moscas nas indicações da bula.</p>
+
+<p><strong>Forma física e embalagem:</strong><br>Solução pronta para uso externo em frasco de 1 litro.</p>
+
+<p><strong>Composição:</strong><br>Cada 100 ml contém fentiom 15 g, além de veículo.</p>
+
+<p><strong>Espécie:</strong><br>Bovinos.</p>
+
+<p><strong>Modo de usar e dosagem:</strong><br>Aplicar em um único ponto na região da cernelha, e não ao longo de toda a linha dorsal.<br><br>Tabela de referência: até 100 kg, 7 ml; 101–150 kg, 10 ml; 151–200 kg, 15 ml; 201–250 kg, 20 ml; 251–320 kg, 25 ml; 321–400 kg, 32 ml; 401–500 kg, 40 ml; acima de 500 kg, 50 ml.<br><br>Para moscas, a bula pode indicar repetição a cada 3 a 4 semanas, conforme infestação.</p>
+
+<p><strong>Contraindicações e advertências:</strong><br>Contém organofosforado. Não associar a outros anticolinesterásicos sem orientação. Evitar uso em animais muito jovens, abaixo do peso mínimo, debilitados ou com pele lesionada sem confirmar a bula. Usar luvas e evitar contato.</p>
+
+<p><strong>Período de carência:</strong><br>Referências de bula comercial indicam 28 dias para abate e 5 dias para leite. Confirmar obrigatoriamente no rótulo atual antes do tratamento.</p>
+
+<p><strong>Conservação:</strong><br>Manter fechado, protegido de calor e luz, separado de alimentos e rações. Evitar contaminação de água.</p>
+
+<p><strong>Fontes consultadas:</strong><br>Página oficial da Elanco para Tiguvon Spot-On e material de bula comercial.</p>
+
+<!-- ====================================================================== -->
+
