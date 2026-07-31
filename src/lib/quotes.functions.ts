@@ -72,7 +72,7 @@ export const getMarketQuotes = createServerFn({ method: "GET" }).handler(
     const boiTable = S.findTable(naTables, ["município", "boi gordo"]);
     const repoTable = S.findTable(naTables, ["desmama", "bezerra", "novilha"]);
     const chinaTable = S.findTableContaining(scotTables, ["boi china a prazo", "preço bruto"]);
-    const naDate = naBoi ? S.extractUpdatedAt(naBoi, "Boi Gordo - (R$/@") : null;
+    const naDate = naBoi ? S.extractUpdatedAt(naBoi, "Atualizado em") : null;
     const scotDate = scot ? S.extractUpdatedAt(scot, "Boi China a Prazo") : null;
     const now = new Date().toISOString();
 
@@ -218,7 +218,7 @@ export const getSpQuotes = createServerFn({ method: "GET" }).handler(
     const sojaTable = S.findTable(sojaTables, ["praça", "sc de 60"]);
     const milhoTable = S.findTable(milhoTables, ["praça", "sc de 60"]);
 
-    const naDate = naBoi ? S.extractUpdatedAt(naBoi, "Boi Gordo - (R$/@") : null;
+    const naDate = naBoi ? S.extractUpdatedAt(naBoi, "Atualizado em") : null;
     const scotDate = scot ? S.extractUpdatedAt(scot, "Boi China a Prazo") : null;
 
     const make = (
