@@ -1,14 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { ProductCard } from "@/components/site/ProductCard";
+import { QuotesPanel } from "@/components/site/QuotesPanel";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ChevronRight } from "lucide-react";
+import { Activity, ChevronRight } from "lucide-react";
 import { LazyMount } from "@/components/site/LazyMount";
 import {
   Carousel,
+  type CarouselApi,
   CarouselContent,
   CarouselItem,
   CarouselNext,
@@ -34,6 +36,7 @@ const PRODUCT_COLS =
 
 const INITIAL_ROWS = 3;
 const ROWS_INCREMENT = 3;
+const FEATURED_PRODUCT_LIMIT = 4;
 
 function ProductCarousel({
   items,
@@ -63,8 +66,78 @@ function ProductCarousel({
   );
 }
 
+function FeaturedCarousel({
+  items,
+  showMobileQuotes,
+}: {
+  items: any[];
+  showMobileQuotes: boolean;
+}) {
+  const products = items.slice(0, FEATURED_PRODUCT_LIMIT);
+  const [mobileApi, setMobileApi] = useState<CarouselApi>();
+
+  useEffect(() => {
+    if (!mobileApi) return;
+    mobileApi.reInit();
+    mobileApi.scrollTo(0);
+  }, [mobileApi, showMobileQuotes]);
+
+  return (
+    <>
+      <div className="md:hidden">
+        <Carousel
+          setApi={setMobileApi}
+          opts={{ align: "start", slidesToScroll: "auto", containScroll: "trimSnaps" }}
+          className="relative group"
+        >
+          <CarouselContent className="-ml-3">
+            {products.map((p, i) => (
+              <CarouselItem key={p.id} className="pl-3 basis-1/2 sm:basis-1/3">
+                {showMobileQuotes && i === 1 ? (
+                  <QuotesPanel variant="embedded" />
+                ) : (
+                  <ProductCard p={p as any} eager={i < 2} />
+                )}
+              </CarouselItem>
+            ))}
+            {showMobileQuotes && products.length < 2 && (
+              <CarouselItem className="pl-3 basis-1/2 sm:basis-1/3">
+                <QuotesPanel variant="embedded" />
+              </CarouselItem>
+            )}
+          </CarouselContent>
+        </Carousel>
+      </div>
+
+      <div className="hidden md:block">
+        <Carousel
+          opts={{ align: "start", slidesToScroll: "auto", containScroll: "trimSnaps" }}
+          className="relative group"
+        >
+          <CarouselContent className="-ml-3">
+            {products.map((p, i) => (
+              <CarouselItem
+                key={p.id}
+                className="pl-3 basis-1/4 lg:basis-1/5"
+              >
+                <ProductCard p={p as any} eager={i < 4} />
+              </CarouselItem>
+            ))}
+            <CarouselItem className="pl-3 basis-1/4 lg:basis-1/5">
+              <QuotesPanel variant="embedded" />
+            </CarouselItem>
+          </CarouselContent>
+          <CarouselPrevious className="hidden md:flex -left-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <CarouselNext className="hidden md:flex -right-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+        </Carousel>
+      </div>
+    </>
+  );
+}
+
 function Home() {
   const [visibleRows, setVisibleRows] = useState<number>(INITIAL_ROWS);
+  const [showMobileQuotes, setShowMobileQuotes] = useState(false);
 
   const featured = useQuery({
     queryKey: ["products", "featured"],
@@ -149,14 +222,37 @@ function Home() {
             </h1>
             <ChevronRight className="h-5 w-5 opacity-60 group-hover/title:opacity-100 group-hover/title:translate-x-0.5 transition-all" />
           </Link>
+          <Button asChild variant="ghost" size="sm" className="hidden md:inline-flex">
+            <Link to="/produtos">
+              Ver todos <ChevronRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
+
+        <div className="mb-3 flex items-center justify-between gap-2 md:hidden">
+          <Button
+            type="button"
+            size="sm"
+            variant={showMobileQuotes ? "default" : "outline"}
+            onClick={() => setShowMobileQuotes((value) => !value)}
+            aria-pressed={showMobileQuotes}
+            className="gap-1.5"
+          >
+            <Activity className="h-4 w-4" />
+            {showMobileQuotes ? "Voltar ao produto" : "Cotação boi"}
+          </Button>
           <Button asChild variant="ghost" size="sm">
             <Link to="/produtos">
               Ver todos <ChevronRight className="h-4 w-4" />
             </Link>
           </Button>
         </div>
+
         {featured.data && featured.data.length > 0 && (
-          <ProductCarousel items={featured.data} eagerFirst />
+          <FeaturedCarousel
+            items={featured.data}
+            showMobileQuotes={showMobileQuotes}
+          />
         )}
       </section>
 
