@@ -143,6 +143,7 @@ export const getMarketQuotesByState = createServerFn({ method: "GET" }).handler(
         const region = (row[0] ?? "").trim();
         const price = S.parseBrNumber(row[col]);
         if (!region || region.length > 40 || price == null || price <= 0) continue;
+        if (/\(kg\)/i.test(region)) continue; // preços em R$/kg não comparáveis a R$/@
         out.push({ region, price });
       }
       return out;
