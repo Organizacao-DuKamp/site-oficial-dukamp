@@ -155,6 +155,9 @@ export async function fetchDolarPrice(): Promise<number | null> {
   const html = await fetchText(DOLAR_URL);
   if (!html) return null;
   const m = html.match(/id=["']comercial["'][^>]*value=["']([\d.,]+)["']/i);
-  const price = m ? parseBrNumber(m[1]) : null;
-  return price;
+  if (!m) return null;
+  const raw = m[1];
+  // melhorcambio uses dot decimals (e.g. "5.4321")
+  const n = /^\d+\.\d+$/.test(raw) ? Number(raw) : parseBrNumber(raw);
+  return Number.isFinite(n as number) && (n as number) > 0 ? (n as number) : null;
 }
