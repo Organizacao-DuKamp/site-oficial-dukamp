@@ -6,7 +6,13 @@ const UA =
 export const NA_BOI_URL = "https://www.noticiasagricolas.com.br/cotacoes/boi-gordo";
 export const NA_SOJA_URL = "https://www.noticiasagricolas.com.br/cotacoes/soja";
 export const NA_MILHO_URL = "https://www.noticiasagricolas.com.br/cotacoes/milho";
-export const SCOT_URL = "https://www.scotconsultoria.com.br/cotacoes/boi-gordo/";
+export const SCOT_BOI_URL = "https://www.scotconsultoria.com.br/cotacoes/boi-gordo/";
+export const SCOT_VACA_URL = "https://www.scotconsultoria.com.br/cotacoes/vaca-gorda/";
+export const SCOT_NOVILHA_URL = "https://www.scotconsultoria.com.br/cotacoes/novilha/";
+export const SCOT_SOJA_URL = "https://www.scotconsultoria.com.br/cotacoes/soja/";
+export const SCOT_MILHO_URL = "https://www.scotconsultoria.com.br/cotacoes/milho/";
+// Backwards-compatible alias used by the state comparison endpoint.
+export const SCOT_URL = SCOT_BOI_URL;
 export const DOLAR_URL = "https://www.melhorcambio.com/dolar-hoje";
 
 export function parseBrNumber(s: string | undefined | null): number | null {
@@ -169,6 +175,51 @@ export function findTableContaining(tables: Table[], needles: string[]): Table |
       .join(" || ")
       .toLowerCase();
     if (needles.every((n) => hay.includes(n.toLowerCase()))) return t;
+  }
+  return null;
+}
+
+
+/** Normalize text for accent-insensitive table/row matching. */
+export function normalizeText(value: string): string {
+  return decodeEntities(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+/** Find the first table containing a row with all requested text fragments. */
+export function findTableWithRow(tables: Table[], needles: string[]): Table | null {
+  const normalizedNeedles = needles.map(normalizeText);
+  for (const table of tables) {
+    const found = table.rows.some((row) => {
+      const haystack = normalizeText(row.join(" | "));
+      return normalizedNeedles.every((needle) => haystack.includes(needle));
+    });
+    if (found) return table;
+  }
+  return null;
+}
+
+/** Find the first row containing all requested text fragments. */
+export function findRowContaining(table: Table | null, needles: string[]): string[] | null {
+  if (!table) return null;
+  const normalizedNeedles = needles.map(normalizeText);
+  for (const row of table.rows) {
+    const haystack = normalizeText(row.join(" | "));
+    if (normalizedNeedles.every((needle) => haystack.includes(needle))) return row;
+  }
+  return null;
+}
+
+/** Return the first positive numeric cell after the row label. */
+export function firstPositiveNumber(row: string[] | null, startIndex = 1): number | null {
+  if (!row) return null;
+  for (let i = startIndex; i < row.length; i++) {
+    const value = parseBrNumber(row[i]);
+    if (value != null && value > 0) return value;
   }
   return null;
 }

@@ -26,7 +26,7 @@ function fmt(n: number | null, unit: string) {
 
 function QuoteRow({ item }: { item: SpQuote }) {
   return (
-    <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-1.5 px-2 py-1.5 border-b last:border-b-0 hover:bg-muted/40 transition-colors">
+    <div className="grid grid-cols-[1fr_auto] items-center gap-1 px-2 py-1.5 border-b last:border-b-0 hover:bg-muted/40 transition-colors">
       <div className="min-w-0">
         <div className="text-[11px] font-semibold leading-tight truncate text-foreground">
           {item.name}
@@ -35,14 +35,8 @@ function QuoteRow({ item }: { item: SpQuote }) {
           {item.unit} · {item.region}
         </div>
       </div>
-      <div className="w-[52px] text-right text-[10px] tabular-nums text-muted-foreground">
-        {item.available ? fmt(item.min, item.unit) : "—"}
-      </div>
-      <div className="w-[58px] text-right text-[11px] font-bold tabular-nums text-primary">
-        {item.available ? fmt(item.media, item.unit) : "—"}
-      </div>
-      <div className="w-[52px] text-right text-[10px] tabular-nums text-muted-foreground">
-        {item.available ? fmt(item.max, item.unit) : "—"}
+      <div className="w-[68px] text-right text-[11px] font-bold tabular-nums text-primary">
+        {item.available ? fmt(item.price, item.unit) : "—"}
       </div>
     </div>
   );
@@ -70,7 +64,7 @@ export function QuotesPanel() {
   }, [data]);
 
   return (
-    <div className="rounded-xl border bg-card shadow-lg overflow-hidden w-[320px]">
+    <div className="rounded-xl border bg-card shadow-lg overflow-hidden w-[290px]">
       <div className="px-3 py-2 border-b bg-gradient-to-r from-primary/10 via-primary/5 to-transparent flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <Activity className="h-3.5 w-3.5 text-primary shrink-0" />
@@ -117,11 +111,9 @@ export function QuotesPanel() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-[1fr_auto_auto_auto] gap-1.5 px-2 py-1 border-b bg-muted/30 text-[9px] uppercase tracking-wider text-muted-foreground">
+          <div className="grid grid-cols-[1fr_auto] gap-1 px-2 py-1 border-b bg-muted/30 text-[9px] uppercase tracking-wider text-muted-foreground">
             <div>Indicador</div>
-            <div className="w-[52px] text-right">Mín.</div>
-            <div className="w-[58px] text-right">Média</div>
-            <div className="w-[52px] text-right">Máx.</div>
+            <div className="w-[68px] text-right">Preço</div>
           </div>
           <div className="max-h-[320px] overflow-y-auto overscroll-contain">
             {ordered.map((item) => (
