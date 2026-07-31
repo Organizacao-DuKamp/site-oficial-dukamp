@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { FacebookBrand, InstagramBrand, YoutubeBrand, TikTokBrand } from "./BrandIcons";
 import fixedLogo from "@/assets/dukamp-logo.webp";
+import taurusIcon from "@/assets/taurus-icon.png";
 
 const socials = [
   { href: "https://www.facebook.com/AgromonteRioPreto21", label: "Facebook", Icon: FacebookBrand },
