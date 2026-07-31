@@ -161,3 +161,14 @@ export async function fetchDolarPrice(): Promise<number | null> {
   const n = /^\d+\.\d+$/.test(raw) ? Number(raw) : parseBrNumber(raw);
   return Number.isFinite(n as number) && (n as number) > 0 ? (n as number) : null;
 }
+
+/** Find the first table whose header (or first rows) contain all needles. */
+export function findTableContaining(tables: Table[], needles: string[]): Table | null {
+  for (const t of tables) {
+    const hay = [t.header.join(" | "), ...t.rows.slice(0, 2).map((r) => r.join(" | "))]
+      .join(" || ")
+      .toLowerCase();
+    if (needles.every((n) => hay.includes(n.toLowerCase()))) return t;
+  }
+  return null;
+}
