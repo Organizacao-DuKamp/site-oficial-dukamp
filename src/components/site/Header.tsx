@@ -47,7 +47,17 @@ export function Header() {
     <header className="border-b bg-card sticky top-0 z-40">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center gap-4">
-          <Link to="/" className="flex items-center shrink-0" aria-label="Início">
+          <Link to="/" className="flex items-center gap-2 shrink-0" aria-label="Início">
+            <img
+              src={taurusIcon}
+              alt="Taurus"
+              width={48}
+              height={48}
+              fetchPriority="high"
+              decoding="async"
+              className="h-10 sm:h-12 w-auto object-contain select-none"
+              draggable={false}
+            />
             <img
               src={fixedLogo}
               alt="Dukamp Saúde Animal"
@@ -58,7 +68,6 @@ export function Header() {
               className="h-12 sm:h-14 w-auto object-contain select-none"
               draggable={false}
             />
-
           </Link>
 
           <form onSubmit={onSearch} className="flex-1 max-w-xl hidden md:flex">
