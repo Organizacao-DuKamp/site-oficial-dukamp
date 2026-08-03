@@ -27,9 +27,18 @@ export const Route = createFileRoute("/api/admin/support-tickets")({
           const users = await listAllAuthUsers(supabaseAdmin);
           const sellerChatTicketIds = new Set<string>();
           for (const account of users) {
-            const ticketId = account.app_metadata?.seller_chat_ticket_id;
-            if (typeof ticketId === "string" && ticketId.trim()) {
-              sellerChatTicketIds.add(ticketId.trim());
+            const currentTicketId = account.app_metadata?.seller_chat_ticket_id;
+            if (typeof currentTicketId === "string" && currentTicketId.trim()) {
+              sellerChatTicketIds.add(currentTicketId.trim());
+            }
+
+            const history = account.app_metadata?.seller_chat_ticket_ids;
+            if (Array.isArray(history)) {
+              for (const ticketId of history) {
+                if (typeof ticketId === "string" && ticketId.trim()) {
+                  sellerChatTicketIds.add(ticketId.trim());
+                }
+              }
             }
           }
 
