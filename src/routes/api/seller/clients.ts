@@ -56,11 +56,11 @@ export const Route = createFileRoute("/api/seller/clients")({
         const count = filtered.length;
         const from = (page - 1) * pageSize;
         const rows = filtered.slice(from, from + pageSize).map(({ user: clientUser, ...client }) => {
-          const metadata = clientUser.user_metadata ?? {};
+          const protectedMetadata = clientUser.app_metadata ?? {};
           const ticketId =
-            metadata.seller_chat_seller_id === seller.sellerId &&
-            typeof metadata.seller_chat_ticket_id === "string"
-              ? metadata.seller_chat_ticket_id.trim()
+            protectedMetadata.seller_chat_seller_id === seller.sellerId &&
+            typeof protectedMetadata.seller_chat_ticket_id === "string"
+              ? protectedMetadata.seller_chat_ticket_id.trim()
               : "";
           return {
             ...client,
