@@ -17,6 +17,13 @@ export type LinkedClient = {
   uf: string | null;
 };
 
+let usersCache: { users: User[]; expiresAt: number } | null = null;
+let usersRequest: Promise<User[]> | null = null;
+
+export function invalidateAuthUsersCache() {
+  usersCache = null;
+}
+
 export function errorResponse(error: string, status: number) {
   return Response.json({ error }, { status, headers: { "Cache-Control": "no-store" } });
 }
@@ -39,19 +46,31 @@ export async function authenticateRequest(request: Request) {
 }
 
 export async function listAllAuthUsers(supabaseAdmin: any): Promise<User[]> {
-  const users: User[] = [];
-  const perPage = 1000;
-  let page = 1;
+  if (usersCache && usersCache.expiresAt > Date.now()) return usersCache.users;
+  if (usersRequest) return usersRequest;
 
-  while (true) {
-    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage });
-    if (error) throw error;
-    users.push(...data.users);
-    if (data.users.length < perPage) break;
-    page += 1;
+  usersRequest = (async () => {
+    const users: User[] = [];
+    const perPage = 1000;
+    let page = 1;
+
+    while (true) {
+      const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage });
+      if (error) throw error;
+      users.push(...data.users);
+      if (data.users.length < perPage) break;
+      page += 1;
+    }
+
+    usersCache = { users, expiresAt: Date.now() + 10_000 };
+    return users;
+  })();
+
+  try {
+    return await usersRequest;
+  } finally {
+    usersRequest = null;
   }
-
-  return users;
 }
 
 export async function resolveSellerIdentity(supabaseAdmin: any, user: User): Promise<SellerIdentity | null> {
@@ -107,6 +126,7 @@ export async function resolveSellerIdentity(supabaseAdmin: any, user: User): Pro
       console.error("[seller-system] Falha ao migrar metadados protegidos:", error.message);
       return null;
     }
+    invalidateAuthUsersCache();
   }
 
   return { userId: user.id, sellerId: seller.id, name: seller.name };
