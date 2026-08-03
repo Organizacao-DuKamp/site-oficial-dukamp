@@ -546,22 +546,33 @@ export const createPixOrder = createServerFn({ method: "POST" })
       // segue anônimo
     }
 
-    // Buscar produtos autoritativos (preços/nome/stock)
+    // Buscar produtos autoritativos (preços/nome/stock). O unit_price recebido existe
+    // apenas por retrocompatibilidade com clientes antigos e nunca é usado no total.
     const ids = data.items.map((i) => i.product_id);
     const { data: prods, error: pe } = await supa
       .from("products")
-      .select("id,name,code,price,consumer_price,producer_price,peso,altura,largura,comprimento,stock,active")
+      .select("id,name,code,price,consumer_price,producer_price,on_sale,sale_consumer_price,sale_producer_price,peso,altura,largura,comprimento,stock,active")
       .in("id", ids);
     if (pe) throw new Error(pe.message);
     if (!prods || prods.length !== ids.length) throw new Error("Produto inválido no carrinho");
 
-    // Monta itens usando o preço enviado pelo cliente, mas validando limites
+    let accountType = "cliente";
+    if (authUserId) {
+      const { data: profile } = await supa.from("profiles").select("account_type").eq("id", authUserId).maybeSingle();
+      accountType = profile?.account_type ?? "cliente";
+    }
+
+    // Recalcula cada preço a partir do cadastro atual e da conta autenticada.
     let subtotal = 0;
     const orderItems = data.items.map((i) => {
       const p = prods.find((x) => x.id === i.product_id)!;
       if (!p.active) throw new Error(`Produto indisponível: ${p.name}`);
       if ((p.stock ?? 0) < i.quantity) throw new Error(`Estoque insuficiente: ${p.name}`);
-      const unit = Number(i.unit_price);
+      const producer = accountType === "produtor";
+      const salePrice = producer ? (p.sale_producer_price ?? p.sale_consumer_price) : p.sale_consumer_price;
+      const regularPrice = producer ? (p.producer_price ?? p.consumer_price ?? p.price) : (p.consumer_price ?? p.price);
+      const unit = Number(p.on_sale && salePrice != null ? salePrice : regularPrice);
+      if (!Number.isFinite(unit) || unit <= 0) throw new Error(`Preço indisponível: ${p.name}`);
       const sub = unit * i.quantity;
       subtotal += sub;
       return {
