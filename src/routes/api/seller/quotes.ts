@@ -48,7 +48,8 @@ export const Route = createFileRoute("/api/seller/quotes")({
             quotes.push(publicQuote(await refreshExpiration(supabaseAdmin, row)));
           }
           quotes.sort(
-            (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+            (first, second) =>
+              new Date(second.created_at).getTime() - new Date(first.created_at).getTime(),
           );
 
           return Response.json({ quotes }, { headers: { "Cache-Control": "no-store" } });
@@ -187,10 +188,13 @@ export const Route = createFileRoute("/api/seller/quotes")({
               supabaseAdmin,
               quote.items.map((item) => item.product_id),
             );
-            const productMap = new Map(products.map((product: any) => [product.id, product]));
+            const productMap = new Map<string, any>();
+            for (const product of products) {
+              productMap.set(product.id, product);
+            }
 
             const items = quote.items.map((item) => {
-              const product: any = productMap.get(item.product_id);
+              const product = productMap.get(item.product_id);
               if (!product || !product.active || Number(product.stock) < item.quantity) {
                 throw new Error(`Produto indisponível: ${item.product_name_snapshot || item.product_id}`);
               }
