@@ -10,13 +10,35 @@ import { supabase } from "@/integrations/supabase/client";
 
 const PAGE_SIZE = 10;
 
+type SellerClientsResponse = {
+  associationMissing?: boolean;
+  clients?: SellerClient[];
+  count?: number;
+  error?: string;
+};
+
 export const Route = createFileRoute("/vendedor/clientes")({
   head: () => ({ meta: [{ title: "Clientes — Painel do Vendedor" }] }),
   component: SellerClientsPage,
 });
 
-function escapePostgrestSearch(value: string) {
-  return value.replace(/[,%()]/g, " ").trim();
+async function loadSellerClients(search: string, page: number): Promise<SellerClientsResponse> {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw new Error("Sessão expirada. Entre novamente.");
+
+  const params = new URLSearchParams({
+    search,
+    page: String(page),
+    pageSize: String(PAGE_SIZE),
+  });
+  const response = await fetch(`/api/seller/clients?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  const payload = (await response.json().catch(() => ({}))) as SellerClientsResponse;
+  if (!response.ok) throw new Error(payload.error || "Não foi possível consultar os clientes.");
+  return payload;
 }
 
 function SellerClientsPage() {
@@ -35,44 +57,15 @@ function SellerClientsPage() {
   const query = useQuery({
     queryKey: ["seller-clients", user?.id, debouncedSearch, page],
     enabled: Boolean(user?.id),
-    queryFn: async () => {
-      // The seller is resolved from the authenticated user, never from a URL id.
-      const { data: seller, error: sellerError } = await supabase
-        .from("sellers")
-        .select("id")
-        .eq("user_id", user!.id)
-        .maybeSingle();
-      if (sellerError) throw sellerError;
-      if (!seller) return { associationMissing: true as const, clients: [], count: 0 };
-
-      const from = (page - 1) * PAGE_SIZE;
-      let request = supabase
-        .from("profiles")
-        .select("id,full_name,contact_email,email,phone,municipio_propriedade,uf", {
-          count: "exact",
-        })
-        .eq("seller_id", seller.id)
-        .order("full_name", { ascending: true, nullsFirst: false })
-        .range(from, from + PAGE_SIZE - 1);
-
-      const term = escapePostgrestSearch(debouncedSearch);
-      if (term) {
-        request = request.or(
-          `full_name.ilike.%${term}%,contact_email.ilike.%${term}%,email.ilike.%${term}%,phone.ilike.%${term}%`,
-        );
-      }
-
-      const { data, count, error } = await request;
-      if (error) throw error;
-      return {
-        associationMissing: false as const,
-        clients: (data ?? []) as SellerClient[],
-        count: count ?? 0,
-      };
-    },
+    queryFn: () => loadSellerClients(debouncedSearch, page),
   });
 
-  const pageCount = Math.max(1, Math.ceil((query.data?.count ?? 0) / PAGE_SIZE));
+  const count = query.data?.count ?? 0;
+  const pageCount = Math.max(1, Math.ceil(count / PAGE_SIZE));
+
+  useEffect(() => {
+    if (page > pageCount) setPage(pageCount);
+  }, [page, pageCount]);
 
   return (
     <div className="max-w-5xl space-y-6">
@@ -92,23 +85,23 @@ function SellerClientsPage() {
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Não foi possível consultar os clientes</AlertTitle>
           <AlertDescription className="flex flex-col items-start gap-3">
-            <span>Tente novamente. Se o problema continuar, fale com um administrador.</span>
+            <span>{query.error instanceof Error ? query.error.message : "Tente novamente."}</span>
             <Button variant="outline" size="sm" onClick={() => void query.refetch()}>
               Tentar novamente
             </Button>
           </AlertDescription>
         </Alert>
-      ) : query.data.associationMissing ? (
+      ) : query.data?.associationMissing ? (
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Conta sem associação de vendedor</AlertTitle>
           <AlertDescription>
-            Peça a um administrador para vincular sua conta ao cadastro da equipe de vendas.
+            Peça a um administrador para definir novamente esta conta como vendedor.
           </AlertDescription>
         </Alert>
       ) : (
         <SellerClientList
-          clients={query.data.clients}
+          clients={query.data?.clients ?? []}
           search={search}
           onSearchChange={setSearch}
           page={page}
