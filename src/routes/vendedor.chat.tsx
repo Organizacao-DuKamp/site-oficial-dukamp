@@ -10,7 +10,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/vendedor/chat")({ ssr: false, component: SellerChatPage });
+export const Route = createFileRoute("/vendedor/chat")({
+  ssr: false,
+  validateSearch: (search: Record<string, unknown>) => ({
+    ticket: typeof search.ticket === "string" ? search.ticket : "",
+  }),
+  component: SellerChatPage,
+});
 
 type Conversation = SupportTicket & {
   customer_id: string;
@@ -51,9 +57,10 @@ async function sellerChatRequest(ticketId?: string, body?: Record<string, unknow
 }
 
 function SellerChatPage() {
+  const { ticket: requestedTicket } = Route.useSearch();
   const { user } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(() => requestedTicket || null);
   const [messages, setMessages] = useState<SupportMessage[]>([]);
   const [search, setSearch] = useState("");
   const [text, setText] = useState("");
@@ -84,6 +91,7 @@ function SellerChatPage() {
       );
     } catch (error) {
       console.error("[seller-chat] Falha ao abrir conversa:", error);
+      setSelectedId(null);
     }
   }, [selectedId]);
 
