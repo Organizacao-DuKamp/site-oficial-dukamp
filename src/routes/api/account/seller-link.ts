@@ -91,16 +91,28 @@ export const Route = createFileRoute("/api/account/seller-link")({
           seller = result.seller;
         }
 
-        const currentMetadata = { ...(user.user_metadata ?? {}) } as Record<string, unknown>;
-        const oldSellerId = typeof currentMetadata.selected_seller_id === "string"
-          ? currentMetadata.selected_seller_id
-          : null;
-        const oldTicketId = typeof currentMetadata.seller_chat_ticket_id === "string"
-          ? currentMetadata.seller_chat_ticket_id
-          : null;
-        const oldTicketSellerId = typeof currentMetadata.seller_chat_seller_id === "string"
-          ? currentMetadata.seller_chat_seller_id
-          : null;
+        const currentUserMetadata = {
+          ...(user.user_metadata ?? {}),
+        } as Record<string, unknown>;
+        const currentAppMetadata = {
+          ...(user.app_metadata ?? {}),
+        } as Record<string, unknown>;
+        const oldSellerId =
+          typeof currentUserMetadata.selected_seller_id === "string"
+            ? currentUserMetadata.selected_seller_id
+            : null;
+        const oldTicketId =
+          typeof currentAppMetadata.seller_chat_ticket_id === "string"
+            ? currentAppMetadata.seller_chat_ticket_id
+            : typeof currentUserMetadata.seller_chat_ticket_id === "string"
+              ? currentUserMetadata.seller_chat_ticket_id
+              : null;
+        const oldTicketSellerId =
+          typeof currentAppMetadata.seller_chat_seller_id === "string"
+            ? currentAppMetadata.seller_chat_seller_id
+            : typeof currentUserMetadata.seller_chat_seller_id === "string"
+              ? currentUserMetadata.seller_chat_seller_id
+              : null;
         const changedSeller = oldSellerId !== (seller?.id ?? null);
 
         if (changedSeller && oldTicketId && oldTicketSellerId === oldSellerId) {
@@ -119,12 +131,17 @@ export const Route = createFileRoute("/api/account/seller-link")({
         }
 
         const { error } = await supabaseAdmin.auth.admin.updateUserById(user.id, {
-          user_metadata: {
-            ...currentMetadata,
-            selected_seller_id: seller?.id ?? null,
+          app_metadata: {
+            ...currentAppMetadata,
             ...(changedSeller
               ? { seller_chat_ticket_id: null, seller_chat_seller_id: null }
               : {}),
+          },
+          user_metadata: {
+            ...currentUserMetadata,
+            selected_seller_id: seller?.id ?? null,
+            seller_chat_ticket_id: null,
+            seller_chat_seller_id: null,
           },
         });
 
