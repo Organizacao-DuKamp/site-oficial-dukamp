@@ -162,7 +162,7 @@ export function SupportProvider({ children }: { children: ReactNode }) {
   }, [open, ticket?.id, unread, applyResponse]);
 
   const startTicket = useCallback(async () => {
-    if (!user || !seller || ticket) return;
+    if (!user || !seller || (ticket && ticket.status !== "closed")) return;
     setLoading(true);
     try {
       applyResponse(await chatRequest({ action: "start" }));
