@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { traduzErroAuth } from "@/lib/auth-errors";
 import { Wallet, History, Coins } from "lucide-react";
 import { useRegisteredSellers } from "@/lib/sellers";
+import { getSellerLink, setSellerLink } from "@/lib/seller-link";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export const Route = createFileRoute("/minha-conta")({
@@ -45,16 +46,26 @@ function MinhaConta() {
     },
   });
 
+  const { data: sellerLink, isLoading: sellerLinkLoading } = useQuery({
+    enabled: !!user,
+    queryKey: ["seller-link", user?.id],
+    queryFn: getSellerLink,
+  });
+
   const [name, setName] = useState("");
   const [avatar, setAvatar] = useState("");
   const [sellerId, setSellerId] = useState("none");
+
   useEffect(() => {
     if (profile) {
       setName((profile as any).full_name ?? "");
       setAvatar((profile as any).avatar_url ?? "");
-      setSellerId((profile as any).seller_id ?? "none");
     }
   }, [profile]);
+
+  useEffect(() => {
+    if (sellerLink) setSellerId(sellerLink.seller?.id ?? "none");
+  }, [sellerLink]);
 
   const saveProfile = useMutation({
     mutationFn: async () => {
@@ -73,21 +84,18 @@ function MinhaConta() {
 
   const saveSeller = useMutation({
     mutationFn: async (nextSellerId: string) => {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ seller_id: nextSellerId === "none" ? null : nextSellerId })
-        .eq("id", user!.id);
-      if (error) throw error;
+      return setSellerLink(nextSellerId === "none" ? null : nextSellerId);
     },
-    onSuccess: () => {
+    onSuccess: async (result) => {
       toast.success("Vínculo com vendedor atualizado");
-      qc.invalidateQueries({ queryKey: ["profile"] });
+      setSellerId(result.seller?.id ?? "none");
+      await qc.invalidateQueries({ queryKey: ["seller-link"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
   function confirmAndSaveSeller() {
-    const currentSellerId = (profile as any)?.seller_id ?? "none";
+    const currentSellerId = sellerLink?.seller?.id ?? "none";
     if (sellerId === currentSellerId) return;
     if (
       currentSellerId !== "none" &&
@@ -121,7 +129,9 @@ function MinhaConta() {
       const { error } = await supabase.auth.updateUser({ password: newPw });
       if (error) throw error;
       toast.success("Senha alterada");
-      setCurPw(""); setNewPw(""); setConfPw("");
+      setCurPw("");
+      setNewPw("");
+      setConfPw("");
     } catch (e: any) {
       toast.error(traduzErroAuth(e.message));
     } finally {
@@ -130,6 +140,8 @@ function MinhaConta() {
   }
 
   if (loading || !user) return null;
+
+  const currentSellerId = sellerLink?.seller?.id ?? "none";
 
   return (
     <SiteLayout>
@@ -189,11 +201,15 @@ function MinhaConta() {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm">
-              Vendedor atual: <strong>{sellers.find((seller) => seller.id === (profile as any)?.seller_id)?.name ?? "Nenhum vendedor"}</strong>
+              Vendedor atual: <strong>{sellerLink?.seller?.name ?? "Nenhum vendedor"}</strong>
             </p>
             <div className="max-w-md">
               <Label>Vínculo</Label>
-              <Select value={sellerId} onValueChange={setSellerId} disabled={sellersLoading}>
+              <Select
+                value={sellerId}
+                onValueChange={setSellerId}
+                disabled={sellersLoading || sellerLinkLoading}
+              >
                 <SelectTrigger><SelectValue placeholder="Selecione um vendedor" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Nenhum vendedor</SelectItem>
@@ -205,7 +221,7 @@ function MinhaConta() {
             </div>
             <Button
               onClick={confirmAndSaveSeller}
-              disabled={saveSeller.isPending || sellerId === ((profile as any)?.seller_id ?? "none")}
+              disabled={saveSeller.isPending || sellerLinkLoading || sellerId === currentSellerId}
             >
               {saveSeller.isPending ? "Salvando..." : "Salvar vínculo"}
             </Button>
