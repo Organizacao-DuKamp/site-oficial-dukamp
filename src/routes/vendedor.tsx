@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Home, LogOut, Menu, UserCircle } from "lucide-react";
+import { FileText, Home, LogOut, Menu, UserCircle } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -13,6 +13,7 @@ export const Route = createFileRoute("/vendedor")({
 function SellerSidebar({ pathname, close, signOut }: { pathname: string; close?: () => void; signOut: () => void }) {
   const links = [
     { to: "/vendedor", label: "Início", icon: Home, exact: true },
+    { to: "/vendedor/orcamentos", label: "Orçamentos", icon: FileText },
     { to: "/vendedor/minha-conta", label: "Minha conta", icon: UserCircle },
   ];
   return (

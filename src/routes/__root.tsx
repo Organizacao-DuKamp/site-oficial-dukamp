@@ -16,6 +16,7 @@ import { AuthProvider } from "../lib/auth";
 import { SupportProvider } from "../lib/support";
 import { SupportWidget } from "../components/support/ChatLauncher";
 import { DeliveryNoticeWatcher } from "../components/site/DeliveryNoticeWatcher";
+import { SellerQuoteNotifications } from "../components/site/SellerQuoteNotifications";
 import { Toaster } from "../components/ui/sonner";
 
 function NotFoundComponent() {
@@ -105,6 +106,7 @@ function RootComponent() {
             <Outlet />
             <SupportWidget />
             <DeliveryNoticeWatcher />
+            <SellerQuoteNotifications />
             <Toaster />
           </SupportProvider>
         </CartProvider>
