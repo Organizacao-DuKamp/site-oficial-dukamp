@@ -76,7 +76,9 @@ export async function listQuotes(supabaseAdmin: any): Promise<StoredQuote[]> {
   if (error) throw error;
   return (data ?? [])
     .map((row: any) => row.value as StoredQuote)
-    .filter((quote: StoredQuote | null): quote is StoredQuote => Boolean(quote?.id && quote.version === 1));
+    .filter((quote: StoredQuote | null): quote is StoredQuote =>
+      Boolean(quote?.id && quote.version === 1),
+    );
 }
 
 export async function writeQuote(supabaseAdmin: any, quote: StoredQuote): Promise<void> {
@@ -89,9 +91,19 @@ export async function writeQuote(supabaseAdmin: any, quote: StoredQuote): Promis
   if (error) throw error;
 }
 
-export async function refreshExpiration(supabaseAdmin: any, quote: StoredQuote): Promise<StoredQuote> {
-  if ((quote.status === "sent" || quote.status === "draft") && new Date(quote.valid_until).getTime() <= Date.now()) {
-    const expired = { ...quote, status: "expired" as const, updated_at: new Date().toISOString() };
+export async function refreshExpiration(
+  supabaseAdmin: any,
+  quote: StoredQuote,
+): Promise<StoredQuote> {
+  if (
+    (quote.status === "sent" || quote.status === "draft") &&
+    new Date(quote.valid_until).getTime() <= Date.now()
+  ) {
+    const expired = {
+      ...quote,
+      status: "expired" as const,
+      updated_at: new Date().toISOString(),
+    };
     await writeQuote(supabaseAdmin, expired);
     return expired;
   }
@@ -100,18 +112,27 @@ export async function refreshExpiration(supabaseAdmin: any, quote: StoredQuote):
 
 function firstFinite(...values: unknown[]): number | null {
   for (const value of values) {
+    if (value === null || value === undefined || value === "") continue;
     const number = Number(value);
     if (Number.isFinite(number) && number >= 0) return number;
   }
   return null;
 }
 
-export function productPrice(product: any, accountType: string | null | undefined): number | null {
+export function productPrice(
+  product: any,
+  accountType: string | null | undefined,
+): number | null {
   const type = accountType ?? "cliente";
 
   if (type === "produtor") {
     return product.on_sale
-      ? firstFinite(product.sale_producer_price, product.producer_price, product.consumer_price, product.price)
+      ? firstFinite(
+          product.sale_producer_price,
+          product.producer_price,
+          product.consumer_price,
+          product.price,
+        )
       : firstFinite(product.producer_price, product.consumer_price, product.price);
   }
 
