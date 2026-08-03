@@ -76,14 +76,20 @@ export function useActiveSellers() {
 
 export type RegisteredSeller = Pick<Seller, "id" | "name">;
 
+type RegisteredSellersResponse = {
+  sellers?: RegisteredSeller[];
+  error?: string;
+};
+
 /** Vendedores que possuem uma conta ativa com o tipo "vendedor". */
 export function useRegisteredSellers() {
   return useQuery({
     queryKey: ["sellers", "registered"],
     queryFn: async (): Promise<RegisteredSeller[]> => {
-      const { data, error } = await supabase.rpc("get_registered_sellers");
-      if (error) throw error;
-      return (data ?? []) as RegisteredSeller[];
+      const response = await fetch("/api/public/registered-sellers");
+      const payload = (await response.json().catch(() => ({}))) as RegisteredSellersResponse;
+      if (!response.ok) throw new Error(payload.error || "Não foi possível carregar os vendedores.");
+      return payload.sellers ?? [];
     },
   });
 }
