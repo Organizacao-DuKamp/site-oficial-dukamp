@@ -13,12 +13,12 @@ async function request(path: string, init?: RequestInit): Promise<AccountTypeApi
   const token = data.session?.access_token;
   if (!token) throw new Error("Sessão expirada. Entre novamente.");
 
+  const headers = new Headers(init?.headers);
+  headers.set("Authorization", `Bearer ${token}`);
+
   const response = await fetch(path, {
     ...init,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      ...(init?.headers ?? {}),
-    },
+    headers,
   });
   const payload = (await response.json().catch(() => ({}))) as AccountTypeApiResponse;
   if (!response.ok) throw new Error(payload.error || "Não foi possível gerenciar o tipo da conta.");
