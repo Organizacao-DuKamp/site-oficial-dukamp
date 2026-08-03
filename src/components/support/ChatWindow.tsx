@@ -77,28 +77,33 @@ export function ChatWindow() {
       ) : (
         <>
           <MessageList messages={messages} selfRole="user" />
-          <form onSubmit={onSend} className="flex gap-2 border-t bg-background p-2">
-            <Input
-              value={text}
-              onChange={(event) => setText(event.target.value)}
-              placeholder={isClosed ? "Conversa encerrada" : "Digite sua mensagem..."}
-              disabled={isClosed || loading}
-            />
-            <Button type="submit" size="sm" disabled={isClosed || loading || !text.trim()}>
-              Enviar
-            </Button>
-          </form>
           {!isClosed && (
-            <button
-              onClick={() => void close()}
-              className="flex items-center justify-center gap-1 border-t px-3 py-1 text-[11px] text-muted-foreground hover:text-destructive"
-            >
-              <X className="h-3 w-3" /> Encerrar conversa
-            </button>
+            <>
+              <form onSubmit={onSend} className="flex gap-2 border-t bg-background p-2">
+                <Input
+                  value={text}
+                  onChange={(event) => setText(event.target.value)}
+                  placeholder="Digite sua mensagem..."
+                  disabled={loading}
+                />
+                <Button type="submit" size="sm" disabled={loading || !text.trim()}>
+                  Enviar
+                </Button>
+              </form>
+              <button
+                onClick={() => void close()}
+                className="flex items-center justify-center gap-1 border-t px-3 py-1 text-[11px] text-muted-foreground hover:text-destructive"
+              >
+                <X className="h-3 w-3" /> Encerrar conversa
+              </button>
+            </>
           )}
           {isClosed && (
-            <div className="border-t px-3 py-2 text-center text-[11px] text-muted-foreground">
-              Esta conversa foi encerrada.
+            <div className="space-y-2 border-t p-3 text-center">
+              <p className="text-[11px] text-muted-foreground">Esta conversa foi encerrada.</p>
+              <Button size="sm" onClick={() => void start()} disabled={loading}>
+                {loading ? "Iniciando..." : "Iniciar nova conversa"}
+              </Button>
             </div>
           )}
         </>
