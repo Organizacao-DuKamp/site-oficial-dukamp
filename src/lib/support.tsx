@@ -1,15 +1,14 @@
-import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { getSellerLink } from "@/lib/seller-link";
 
 export type TicketStatus = "open" | "in_progress" | "closed";
 
 export type SupportTicket = {
   id: string;
   user_id: string;
-  customer_id: string | null;
-  seller_id: string | null;
+  customer_id?: string | null;
+  seller_id?: string | null;
   status: TicketStatus;
   last_message_at: string;
   closed_at: string | null;
@@ -24,9 +23,17 @@ export type SupportMessage = {
   message: string;
   read_by_user: boolean;
   read_by_admin: boolean;
-  read_by_customer: boolean;
-  read_by_seller: boolean;
+  read_by_customer?: boolean;
+  read_by_seller?: boolean;
   created_at: string;
+};
+
+type ChatResponse = {
+  ok?: boolean;
+  seller: { id: string; name: string } | null;
+  ticket: SupportTicket | null;
+  messages: SupportMessage[];
+  error?: string;
 };
 
 type Ctx = {
@@ -46,6 +53,30 @@ type Ctx = {
 const SupportCtx = createContext<Ctx | null>(null);
 const STORAGE_KEY = "dukamp_chat_open";
 
+async function chatRequest(body?: Record<string, unknown>): Promise<ChatResponse> {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw new Error("Sessão expirada. Entre novamente.");
+
+  const response = await fetch("/api/account/seller-chat", {
+    method: body ? "POST" : "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...(body ? { "Content-Type": "application/json" } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+    cache: "no-store",
+  });
+  const payload = (await response.json().catch(() => ({}))) as ChatResponse;
+  if (!response.ok) throw new Error(payload.error || "Não foi possível atualizar a conversa.");
+  return {
+    seller: payload.seller ?? null,
+    ticket: payload.ticket ?? null,
+    messages: payload.messages ?? [],
+    ok: payload.ok,
+  };
+}
+
 export function SupportProvider({ children }: { children: ReactNode }) {
   const { user, isAdmin, accountType } = useAuth();
   const [ticket, setTicket] = useState<SupportTicket | null>(null);
@@ -54,28 +85,28 @@ export function SupportProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false);
   const [seller, setSeller] = useState<{ id: string; name: string } | null>(null);
 
-  const active = !!user && !isAdmin && accountType !== "vendedor";
+  const active = Boolean(user) && !isAdmin && accountType !== "vendedor";
 
-  useEffect(() => {
+  const applyResponse = useCallback((response: ChatResponse) => {
+    setSeller(response.seller ?? null);
+    setTicket(response.ticket ?? null);
+    setMessages(response.messages ?? []);
+  }, []);
+
+  const refresh = useCallback(async () => {
     if (!active || !user) {
       setSeller(null);
+      setTicket(null);
+      setMessages([]);
       return;
     }
 
-    let cancelled = false;
-    (async () => {
-      try {
-        const link = await getSellerLink();
-        if (!cancelled) setSeller(link.seller);
-      } catch {
-        if (!cancelled) setSeller(null);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [active, user]);
+    try {
+      applyResponse(await chatRequest());
+    } catch (error) {
+      console.error("[support] Falha ao carregar chat:", error);
+    }
+  }, [active, user, applyResponse]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -88,126 +119,71 @@ export function SupportProvider({ children }: { children: ReactNode }) {
   }, [open]);
 
   useEffect(() => {
-    if (!active || !user || !seller) {
-      setTicket(null);
-      setMessages([]);
-      return;
-    }
-
-    let cancel = false;
+    let cancelled = false;
     (async () => {
       setLoading(true);
-      const { data } = await (supabase as any)
-        .from("support_tickets")
-        .select("*")
-        .eq("customer_id", user.id)
-        .eq("seller_id", seller.id)
-        .neq("status", "closed")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (cancel) return;
-      setTicket((data as SupportTicket | null) ?? null);
-      setLoading(false);
+      try {
+        const response = active && user ? await chatRequest() : null;
+        if (!cancelled) {
+          if (response) applyResponse(response);
+          else {
+            setSeller(null);
+            setTicket(null);
+            setMessages([]);
+          }
+        }
+      } catch (error) {
+        if (!cancelled) console.error("[support] Falha ao iniciar chat:", error);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     })();
-
     return () => {
-      cancel = true;
+      cancelled = true;
     };
-  }, [active, user, seller]);
+  }, [active, user?.id, applyResponse]);
 
   useEffect(() => {
-    if (!ticket) {
-      setMessages([]);
-      return;
-    }
+    if (!active || !user) return;
+    const interval = window.setInterval(() => void refresh(), open ? 4000 : 12000);
+    return () => window.clearInterval(interval);
+  }, [active, user?.id, open, refresh]);
 
-    let cancel = false;
-    (async () => {
-      const { data } = await (supabase as any)
-        .from("support_messages")
-        .select("*")
-        .eq("ticket_id", ticket.id)
-        .order("created_at", { ascending: true });
-      if (cancel) return;
-      setMessages((data as SupportMessage[]) ?? []);
-    })();
-
-    const ch = supabase
-      .channel(`support_ticket_${ticket.id}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "support_messages", filter: `ticket_id=eq.${ticket.id}` },
-        (payload) => {
-          setMessages((prev) => {
-            const m = payload.new as SupportMessage;
-            if (prev.some((x) => x.id === m.id)) return prev;
-            return [...prev, m];
-          });
-        },
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "support_tickets", filter: `id=eq.${ticket.id}` },
-        (payload) => setTicket(payload.new as SupportTicket),
-      )
-      .subscribe();
-
-    return () => {
-      cancel = true;
-      supabase.removeChannel(ch);
-    };
-  }, [ticket?.id]);
+  const unread = useMemo(
+    () => messages.filter((message) => message.sender_role === "admin" && !message.read_by_user).length,
+    [messages],
+  );
 
   useEffect(() => {
-    if (!open || !ticket || !user) return;
-    const unreadIds = messages
-      .filter((m) => (m.sender_role === "seller" || m.sender_role === "admin") && !m.read_by_customer)
-      .map((m) => m.id);
-    if (unreadIds.length === 0) return;
-    (supabase as any)
-      .from("support_messages")
-      .update({ read_by_customer: true, read_by_user: true })
-      .in("id", unreadIds)
-      .then(() => {});
-  }, [open, messages, ticket, user]);
-
-  const unread = messages.filter(
-    (m) => (m.sender_role === "seller" || m.sender_role === "admin") && !m.read_by_customer,
-  ).length;
+    if (!open || !ticket || unread === 0) return;
+    void chatRequest({ action: "markRead" })
+      .then(applyResponse)
+      .catch((error) => console.error("[support] Falha ao marcar mensagens:", error));
+  }, [open, ticket?.id, unread, applyResponse]);
 
   const startTicket = useCallback(async () => {
     if (!user || !seller || ticket) return;
-    const { data, error } = await (supabase as any)
-      .from("support_tickets")
-      .insert({ user_id: user.id, customer_id: user.id, seller_id: seller.id, status: "open" })
-      .select()
-      .single();
-    if (!error && data) {
-      setTicket(data as SupportTicket);
+    setLoading(true);
+    try {
+      applyResponse(await chatRequest({ action: "start" }));
       setOpen(true);
+    } finally {
+      setLoading(false);
     }
-  }, [user, seller, ticket]);
+  }, [user, seller, ticket, applyResponse]);
 
   const sendMessage = useCallback(
     async (text: string) => {
       if (!user || !ticket || ticket.status === "closed" || !text.trim()) return;
-      await (supabase as any).from("support_messages").insert({
-        ticket_id: ticket.id,
-        message: text.trim(),
-      });
+      applyResponse(await chatRequest({ action: "send", message: text.trim() }));
     },
-    [user, ticket],
+    [user, ticket, applyResponse],
   );
 
   const closeTicket = useCallback(async () => {
     if (!ticket || !user) return;
-    await (supabase as any)
-      .from("support_tickets")
-      .update({ status: "closed", closed_by: user.id, closed_at: new Date().toISOString() })
-      .eq("id", ticket.id);
-    setTicket((t) => (t ? { ...t, status: "closed" } : t));
-  }, [ticket, user]);
+    applyResponse(await chatRequest({ action: "close" }));
+  }, [ticket, user, applyResponse]);
 
   return (
     <SupportCtx.Provider
@@ -231,7 +207,7 @@ export function SupportProvider({ children }: { children: ReactNode }) {
 }
 
 export function useSupport() {
-  const c = useContext(SupportCtx);
-  if (!c) throw new Error("useSupport must be inside SupportProvider");
-  return c;
+  const context = useContext(SupportCtx);
+  if (!context) throw new Error("useSupport must be inside SupportProvider");
+  return context;
 }
