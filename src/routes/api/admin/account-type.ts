@@ -133,9 +133,11 @@ export const Route = createFileRoute("/api/admin/account-type")({
         const currentMetadata = { ...(targetR.data.user.user_metadata ?? {}) } as Record<string, unknown>;
 
         if (accountType === "vendedor") {
+          // "vendedor" is stored in auth metadata for compatibility with
+          // databases whose account_type enum predates the seller role.
           const { error: profileError } = await supabaseAdmin
             .from("profiles")
-            .update({ account_type: "vendedor" })
+            .update({ account_type: "cliente" })
             .eq("id", userId);
           if (profileError) return errorResponse(profileError.message, 500);
 
