@@ -105,7 +105,11 @@ export async function listLinkedClients(supabaseAdmin: any, sellerId: string): P
     .in("id", userIds);
   if (error) throw error;
 
-  const profileMap = new Map<string, any>((profiles ?? []).map((profile: any) => [profile.id, profile]));
+  const profileMap = new Map<string, any>();
+  for (const profile of profiles ?? []) {
+    profileMap.set(profile.id, profile);
+  }
+
   return linkedUsers.map((user) => {
     const profile = profileMap.get(user.id) ?? {};
     return {
