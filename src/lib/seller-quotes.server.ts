@@ -1,3 +1,5 @@
+import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
+
 export type QuoteStatus = "draft" | "sent" | "accepted" | "declined" | "expired";
 
 export type StoredQuoteItem = {
@@ -30,7 +32,74 @@ export type StoredQuote = {
   items: StoredQuoteItem[];
 };
 
+type EncryptedQuote = {
+  version: 2;
+  algorithm: "aes-256-gcm";
+  iv: string;
+  tag: string;
+  ciphertext: string;
+};
+
 const PREFIX = "seller_quote:";
+
+function encryptionKey(): Buffer {
+  const secret =
+    process.env.SELLER_QUOTES_ENCRYPTION_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!secret) {
+    throw new Error("Chave de criptografia dos orçamentos não configurada.");
+  }
+  return createHash("sha256").update(`dukamp-seller-quotes:${secret}`).digest();
+}
+
+function isStoredQuote(value: unknown): value is StoredQuote {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<StoredQuote>;
+  return candidate.version === 1 && typeof candidate.id === "string" && Array.isArray(candidate.items);
+}
+
+function isEncryptedQuote(value: unknown): value is EncryptedQuote {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<EncryptedQuote>;
+  return (
+    candidate.version === 2 &&
+    candidate.algorithm === "aes-256-gcm" &&
+    typeof candidate.iv === "string" &&
+    typeof candidate.tag === "string" &&
+    typeof candidate.ciphertext === "string"
+  );
+}
+
+function encryptQuote(quote: StoredQuote): EncryptedQuote {
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", encryptionKey(), iv);
+  const ciphertext = Buffer.concat([
+    cipher.update(JSON.stringify(quote), "utf8"),
+    cipher.final(),
+  ]);
+  return {
+    version: 2,
+    algorithm: "aes-256-gcm",
+    iv: iv.toString("base64"),
+    tag: cipher.getAuthTag().toString("base64"),
+    ciphertext: ciphertext.toString("base64"),
+  };
+}
+
+function decryptQuote(value: EncryptedQuote): StoredQuote {
+  const decipher = createDecipheriv(
+    "aes-256-gcm",
+    encryptionKey(),
+    Buffer.from(value.iv, "base64"),
+  );
+  decipher.setAuthTag(Buffer.from(value.tag, "base64"));
+  const plaintext = Buffer.concat([
+    decipher.update(Buffer.from(value.ciphertext, "base64")),
+    decipher.final(),
+  ]).toString("utf8");
+  const parsed = JSON.parse(plaintext) as unknown;
+  if (!isStoredQuote(parsed)) throw new Error("Conteúdo de orçamento inválido.");
+  return parsed;
+}
 
 export function quoteKey(id: string) {
   return `${PREFIX}${id}`;
@@ -65,7 +134,15 @@ export async function readQuote(supabaseAdmin: any, id: string): Promise<StoredQ
     .eq("key", quoteKey(id))
     .maybeSingle();
   if (error) throw error;
-  return (data?.value as StoredQuote | undefined) ?? null;
+  if (!data?.value) return null;
+
+  if (isEncryptedQuote(data.value)) return decryptQuote(data.value);
+  if (isStoredQuote(data.value)) {
+    // Migra automaticamente qualquer registro criado antes da criptografia.
+    await writeQuote(supabaseAdmin, data.value);
+    return data.value;
+  }
+  return null;
 }
 
 export async function listQuotes(supabaseAdmin: any): Promise<StoredQuote[]> {
@@ -74,18 +151,29 @@ export async function listQuotes(supabaseAdmin: any): Promise<StoredQuote[]> {
     .select("value")
     .like("key", `${PREFIX}%`);
   if (error) throw error;
-  return (data ?? [])
-    .map((row: any) => row.value as StoredQuote)
-    .filter((quote: StoredQuote | null): quote is StoredQuote =>
-      Boolean(quote?.id && quote.version === 1),
-    );
+
+  const quotes: StoredQuote[] = [];
+  for (const row of data ?? []) {
+    try {
+      if (isEncryptedQuote(row.value)) {
+        quotes.push(decryptQuote(row.value));
+      } else if (isStoredQuote(row.value)) {
+        quotes.push(row.value);
+        await writeQuote(supabaseAdmin, row.value);
+      }
+    } catch (error) {
+      console.error("[seller-quotes] Registro inválido ou impossível de descriptografar:", error);
+    }
+  }
+  return quotes;
 }
 
 export async function writeQuote(supabaseAdmin: any, quote: StoredQuote): Promise<void> {
+  const encrypted = encryptQuote(quote);
   const { error } = await supabaseAdmin
     .from("site_settings")
     .upsert(
-      { key: quoteKey(quote.id), value: quote, updated_at: new Date().toISOString() },
+      { key: quoteKey(quote.id), value: encrypted, updated_at: new Date().toISOString() },
       { onConflict: "key" },
     );
   if (error) throw error;
