@@ -33,11 +33,17 @@ async function loadClients(): Promise<ClientOption[]> {
   return payload.clients ?? [];
 }
 
-export const Route = createFileRoute("/vendedor/orcamentos/novo")({ component: NewQuote });
+export const Route = createFileRoute("/vendedor/orcamentos/novo")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    cliente: typeof search.cliente === "string" ? search.cliente : "",
+  }),
+  component: NewQuote,
+});
 
 function NewQuote() {
+  const { cliente } = Route.useSearch();
   const nav = useNavigate();
-  const [client, setClient] = useState("");
+  const [client, setClient] = useState(() => cliente);
   const [notes, setNotes] = useState("");
   const [valid, setValid] = useState(() => {
     const date = new Date(Date.now() + 7 * 86400000);
@@ -45,6 +51,7 @@ function NewQuote() {
   });
 
   const clients = useQuery({ queryKey: ["seller-clients", "quote-options"], queryFn: loadClients });
+  const selectedClientIsValid = clients.data?.some((item) => item.id === client) ?? false;
   const create = useMutation({
     mutationFn: () =>
       createSellerQuote(client, notes, new Date(`${valid}T23:59:59`).toISOString()),
@@ -83,6 +90,11 @@ function NewQuote() {
               Nenhum cliente está vinculado à sua conta.
             </p>
           )}
+          {!clients.isLoading && client && !selectedClientIsValid && (
+            <p className="text-sm text-destructive">
+              O cliente indicado não está mais vinculado à sua conta. Selecione outro cliente.
+            </p>
+          )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="valid">Validade</Label>
@@ -98,7 +110,10 @@ function NewQuote() {
           <Label htmlFor="notes">Observações</Label>
           <Textarea id="notes" value={notes} onChange={(event) => setNotes(event.target.value)} />
         </div>
-        <Button disabled={!client || create.isPending} onClick={() => create.mutate()}>
+        <Button
+          disabled={!client || !selectedClientIsValid || create.isPending}
+          onClick={() => create.mutate()}
+        >
           {create.isPending ? "Criando..." : "Criar e adicionar produtos"}
         </Button>
       </CardContent>
