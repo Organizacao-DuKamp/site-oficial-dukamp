@@ -12,6 +12,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { toast } from "sonner";
 import { traduzErroAuth } from "@/lib/auth-errors";
 import { Wallet, History, Coins } from "lucide-react";
+import { useActiveSellers } from "@/lib/sellers";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export const Route = createFileRoute("/minha-conta")({
   ssr: false,
@@ -23,6 +25,7 @@ function MinhaConta() {
   const { user, loading } = useAuth();
   const nav = useNavigate();
   const qc = useQueryClient();
+  const { data: sellers = [], isLoading: sellersLoading } = useActiveSellers();
 
   useEffect(() => {
     if (!loading && !user) nav({ to: "/auth" });
@@ -44,10 +47,12 @@ function MinhaConta() {
 
   const [name, setName] = useState("");
   const [avatar, setAvatar] = useState("");
+  const [sellerId, setSellerId] = useState("none");
   useEffect(() => {
     if (profile) {
       setName((profile as any).full_name ?? "");
       setAvatar((profile as any).avatar_url ?? "");
+      setSellerId((profile as any).seller_id ?? "none");
     }
   }, [profile]);
 
@@ -65,6 +70,34 @@ function MinhaConta() {
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const saveSeller = useMutation({
+    mutationFn: async (nextSellerId: string) => {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ seller_id: nextSellerId === "none" ? null : nextSellerId })
+        .eq("id", user!.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Vínculo com vendedor atualizado");
+      qc.invalidateQueries({ queryKey: ["profile"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  function confirmAndSaveSeller() {
+    const currentSellerId = (profile as any)?.seller_id ?? "none";
+    if (sellerId === currentSellerId) return;
+    if (
+      currentSellerId !== "none" &&
+      !window.confirm("Trocar ou remover o vendedor altera o destinatário do chat. Deseja continuar?")
+    ) {
+      setSellerId(currentSellerId);
+      return;
+    }
+    saveSeller.mutate(sellerId);
+  }
 
   const [curPw, setCurPw] = useState("");
   const [newPw, setNewPw] = useState("");
@@ -144,6 +177,38 @@ function MinhaConta() {
                 Salvar alterações
               </Button>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Vendedor Dukamp</CardTitle>
+            <CardDescription>
+              Selecione quem receberá suas mensagens no chat. Contas sem vínculo também podem escolher um vendedor.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm">
+              Vendedor atual: <strong>{sellers.find((seller) => seller.id === (profile as any)?.seller_id)?.name ?? "Nenhum vendedor"}</strong>
+            </p>
+            <div className="max-w-md">
+              <Label>Vínculo</Label>
+              <Select value={sellerId} onValueChange={setSellerId} disabled={sellersLoading}>
+                <SelectTrigger><SelectValue placeholder="Selecione um vendedor" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhum vendedor</SelectItem>
+                  {sellers.map((seller) => (
+                    <SelectItem key={seller.id} value={seller.id}>{seller.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              onClick={confirmAndSaveSeller}
+              disabled={saveSeller.isPending || sellerId === ((profile as any)?.seller_id ?? "none")}
+            >
+              {saveSeller.isPending ? "Salvando..." : "Salvar vínculo"}
+            </Button>
           </CardContent>
         </Card>
 
