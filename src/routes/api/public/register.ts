@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 type AccountKind = "cliente" | "produtor" | "empresa";
+type RequestedAccountKind = "produtor" | "empresa";
 
 type RegisterPayload = {
   accountKind?: AccountKind;
@@ -57,21 +58,24 @@ export const Route = createFileRoute("/api/public/register")({
         const email = text(payload.email).toLowerCase();
         const password = typeof payload.password === "string" ? payload.password : "";
         const phone = text(payload.phone);
-        const needsExtra = accountKind === "produtor" || accountKind === "empresa";
 
         if (!accountKind || !ACCOUNT_KINDS.includes(accountKind)) {
           return errorResponse("Tipo de conta inválido.");
         }
+
+        const requestedType: RequestedAccountKind | null =
+          accountKind === "produtor" || accountKind === "empresa" ? accountKind : null;
+
         if (!fullName) return errorResponse("Informe seu nome completo.");
         if (!EMAIL_RE.test(email)) return errorResponse("E-mail inválido.");
         if (password.length < 6) return errorResponse("A senha deve ter no mínimo 6 caracteres.");
         if (!phone) return errorResponse("Informe o telefone.");
 
         if (
-          !Number.isFinite(payload.challengeA) ||
-          !Number.isFinite(payload.challengeB) ||
-          !Number.isFinite(payload.challengeAnswer) ||
-          Number(payload.challengeA) + Number(payload.challengeB) !== Number(payload.challengeAnswer)
+          typeof payload.challengeA !== "number" ||
+          typeof payload.challengeB !== "number" ||
+          typeof payload.challengeAnswer !== "number" ||
+          payload.challengeA + payload.challengeB !== payload.challengeAnswer
         ) {
           return errorResponse("Resposta do desafio incorreta.");
         }
@@ -94,7 +98,7 @@ export const Route = createFileRoute("/api/public/register")({
           aptoInfo: text(payload.aptoInfo),
         };
 
-        if (needsExtra) {
+        if (requestedType) {
           if (!extra.cpf) return errorResponse("Informe o CPF.");
           if (!extra.fazenda) return errorResponse("Informe a Fazenda.");
           if (!extra.cnpjPropriedade) return errorResponse("Informe o CNPJ da propriedade.");
@@ -141,14 +145,14 @@ export const Route = createFileRoute("/api/public/register")({
         const userId = data.user?.id;
         if (!userId) return errorResponse("Não foi possível criar a conta. Tente novamente.", 500);
 
-        if (needsExtra) {
+        if (requestedType) {
           const { error: requestError } = await supabaseAdmin.from("account_requests").insert({
             user_id: userId,
             full_name: fullName,
             email,
-            requested_type: accountKind,
+            requested_type: requestedType,
             uf: extra.uf,
-            cnpj: accountKind === "empresa" ? extra.cnpjPropriedade : null,
+            cnpj: requestedType === "empresa" ? extra.cnpjPropriedade : null,
             cpf: extra.cpf,
             phone,
             contact_email: extra.cobEmail,
@@ -176,7 +180,7 @@ export const Route = createFileRoute("/api/public/register")({
           }
         }
 
-        return Response.json({ ok: true, needsApproval: needsExtra });
+        return Response.json({ ok: true, needsApproval: requestedType !== null });
       },
     },
   },
