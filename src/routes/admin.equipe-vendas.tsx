@@ -2,10 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog";
@@ -22,6 +24,10 @@ export const Route = createFileRoute("/admin/equipe-vendas")({
 });
 
 type FormState = Partial<Seller>;
+type SellerAccount = Pick<
+  Database["public"]["Tables"]["profiles"]["Row"],
+  "id" | "full_name" | "email"
+>;
 
 function AdminSellersPage() {
   const qc = useQueryClient();
@@ -41,6 +47,19 @@ function AdminSellersPage() {
     },
   });
 
+  const accounts = useQuery({
+    queryKey: ["admin", "seller-accounts"],
+    queryFn: async (): Promise<SellerAccount[]> => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, email")
+        .eq("account_type", "vendedor")
+        .order("full_name", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   const save = useMutation({
     mutationFn: async (values: FormState) => {
       const payload: any = {
@@ -54,6 +73,7 @@ function AdminSellersPage() {
         banner_url: values.banner_url || null,
         active: values.active ?? true,
         display_order: values.display_order ?? 0,
+        user_id: values.user_id || null,
       };
       if (!payload.name) throw new Error("Nome é obrigatório");
       const baseSlug = slugify(values.slug?.trim() || payload.name);
@@ -161,6 +181,9 @@ function AdminSellersPage() {
             </DialogHeader>
             <SellerForm
               initial={editing}
+              accounts={accounts.data ?? []}
+              sellers={rows}
+              accountsLoading={accounts.isLoading}
               submitting={save.isPending}
               onSubmit={(v) => save.mutate(v)}
             />
@@ -255,10 +278,16 @@ function AdminSellersPage() {
 
 function SellerForm({
   initial,
+  accounts,
+  sellers,
+  accountsLoading,
   onSubmit,
   submitting,
 }: {
   initial: Seller | null;
+  accounts: SellerAccount[];
+  sellers: Seller[];
+  accountsLoading: boolean;
   onSubmit: (v: FormState) => void;
   submitting: boolean;
 }) {
@@ -274,6 +303,7 @@ function SellerForm({
     banner_url: initial?.banner_url ?? "",
     active: initial?.active ?? true,
     display_order: initial?.display_order ?? 0,
+    user_id: initial?.user_id ?? null,
   }));
 
   function set<K extends keyof FormState>(k: K, v: FormState[K]) {
@@ -289,6 +319,35 @@ function SellerForm({
         <div className="sm:col-span-2">
           <Label>Nome completo *</Label>
           <Input value={values.name ?? ""} onChange={(e) => set("name", e.target.value)} required />
+        </div>
+        <div className="sm:col-span-2">
+          <Label>Conta de acesso do vendedor</Label>
+          <Select
+            value={values.user_id ?? "unassigned"}
+            onValueChange={(value) => set("user_id", value === "unassigned" ? null : value)}
+            disabled={accountsLoading}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder={accountsLoading ? "Carregando contas..." : "Selecione uma conta"} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="unassigned">Nenhuma conta</SelectItem>
+              {accounts.map((account) => {
+                const owner = sellers.find(
+                  (seller) => seller.user_id === account.id && seller.id !== initial?.id,
+                );
+                return (
+                  <SelectItem key={account.id} value={account.id} disabled={!!owner}>
+                    {account.full_name || account.email || account.id}
+                    {owner ? ` — associada a ${owner.name}` : account.email && account.full_name ? ` — ${account.email}` : ""}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground mt-1">
+            Apenas contas do tipo vendedor são exibidas. Uma conta já vinculada não pode ser reutilizada.
+          </p>
         </div>
         <div>
           <Label>Cargo</Label>
