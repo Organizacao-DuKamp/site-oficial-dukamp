@@ -60,12 +60,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: subscription } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
+
       if (nextSession?.user) {
-        setTimeout(() => void loadProfile(nextSession.user, nextSession.access_token), 0);
+        setLoading(true);
+        setTimeout(() => {
+          void loadProfile(nextSession.user, nextSession.access_token).finally(() => {
+            setLoading(false);
+          });
+        }, 0);
       } else {
         setIsAdmin(false);
         setAccountType("cliente");
         setApprovalNotice(null);
+        setLoading(false);
       }
     });
 
