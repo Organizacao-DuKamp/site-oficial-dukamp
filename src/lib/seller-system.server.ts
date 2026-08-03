@@ -73,6 +73,7 @@ export async function resolveSellerIdentity(supabaseAdmin: any, user: User): Pro
       .select("id, name")
       .eq("id", trustedSellerId)
       .eq("slug", sellerSlug)
+      .eq("active", true)
       .maybeSingle();
     if (!result.error) seller = result.data;
   }
@@ -82,6 +83,7 @@ export async function resolveSellerIdentity(supabaseAdmin: any, user: User): Pro
       .from("sellers")
       .select("id, name")
       .eq("slug", sellerSlug)
+      .eq("active", true)
       .maybeSingle();
     if (!result.error) seller = result.data;
   }
