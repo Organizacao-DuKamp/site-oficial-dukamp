@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import type { User } from "@supabase/supabase-js";
 
 type SellerOption = {
   id: string;
@@ -14,7 +15,7 @@ export const Route = createFileRoute("/api/public/registered-sellers")({
     handlers: {
       GET: async () => {
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const users = [];
+        const users: User[] = [];
         const perPage = 1000;
         let page = 1;
 
