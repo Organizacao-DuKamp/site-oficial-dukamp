@@ -55,19 +55,24 @@ export async function listAllAuthUsers(supabaseAdmin: any): Promise<User[]> {
 }
 
 export async function resolveSellerIdentity(supabaseAdmin: any, user: User): Promise<SellerIdentity | null> {
-  const metadata = { ...(user.user_metadata ?? {}) } as Record<string, unknown>;
-  if (metadata.account_type_override !== "vendedor") return null;
+  const appMetadata = { ...(user.app_metadata ?? {}) } as Record<string, unknown>;
+  const userMetadata = { ...(user.user_metadata ?? {}) } as Record<string, unknown>;
+  const trustedRole = appMetadata.account_type_override === "vendedor";
+  const legacyRole = userMetadata.account_type_override === "vendedor";
+  if (!trustedRole && !legacyRole) return null;
 
-  const metadataSellerId = typeof metadata.seller_record_id === "string"
-    ? metadata.seller_record_id.trim()
+  const sellerSlug = `conta-${user.id}`;
+  const trustedSellerId = typeof appMetadata.seller_record_id === "string"
+    ? appMetadata.seller_record_id.trim()
     : "";
   let seller: { id: string; name: string } | null = null;
 
-  if (metadataSellerId) {
+  if (trustedRole && trustedSellerId) {
     const result = await supabaseAdmin
       .from("sellers")
       .select("id, name")
-      .eq("id", metadataSellerId)
+      .eq("id", trustedSellerId)
+      .eq("slug", sellerSlug)
       .maybeSingle();
     if (!result.error) seller = result.data;
   }
@@ -76,18 +81,30 @@ export async function resolveSellerIdentity(supabaseAdmin: any, user: User): Pro
     const result = await supabaseAdmin
       .from("sellers")
       .select("id, name")
-      .eq("slug", `conta-${user.id}`)
+      .eq("slug", sellerSlug)
       .maybeSingle();
     if (!result.error) seller = result.data;
   }
 
   if (!seller) return null;
 
-  if (metadataSellerId !== seller.id) {
+  if (!trustedRole || trustedSellerId !== seller.id) {
     const { error } = await supabaseAdmin.auth.admin.updateUserById(user.id, {
-      user_metadata: { ...metadata, seller_record_id: seller.id },
+      app_metadata: {
+        ...appMetadata,
+        account_type_override: "vendedor",
+        seller_record_id: seller.id,
+      },
+      user_metadata: {
+        ...userMetadata,
+        account_type_override: null,
+        seller_record_id: null,
+      },
     });
-    if (error) console.error("[seller-system] Falha ao reparar seller_record_id:", error.message);
+    if (error) {
+      console.error("[seller-system] Falha ao migrar metadados protegidos:", error.message);
+      return null;
+    }
   }
 
   return { userId: user.id, sellerId: seller.id, name: seller.name };
