@@ -5,6 +5,7 @@ export type Seller = {
   id: string;
   user_id: string | null;
   slug: string;
+  show_on_team: boolean;
   name: string;
   role: string | null;
   region: string | null;
@@ -64,6 +65,7 @@ export function useActiveSellers() {
         .from("sellers")
         .select("*")
         .eq("active", true)
+        .eq("show_on_team", true)
         .order("display_order", { ascending: true })
         .order("name", { ascending: true });
       if (error) throw error;
