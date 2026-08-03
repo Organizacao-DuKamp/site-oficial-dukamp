@@ -2,42 +2,12 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SIGNUP_DEDUPE_WINDOW_MS = 5_000;
-
-type CachedSignupRequest = {
-  expiresAt: number;
-  response: Promise<Response>;
-};
-
-const signupRequests = new Map<string, CachedSignupRequest>();
-
 function isNewSupabaseApiKey(value: string): boolean {
   return value.startsWith('sb_publishable_') || value.startsWith('sb_secret_');
 }
 
-function getRequestUrl(input: RequestInfo | URL): string {
-  if (typeof input === 'string') return input;
-  if (input instanceof URL) return input.toString();
-  return input.url;
-}
-
-function getRequestMethod(input: RequestInfo | URL, init?: RequestInit): string {
-  if (init?.method) return init.method.toUpperCase();
-  if (typeof Request !== 'undefined' && input instanceof Request) return input.method.toUpperCase();
-  return 'GET';
-}
-
-function getSignupRequestKey(input: RequestInfo | URL, init?: RequestInit): string {
-  const body = typeof init?.body === 'string' ? init.body : '';
-  return `${getRequestMethod(input, init)}:${getRequestUrl(input)}:${body}`;
-}
-
-function isSignupRequest(input: RequestInfo | URL, init?: RequestInit): boolean {
-  return getRequestMethod(input, init) === 'POST' && getRequestUrl(input).includes('/auth/v1/signup');
-}
-
 function createSupabaseFetch(supabaseKey: string): typeof fetch {
-  return async (input, init) => {
+  return (input, init) => {
     const headers = new Headers(
       typeof Request !== 'undefined' && input instanceof Request ? input.headers : undefined,
     );
@@ -52,39 +22,7 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
     }
 
     headers.set('apikey', supabaseKey);
-    const requestInit = { ...init, headers };
-
-    if (!isSignupRequest(input, init)) {
-      return fetch(input, requestInit);
-    }
-
-    const key = getSignupRequestKey(input, init);
-    const now = Date.now();
-    const cached = signupRequests.get(key);
-
-    if (cached && cached.expiresAt > now) {
-      return (await cached.response).clone();
-    }
-
-    if (cached) signupRequests.delete(key);
-
-    const networkRequest = fetch(input, requestInit);
-    const cacheEntry: CachedSignupRequest = {
-      expiresAt: now + SIGNUP_DEDUPE_WINDOW_MS,
-      response: networkRequest.then((response) => response.clone()),
-    };
-
-    signupRequests.set(key, cacheEntry);
-
-    cacheEntry.response.catch(() => {
-      if (signupRequests.get(key) === cacheEntry) signupRequests.delete(key);
-    });
-
-    setTimeout(() => {
-      if (signupRequests.get(key) === cacheEntry) signupRequests.delete(key);
-    }, SIGNUP_DEDUPE_WINDOW_MS);
-
-    return networkRequest;
+    return fetch(input, { ...init, headers });
   };
 }
 

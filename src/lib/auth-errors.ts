@@ -7,7 +7,7 @@ const MAP: Array<[RegExp, string]> = [
   [/password should be at least (\d+)/i, "A senha deve ter no mínimo $1 caracteres."],
   [/password.*(short|weak)/i, "A senha é muito curta ou fraca."],
   [/passwords?.*(do not|don't)\s*match/i, "As senhas não coincidem."],
-  [/email rate limit exceeded|over_email_send_rate_limit|rate limit|too many requests/i, "Muitas tentativas de cadastro. Aguarde alguns minutos, confira sua caixa de entrada e tente novamente somente se não tiver recebido o e-mail."],
+  [/email rate limit exceeded|over_email_send_rate_limit|rate limit|too many requests/i, "Não foi possível concluir a solicitação. Tente novamente."],
   [/database error saving new user/i, "Não foi possível concluir o cadastro. Tente novamente; se o problema continuar, entre em contato com o suporte."],
   [/network|failed to fetch/i, "Falha de conexão. Verifique sua internet."],
   [/user not found/i, "Usuário não encontrado."],
