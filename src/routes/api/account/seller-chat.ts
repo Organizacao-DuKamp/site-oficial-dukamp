@@ -12,9 +12,10 @@ function cleanMessage(value: unknown): string {
 }
 
 async function resolveSelectedSeller(supabaseAdmin: any, user: any) {
-  const sellerId = typeof user.user_metadata?.selected_seller_id === "string"
-    ? user.user_metadata.selected_seller_id.trim()
-    : "";
+  const sellerId =
+    typeof user.user_metadata?.selected_seller_id === "string"
+      ? user.user_metadata.selected_seller_id.trim()
+      : "";
   if (!sellerId) return null;
 
   const { data, error } = await supabaseAdmin
@@ -26,24 +27,64 @@ async function resolveSelectedSeller(supabaseAdmin: any, user: any) {
   return { id: data.id, name: data.name };
 }
 
-async function loadTicket(supabaseAdmin: any, user: any, sellerId: string) {
-  const metadata = user.user_metadata ?? {};
-  const ticketId = typeof metadata.seller_chat_ticket_id === "string"
-    ? metadata.seller_chat_ticket_id.trim()
-    : "";
-  const ticketSellerId = typeof metadata.seller_chat_seller_id === "string"
-    ? metadata.seller_chat_seller_id.trim()
-    : "";
-  if (!ticketId || ticketSellerId !== sellerId) return null;
-
+async function findOwnedTicket(supabaseAdmin: any, userId: string, ticketId: string) {
   const { data, error } = await supabaseAdmin
     .from("support_tickets")
     .select("*")
     .eq("id", ticketId)
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .maybeSingle();
   if (error) throw error;
   return data;
+}
+
+async function loadTicket(supabaseAdmin: any, user: any, sellerId: string) {
+  const appMetadata = { ...(user.app_metadata ?? {}) } as Record<string, unknown>;
+  const userMetadata = { ...(user.user_metadata ?? {}) } as Record<string, unknown>;
+
+  const protectedTicketId =
+    typeof appMetadata.seller_chat_ticket_id === "string"
+      ? appMetadata.seller_chat_ticket_id.trim()
+      : "";
+  const protectedSellerId =
+    typeof appMetadata.seller_chat_seller_id === "string"
+      ? appMetadata.seller_chat_seller_id.trim()
+      : "";
+
+  if (protectedTicketId && protectedSellerId === sellerId) {
+    return findOwnedTicket(supabaseAdmin, user.id, protectedTicketId);
+  }
+
+  const legacyTicketId =
+    typeof userMetadata.seller_chat_ticket_id === "string"
+      ? userMetadata.seller_chat_ticket_id.trim()
+      : "";
+  const legacySellerId =
+    typeof userMetadata.seller_chat_seller_id === "string"
+      ? userMetadata.seller_chat_seller_id.trim()
+      : "";
+  if (!legacyTicketId || legacySellerId !== sellerId) return null;
+
+  const ticket = await findOwnedTicket(supabaseAdmin, user.id, legacyTicketId);
+  if (!ticket) return null;
+
+  const { error: migrationError } = await supabaseAdmin.auth.admin.updateUserById(user.id, {
+    app_metadata: {
+      ...appMetadata,
+      seller_chat_ticket_id: ticket.id,
+      seller_chat_seller_id: sellerId,
+    },
+    user_metadata: {
+      ...userMetadata,
+      seller_chat_ticket_id: null,
+      seller_chat_seller_id: null,
+    },
+  });
+  if (migrationError) throw migrationError;
+
+  const { invalidateAuthUsersCache } = await import("@/lib/seller-system.server");
+  invalidateAuthUsersCache();
+  return ticket;
 }
 
 async function loadMessages(supabaseAdmin: any, ticketId: string) {
@@ -87,7 +128,8 @@ export const Route = createFileRoute("/api/account/seller-chat")({
       },
 
       POST: async ({ request }) => {
-        const { authenticateRequest, errorResponse } = await import("@/lib/seller-system.server");
+        const { authenticateRequest, errorResponse, invalidateAuthUsersCache } =
+          await import("@/lib/seller-system.server");
         const authorization = await authenticateRequest(request);
         if ("response" in authorization) return authorization.response;
         const { supabaseAdmin, user } = authorization;
@@ -102,7 +144,12 @@ export const Route = createFileRoute("/api/account/seller-chat")({
         const seller = await resolveSelectedSeller(supabaseAdmin, user);
         if (!seller) return errorResponse("Selecione um vendedor antes de iniciar a conversa.", 400);
 
-        const currentMetadata = { ...(user.user_metadata ?? {}) } as Record<string, unknown>;
+        const currentUserMetadata = {
+          ...(user.user_metadata ?? {}),
+        } as Record<string, unknown>;
+        const currentAppMetadata = {
+          ...(user.app_metadata ?? {}),
+        } as Record<string, unknown>;
 
         try {
           if (payload.action === "start") {
@@ -117,16 +164,27 @@ export const Route = createFileRoute("/api/account/seller-chat")({
               ticket = result.data;
 
               const metadataResult = await supabaseAdmin.auth.admin.updateUserById(user.id, {
-                user_metadata: {
-                  ...currentMetadata,
+                app_metadata: {
+                  ...currentAppMetadata,
                   seller_chat_ticket_id: ticket.id,
                   seller_chat_seller_id: seller.id,
                 },
+                user_metadata: {
+                  ...currentUserMetadata,
+                  seller_chat_ticket_id: null,
+                  seller_chat_seller_id: null,
+                },
               });
               if (metadataResult.error) throw metadataResult.error;
+              invalidateAuthUsersCache();
             }
 
-            return Response.json({ ok: true, seller, ticket, messages: await loadMessages(supabaseAdmin, ticket.id) });
+            return Response.json({
+              ok: true,
+              seller,
+              ticket,
+              messages: await loadMessages(supabaseAdmin, ticket.id),
+            });
           }
 
           const ticket = await loadTicket(supabaseAdmin, user, seller.id);
@@ -162,7 +220,11 @@ export const Route = createFileRoute("/api/account/seller-chat")({
           } else if (payload.action === "close") {
             const result = await supabaseAdmin
               .from("support_tickets")
-              .update({ status: "closed", closed_by: user.id, closed_at: new Date().toISOString() })
+              .update({
+                status: "closed",
+                closed_by: user.id,
+                closed_at: new Date().toISOString(),
+              })
               .eq("id", ticket.id);
             if (result.error) throw result.error;
           } else {
