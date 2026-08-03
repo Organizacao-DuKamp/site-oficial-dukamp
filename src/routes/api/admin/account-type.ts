@@ -25,7 +25,10 @@ function isMissingSellerColumn(error: DatabaseError, column: string): boolean {
   const target = column.toLowerCase();
   return (
     message.includes(target) &&
-    (error.code === "42703" || error.code === "PGRST204" || message.includes("does not exist") || message.includes("schema cache"))
+    (error.code === "42703" ||
+      error.code === "PGRST204" ||
+      message.includes("does not exist") ||
+      message.includes("schema cache"))
   );
 }
 
@@ -51,13 +54,41 @@ async function authorizeMasterAdmin(request: Request) {
   return { supabaseAdmin } as const;
 }
 
-function effectiveAccountType(
-  profileType: unknown,
-  isAdmin: boolean,
-  userMetadata: Record<string, unknown> | null | undefined,
-): AccountType {
+async function ensureTrustedSellerMetadata(supabaseAdmin: any, user: any): Promise<boolean> {
+  if (user.app_metadata?.account_type_override === "vendedor") return true;
+  if (user.user_metadata?.account_type_override !== "vendedor") return false;
+
+  const { data: seller, error } = await supabaseAdmin
+    .from("sellers")
+    .select("id")
+    .eq("slug", `conta-${user.id}`)
+    .maybeSingle();
+  if (error || !seller) return false;
+
+  const appMetadata = { ...(user.app_metadata ?? {}) } as Record<string, unknown>;
+  const userMetadata = { ...(user.user_metadata ?? {}) } as Record<string, unknown>;
+  const { error: migrationError } = await supabaseAdmin.auth.admin.updateUserById(user.id, {
+    app_metadata: {
+      ...appMetadata,
+      account_type_override: "vendedor",
+      seller_record_id: seller.id,
+    },
+    user_metadata: {
+      ...userMetadata,
+      account_type_override: null,
+      seller_record_id: null,
+    },
+  });
+  if (migrationError) {
+    console.error("[account-type] Falha ao migrar cargo de vendedor:", migrationError.message);
+    return false;
+  }
+  return true;
+}
+
+function effectiveAccountType(profileType: unknown, isAdmin: boolean, isSeller: boolean): AccountType {
   if (isAdmin) return "admin";
-  if (userMetadata?.account_type_override === "vendedor") return "vendedor";
+  if (isSeller) return "vendedor";
   return (typeof profileType === "string" ? profileType : "cliente") as AccountType;
 }
 
@@ -83,11 +114,12 @@ export const Route = createFileRoute("/api/admin/account-type")({
           if (profileR.error) return errorResponse(profileR.error.message, 500);
           if (rolesR.error) return errorResponse(rolesR.error.message, 500);
 
+          const isSeller = await ensureTrustedSellerMetadata(supabaseAdmin, targetR.data.user);
           return Response.json({
             accountType: effectiveAccountType(
               profileR.data?.account_type,
               (rolesR.data ?? []).length > 0,
-              targetR.data.user.user_metadata,
+              isSeller,
             ),
           });
         }
@@ -101,7 +133,7 @@ export const Route = createFileRoute("/api/admin/account-type")({
           if (error) return errorResponse(error.message, 500);
 
           for (const user of data.users) {
-            if (user.user_metadata?.account_type_override === "vendedor") sellerIds.push(user.id);
+            if (await ensureTrustedSellerMetadata(supabaseAdmin, user)) sellerIds.push(user.id);
           }
 
           if (data.users.length < perPage) break;
@@ -131,12 +163,14 @@ export const Route = createFileRoute("/api/admin/account-type")({
 
         const [targetR, profileR] = await Promise.all([
           supabaseAdmin.auth.admin.getUserById(userId),
-          supabaseAdmin.from("profiles").select("id, account_type, email, full_name").eq("id", userId).maybeSingle(),
+          supabaseAdmin
+            .from("profiles")
+            .select("id, account_type, email, full_name")
+            .eq("id", userId)
+            .maybeSingle(),
         ]);
 
-        if (targetR.error || !targetR.data.user) {
-          return errorResponse("Conta não encontrada.", 404);
-        }
+        if (targetR.error || !targetR.data.user) return errorResponse("Conta não encontrada.", 404);
         if (profileR.error) return errorResponse(profileR.error.message, 500);
         if (!profileR.data) return errorResponse("Conta não encontrada.", 404);
 
@@ -145,7 +179,12 @@ export const Route = createFileRoute("/api/admin/account-type")({
           return errorResponse("Esta conta é protegida.", 403);
         }
 
-        const currentMetadata = { ...(targetR.data.user.user_metadata ?? {}) } as Record<string, unknown>;
+        const currentUserMetadata = {
+          ...(targetR.data.user.user_metadata ?? {}),
+        } as Record<string, unknown>;
+        const currentAppMetadata = {
+          ...(targetR.data.user.app_metadata ?? {}),
+        } as Record<string, unknown>;
 
         if (accountType === "vendedor") {
           const { error: profileError } = await supabaseAdmin
@@ -154,20 +193,26 @@ export const Route = createFileRoute("/api/admin/account-type")({
             .eq("id", userId);
           if (profileError) return errorResponse(profileError.message, 500);
 
-          const sellerName = profileR.data.full_name || profileR.data.email || targetR.data.user.email || `Vendedor ${userId.slice(0, 8)}`;
+          const sellerName =
+            profileR.data.full_name ||
+            profileR.data.email ||
+            targetR.data.user.email ||
+            `Vendedor ${userId.slice(0, 8)}`;
           const sellerSlug = `conta-${userId}`;
-          const metadataSellerId = typeof currentMetadata.seller_record_id === "string"
-            ? currentMetadata.seller_record_id
-            : null;
+          const trustedSellerId =
+            typeof currentAppMetadata.seller_record_id === "string"
+              ? currentAppMetadata.seller_record_id
+              : null;
 
           let linkedSeller: { id: string } | null = null;
           let sellerWarning: string | undefined;
 
-          if (metadataSellerId) {
+          if (trustedSellerId) {
             const { data, error } = await supabaseAdmin
               .from("sellers")
               .select("id")
-              .eq("id", metadataSellerId)
+              .eq("id", trustedSellerId)
+              .eq("slug", sellerSlug)
               .maybeSingle();
             if (!error) linkedSeller = data;
           }
@@ -207,35 +252,45 @@ export const Route = createFileRoute("/api/admin/account-type")({
             }
           }
 
-          if (linkedSeller) {
-            const { error: activeError } = await supabaseAdmin
-              .from("sellers")
-              .update({ active: true, name: sellerName })
-              .eq("id", linkedSeller.id);
-            if (activeError) console.error("[account-type] Falha ao reativar vendedor:", activeError.message);
+          if (!linkedSeller) {
+            return errorResponse(
+              sellerWarning ?? "Não foi possível criar o cadastro interno do vendedor.",
+              500,
+            );
+          }
 
-            const { error: teamError } = await supabaseAdmin
-              .from("sellers")
-              .update({ show_on_team: false })
-              .eq("id", linkedSeller.id);
-            if (teamError && !isMissingSellerColumn(teamError, "show_on_team")) {
-              console.error("[account-type] Falha ao ocultar vendedor interno:", teamError.message);
-            }
+          const { error: activeError } = await supabaseAdmin
+            .from("sellers")
+            .update({ active: true, name: sellerName })
+            .eq("id", linkedSeller.id);
+          if (activeError) return errorResponse(activeError.message, 500);
 
-            const { error: userLinkError } = await supabaseAdmin
-              .from("sellers")
-              .update({ user_id: userId })
-              .eq("id", linkedSeller.id);
-            if (userLinkError && !isMissingSellerColumn(userLinkError, "user_id")) {
-              console.error("[account-type] Falha ao vincular conta ao vendedor:", userLinkError.message);
-            }
+          const { error: teamError } = await supabaseAdmin
+            .from("sellers")
+            .update({ show_on_team: false })
+            .eq("id", linkedSeller.id);
+          if (teamError && !isMissingSellerColumn(teamError, "show_on_team")) {
+            console.error("[account-type] Falha ao ocultar vendedor interno:", teamError.message);
+          }
+
+          const { error: userLinkError } = await supabaseAdmin
+            .from("sellers")
+            .update({ user_id: userId })
+            .eq("id", linkedSeller.id);
+          if (userLinkError && !isMissingSellerColumn(userLinkError, "user_id")) {
+            console.error("[account-type] Falha ao vincular conta ao vendedor:", userLinkError.message);
           }
 
           const { error: metadataError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-            user_metadata: {
-              ...currentMetadata,
+            app_metadata: {
+              ...currentAppMetadata,
               account_type_override: "vendedor",
-              seller_record_id: linkedSeller?.id ?? null,
+              seller_record_id: linkedSeller.id,
+            },
+            user_metadata: {
+              ...currentUserMetadata,
+              account_type_override: null,
+              seller_record_id: null,
             },
           });
           if (metadataError) return errorResponse(metadataError.message, 500);
@@ -247,12 +302,17 @@ export const Route = createFileRoute("/api/admin/account-type")({
             .eq("role", "admin");
           if (roleError) return errorResponse(roleError.message, 500);
 
-          return Response.json({ ok: true, accountType: "vendedor", warning: sellerWarning });
+          return Response.json({ ok: true, accountType: "vendedor" });
         }
 
         const { error: metadataError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+          app_metadata: {
+            ...currentAppMetadata,
+            account_type_override: null,
+            seller_record_id: null,
+          },
           user_metadata: {
-            ...currentMetadata,
+            ...currentUserMetadata,
             account_type_override: null,
             seller_record_id: null,
           },
