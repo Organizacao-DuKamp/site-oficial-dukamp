@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { toast } from "sonner";
 import { traduzErroAuth } from "@/lib/auth-errors";
 import { Wallet, History, Coins } from "lucide-react";
-import { useActiveSellers } from "@/lib/sellers";
+import { useRegisteredSellers } from "@/lib/sellers";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export const Route = createFileRoute("/minha-conta")({
@@ -25,7 +25,7 @@ function MinhaConta() {
   const { user, loading } = useAuth();
   const nav = useNavigate();
   const qc = useQueryClient();
-  const { data: sellers = [], isLoading: sellersLoading } = useActiveSellers();
+  const { data: sellers = [], isLoading: sellersLoading } = useRegisteredSellers();
 
   useEffect(() => {
     if (!loading && !user) nav({ to: "/auth" });

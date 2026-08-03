@@ -896,6 +896,13 @@ export type Database = {
         Args: { _request_id: string; _reviewer: string }
         Returns: undefined
       }
+      get_registered_sellers: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          name: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
