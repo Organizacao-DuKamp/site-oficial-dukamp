@@ -130,6 +130,9 @@ export const Route = createFileRoute("/api/account/seller-link")({
 
         if (error) return errorResponse("Não foi possível atualizar o vínculo com o vendedor.", 500);
 
+        const { invalidateAuthUsersCache } = await import("@/lib/seller-system.server");
+        invalidateAuthUsersCache();
+
         return Response.json({ ok: true, seller }, { headers: { "Cache-Control": "no-store" } });
       },
     },
