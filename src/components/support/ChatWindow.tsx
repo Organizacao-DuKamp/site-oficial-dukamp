@@ -6,7 +6,7 @@ import { X, Minus, MessageCircle } from "lucide-react";
 import { MessageList } from "./MessageList";
 
 export function ChatWindow() {
-  const { ticket, messages, open, closeChat, sendMessage, closeTicket, startTicket } = useSupport();
+  const { ticket, seller, messages, open, closeChat, sendMessage, closeTicket, startTicket } = useSupport();
   const [text, setText] = useState("");
 
   if (!open) return null;
@@ -25,12 +25,12 @@ export function ChatWindow() {
         <div className="flex items-center gap-2">
           <MessageCircle className="h-4 w-4" />
           <div>
-            <div className="text-sm font-semibold">Atendimento Dukamp</div>
+            <div className="text-sm font-semibold">{seller?.name ?? "Seu vendedor"}</div>
             <div className="text-[10px] opacity-80">
               {!ticket
-                ? "Sem atendimento"
+                ? "Conversa ainda não iniciada"
                 : ticket.status === "open"
-                  ? "Aguardando atendente"
+                  ? "Conversa aberta"
                   : ticket.status === "in_progress"
                     ? "Em atendimento"
                     : "Encerrado"}
@@ -45,13 +45,13 @@ export function ChatWindow() {
       {!ticket ? (
         <div className="flex-1 grid place-items-center p-4 text-center">
           <div>
-            <p className="text-sm text-muted-foreground mb-3">Inicie um atendimento com nossa equipe.</p>
-            <Button onClick={startTicket}>Iniciar atendimento</Button>
+            <p className="text-sm text-muted-foreground mb-3">Inicie uma conversa com {seller?.name}.</p>
+            <Button onClick={startTicket}>Iniciar conversa</Button>
           </div>
         </div>
       ) : (
         <>
-          <MessageList messages={messages} selfRole="user" />
+          <MessageList messages={messages} selfRole="customer" />
           <form onSubmit={onSend} className="border-t p-2 flex gap-2 bg-background">
             <Input
               value={text}

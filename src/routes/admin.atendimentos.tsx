@@ -37,7 +37,7 @@ function AtendimentosPage() {
       (supabase as any)
         .from("support_messages")
         .select("ticket_id")
-        .eq("sender_role", "user")
+        .in("sender_role", ["user", "customer"])
         .eq("read_by_admin", false),
     ]);
     const pmap = new Map((profs ?? []).map((p: any) => [p.id, p]));
