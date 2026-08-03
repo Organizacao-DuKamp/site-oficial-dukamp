@@ -33,7 +33,7 @@ async function authorize(request: Request) {
 }
 
 async function findSelectableSeller(
-  supabaseAdmin: Awaited<ReturnType<typeof authorize>> extends { supabaseAdmin: infer T } ? T : never,
+  supabaseAdmin: any,
   sellerId: string,
 ): Promise<{ seller: SellerOption | null; error?: string }> {
   const { data, error } = await supabaseAdmin
