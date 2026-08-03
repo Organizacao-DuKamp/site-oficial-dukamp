@@ -144,18 +144,14 @@ export const Route = createFileRoute("/api/public/register")({
           }
           if (!seller?.user_id) return errorResponse("Vendedor inválido ou sem conta cadastrada.");
 
-          const { data: sellerProfile, error: sellerProfileError } = await supabaseAdmin
-            .from("profiles")
-            .select("id")
-            .eq("id", seller.user_id)
-            .eq("account_type", "vendedor")
-            .maybeSingle();
-
-          if (sellerProfileError) {
-            console.error("[register] Falha ao validar conta do vendedor:", sellerProfileError.message);
+          const { data: sellerUser, error: sellerUserError } = await supabaseAdmin.auth.admin.getUserById(seller.user_id);
+          if (sellerUserError) {
+            console.error("[register] Falha ao validar conta do vendedor:", sellerUserError.message);
             return errorResponse("Não foi possível validar o vendedor. Tente novamente.", 500);
           }
-          if (!sellerProfile) return errorResponse("Vendedor inválido ou sem conta de vendedor.");
+          if (sellerUser.user?.user_metadata?.account_type_override !== "vendedor") {
+            return errorResponse("Vendedor inválido ou sem conta de vendedor.");
+          }
         }
 
         const { data, error } = await supabaseAdmin.auth.admin.createUser({

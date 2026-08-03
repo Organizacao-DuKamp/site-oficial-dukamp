@@ -1,5 +1,8 @@
--- The seller picker represents login accounts, not every static sales-team card.
--- Keep returning the sellers.id because profiles.seller_id and chat records use it.
+-- Seller is an auth-level account role in installations where the database enum
+-- predates that value. Do not cast "vendedor" to public.account_type.
+ALTER TABLE public.sellers
+  ADD COLUMN IF NOT EXISTS show_on_team boolean NOT NULL DEFAULT true;
+
 CREATE OR REPLACE FUNCTION public.get_registered_sellers()
 RETURNS TABLE (id uuid, name text)
 LANGUAGE sql
@@ -19,7 +22,6 @@ $$;
 REVOKE ALL ON FUNCTION public.get_registered_sellers() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_registered_sellers() TO anon, authenticated;
 
--- Also reject stale or forged selections at the database boundary.
 CREATE OR REPLACE FUNCTION public.validate_active_profile_seller()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -41,3 +43,16 @@ BEGIN
   RETURN NEW;
 END;
 $$;
+
+INSERT INTO public.sellers (user_id, name, slug, active, show_on_team)
+SELECT
+  p.id,
+  COALESCE(NULLIF(BTRIM(p.full_name), ''), p.email, 'Vendedor'),
+  'conta-' || p.id::text,
+  true,
+  false
+FROM public.profiles AS p
+JOIN auth.users AS u ON u.id = p.id
+WHERE u.raw_user_meta_data ->> 'account_type_override' = 'vendedor'
+  AND NOT EXISTS (SELECT 1 FROM public.sellers AS s WHERE s.user_id = p.id)
+ON CONFLICT (slug) DO NOTHING;
