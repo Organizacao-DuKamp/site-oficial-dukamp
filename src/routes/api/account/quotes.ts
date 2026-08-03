@@ -26,11 +26,13 @@ export const Route = createFileRoute("/api/account/quotes")({
           const quotes = [];
           for (const row of rows.filter((quote) => quote.client_id === user.id)) {
             const quote = await refreshExpiration(supabaseAdmin, row);
-            if (pendingOnly && (quote.status !== "sent" || quote.viewed_at)) continue;
+            if (pendingOnly && quote.status !== "sent") continue;
             quotes.push(publicQuote(quote));
           }
           quotes.sort(
-            (a, b) => new Date(b.sent_at || b.created_at).getTime() - new Date(a.sent_at || a.created_at).getTime(),
+            (first, second) =>
+              new Date(second.sent_at || second.created_at).getTime() -
+              new Date(first.sent_at || first.created_at).getTime(),
           );
           return Response.json({ quotes }, { headers: { "Cache-Control": "no-store" } });
         } catch (error) {
@@ -59,7 +61,9 @@ export const Route = createFileRoute("/api/account/quotes")({
 
         try {
           const stored = await readQuote(supabaseAdmin, quoteId);
-          if (!stored || stored.client_id !== user.id) return errorResponse("Orçamento não encontrado.", 404);
+          if (!stored || stored.client_id !== user.id) {
+            return errorResponse("Orçamento não encontrado.", 404);
+          }
           const quote = await refreshExpiration(supabaseAdmin, stored);
 
           if (payload.action === "view") {
