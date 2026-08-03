@@ -72,6 +72,20 @@ export function useActiveSellers() {
   });
 }
 
+export type RegisteredSeller = Pick<Seller, "id" | "name">;
+
+/** Vendedores que possuem uma conta ativa com o tipo "vendedor". */
+export function useRegisteredSellers() {
+  return useQuery({
+    queryKey: ["sellers", "registered"],
+    queryFn: async (): Promise<RegisteredSeller[]> => {
+      const { data, error } = await supabase.rpc("get_registered_sellers");
+      if (error) throw error;
+      return (data ?? []) as RegisteredSeller[];
+    },
+  });
+}
+
 export function useSellerBySlug(slug: string) {
   return useQuery({
     queryKey: ["sellers", "slug", slug],
