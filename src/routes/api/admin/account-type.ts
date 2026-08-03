@@ -13,18 +13,24 @@ type DatabaseError = {
   message?: string;
 } | null;
 
-const WRITABLE_TYPES: AccountType[] = ["cliente", "revendedor", "produtor", "empresa", "vendedor", "admin"];
+const WRITABLE_TYPES: AccountType[] = [
+  "cliente",
+  "revendedor",
+  "produtor",
+  "empresa",
+  "vendedor",
+  "admin",
+];
 
 function errorResponse(error: string, status: number) {
-  return Response.json({ error }, { status });
+  return Response.json({ error }, { status, headers: { "Cache-Control": "no-store" } });
 }
 
 function isMissingSellerColumn(error: DatabaseError, column: string): boolean {
   if (!error) return false;
   const message = (error.message ?? "").toLowerCase();
-  const target = column.toLowerCase();
   return (
-    message.includes(target) &&
+    message.includes(column.toLowerCase()) &&
     (error.code === "42703" ||
       error.code === "PGRST204" ||
       message.includes("does not exist") ||
@@ -48,45 +54,19 @@ async function authorizeMasterAdmin(request: Request) {
 
   if (error || !data.user) return { response: errorResponse("Sessão inválida.", 401) } as const;
   if (email !== PROTECTED_ADMIN_EMAIL.toLowerCase()) {
-    return { response: errorResponse("Apenas o Administrador Mestre pode gerenciar contas.", 403) } as const;
+    return {
+      response: errorResponse("Apenas o Administrador Mestre pode gerenciar contas.", 403),
+    } as const;
   }
 
   return { supabaseAdmin } as const;
 }
 
-async function ensureTrustedSellerMetadata(supabaseAdmin: any, user: any): Promise<boolean> {
-  if (user.app_metadata?.account_type_override === "vendedor") return true;
-  if (user.user_metadata?.account_type_override !== "vendedor") return false;
-
-  const { data: seller, error } = await supabaseAdmin
-    .from("sellers")
-    .select("id")
-    .eq("slug", `conta-${user.id}`)
-    .maybeSingle();
-  if (error || !seller) return false;
-
-  const appMetadata = { ...(user.app_metadata ?? {}) } as Record<string, unknown>;
-  const userMetadata = { ...(user.user_metadata ?? {}) } as Record<string, unknown>;
-  const { error: migrationError } = await supabaseAdmin.auth.admin.updateUserById(user.id, {
-    app_metadata: {
-      ...appMetadata,
-      account_type_override: "vendedor",
-      seller_record_id: seller.id,
-    },
-    user_metadata: {
-      ...userMetadata,
-      account_type_override: null,
-      seller_record_id: null,
-    },
-  });
-  if (migrationError) {
-    console.error("[account-type] Falha ao migrar cargo de vendedor:", migrationError.message);
-    return false;
-  }
-  return true;
-}
-
-function effectiveAccountType(profileType: unknown, isAdmin: boolean, isSeller: boolean): AccountType {
+function effectiveAccountType(
+  profileType: unknown,
+  isAdmin: boolean,
+  isSeller: boolean,
+): AccountType {
   if (isAdmin) return "admin";
   if (isSeller) return "vendedor";
   return (typeof profileType === "string" ? profileType : "cliente") as AccountType;
@@ -99,54 +79,61 @@ export const Route = createFileRoute("/api/admin/account-type")({
         const authorization = await authorizeMasterAdmin(request);
         if ("response" in authorization) return authorization.response;
         const { supabaseAdmin } = authorization;
+        const {
+          invalidateAuthUsersCache,
+          listAllAuthUsers,
+          resolveSellerIdentity,
+        } = await import("@/lib/seller-system.server");
 
-        const url = new URL(request.url);
-        const userId = url.searchParams.get("userId")?.trim();
-
+        const userId = new URL(request.url).searchParams.get("userId")?.trim();
         if (userId) {
-          const [targetR, profileR, rolesR] = await Promise.all([
+          const [targetResult, profileResult, rolesResult] = await Promise.all([
             supabaseAdmin.auth.admin.getUserById(userId),
             supabaseAdmin.from("profiles").select("account_type").eq("id", userId).maybeSingle(),
-            supabaseAdmin.from("user_roles").select("role").eq("user_id", userId).eq("role", "admin"),
+            supabaseAdmin
+              .from("user_roles")
+              .select("role")
+              .eq("user_id", userId)
+              .eq("role", "admin"),
           ]);
 
-          if (targetR.error || !targetR.data.user) return errorResponse("Conta não encontrada.", 404);
-          if (profileR.error) return errorResponse(profileR.error.message, 500);
-          if (rolesR.error) return errorResponse(rolesR.error.message, 500);
+          if (targetResult.error || !targetResult.data.user) {
+            return errorResponse("Conta não encontrada.", 404);
+          }
+          if (profileResult.error) return errorResponse(profileResult.error.message, 500);
+          if (rolesResult.error) return errorResponse(rolesResult.error.message, 500);
 
-          const isSeller = await ensureTrustedSellerMetadata(supabaseAdmin, targetR.data.user);
-          return Response.json({
-            accountType: effectiveAccountType(
-              profileR.data?.account_type,
-              (rolesR.data ?? []).length > 0,
-              isSeller,
-            ),
-          });
+          const seller = await resolveSellerIdentity(supabaseAdmin, targetResult.data.user);
+          invalidateAuthUsersCache();
+          return Response.json(
+            {
+              accountType: effectiveAccountType(
+                profileResult.data?.account_type,
+                (rolesResult.data ?? []).length > 0,
+                Boolean(seller),
+              ),
+            },
+            { headers: { "Cache-Control": "no-store" } },
+          );
         }
 
         const sellerIds: string[] = [];
-        const perPage = 1000;
-        let page = 1;
-
-        while (true) {
-          const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage });
-          if (error) return errorResponse(error.message, 500);
-
-          for (const user of data.users) {
-            if (await ensureTrustedSellerMetadata(supabaseAdmin, user)) sellerIds.push(user.id);
-          }
-
-          if (data.users.length < perPage) break;
-          page += 1;
+        const users = await listAllAuthUsers(supabaseAdmin);
+        for (const user of users) {
+          if (await resolveSellerIdentity(supabaseAdmin, user)) sellerIds.push(user.id);
         }
-
-        return Response.json({ sellerIds });
+        invalidateAuthUsersCache();
+        return Response.json(
+          { sellerIds },
+          { headers: { "Cache-Control": "no-store" } },
+        );
       },
 
       POST: async ({ request }) => {
         const authorization = await authorizeMasterAdmin(request);
         if ("response" in authorization) return authorization.response;
         const { supabaseAdmin } = authorization;
+        const { invalidateAuthUsersCache } = await import("@/lib/seller-system.server");
 
         let payload: UpdatePayload;
         try {
@@ -161,7 +148,7 @@ export const Route = createFileRoute("/api/admin/account-type")({
           return errorResponse("Tipo de conta inválido.", 400);
         }
 
-        const [targetR, profileR] = await Promise.all([
+        const [targetResult, profileResult] = await Promise.all([
           supabaseAdmin.auth.admin.getUserById(userId),
           supabaseAdmin
             .from("profiles")
@@ -170,21 +157,28 @@ export const Route = createFileRoute("/api/admin/account-type")({
             .maybeSingle(),
         ]);
 
-        if (targetR.error || !targetR.data.user) return errorResponse("Conta não encontrada.", 404);
-        if (profileR.error) return errorResponse(profileR.error.message, 500);
-        if (!profileR.data) return errorResponse("Conta não encontrada.", 404);
+        if (targetResult.error || !targetResult.data.user) {
+          return errorResponse("Conta não encontrada.", 404);
+        }
+        if (profileResult.error) return errorResponse(profileResult.error.message, 500);
+        if (!profileResult.data) return errorResponse("Conta não encontrada.", 404);
 
-        const targetEmail = (targetR.data.user.email ?? profileR.data.email ?? "").toLowerCase();
+        const targetEmail = (
+          targetResult.data.user.email ??
+          profileResult.data.email ??
+          ""
+        ).toLowerCase();
         if (targetEmail === PROTECTED_ADMIN_EMAIL.toLowerCase()) {
           return errorResponse("Esta conta é protegida.", 403);
         }
 
         const currentUserMetadata = {
-          ...(targetR.data.user.user_metadata ?? {}),
+          ...(targetResult.data.user.user_metadata ?? {}),
         } as Record<string, unknown>;
         const currentAppMetadata = {
-          ...(targetR.data.user.app_metadata ?? {}),
+          ...(targetResult.data.user.app_metadata ?? {}),
         } as Record<string, unknown>;
+        const sellerSlug = `conta-${userId}`;
 
         if (accountType === "vendedor") {
           const { error: profileError } = await supabaseAdmin
@@ -194,67 +188,42 @@ export const Route = createFileRoute("/api/admin/account-type")({
           if (profileError) return errorResponse(profileError.message, 500);
 
           const sellerName =
-            profileR.data.full_name ||
-            profileR.data.email ||
-            targetR.data.user.email ||
+            profileResult.data.full_name ||
+            profileResult.data.email ||
+            targetResult.data.user.email ||
             `Vendedor ${userId.slice(0, 8)}`;
-          const sellerSlug = `conta-${userId}`;
-          const trustedSellerId =
-            typeof currentAppMetadata.seller_record_id === "string"
-              ? currentAppMetadata.seller_record_id
-              : null;
 
-          let linkedSeller: { id: string } | null = null;
-          let sellerWarning: string | undefined;
-
-          if (trustedSellerId) {
-            const { data, error } = await supabaseAdmin
-              .from("sellers")
-              .select("id")
-              .eq("id", trustedSellerId)
-              .eq("slug", sellerSlug)
-              .maybeSingle();
-            if (!error) linkedSeller = data;
-          }
+          let { data: linkedSeller, error: sellerLookupError } = await supabaseAdmin
+            .from("sellers")
+            .select("id")
+            .eq("slug", sellerSlug)
+            .maybeSingle();
+          if (sellerLookupError) return errorResponse(sellerLookupError.message, 500);
 
           if (!linkedSeller) {
-            const { data, error } = await supabaseAdmin
-              .from("sellers")
-              .select("id")
-              .eq("slug", sellerSlug)
-              .maybeSingle();
-            if (error) {
-              console.error("[account-type] Falha ao procurar vendedor pelo slug:", error.message);
-            } else {
-              linkedSeller = data;
-            }
-          }
-
-          if (!linkedSeller) {
-            const { data, error } = await supabaseAdmin
+            const creation = await supabaseAdmin
               .from("sellers")
               .insert({ name: sellerName, slug: sellerSlug, active: true })
               .select("id")
               .single();
 
-            if (error?.code === "23505") {
+            if (creation.error?.code === "23505") {
               const retry = await supabaseAdmin
                 .from("sellers")
                 .select("id")
                 .eq("slug", sellerSlug)
                 .maybeSingle();
               linkedSeller = retry.data;
-            } else if (error) {
-              console.error("[account-type] Falha ao criar registro de vendedor:", error.message);
-              sellerWarning = "Cargo salvo, mas o registro interno do vendedor não pôde ser criado.";
+              sellerLookupError = retry.error;
             } else {
-              linkedSeller = data;
+              linkedSeller = creation.data;
+              sellerLookupError = creation.error;
             }
           }
 
-          if (!linkedSeller) {
+          if (sellerLookupError || !linkedSeller) {
             return errorResponse(
-              sellerWarning ?? "Não foi possível criar o cadastro interno do vendedor.",
+              sellerLookupError?.message ?? "Não foi possível criar o cadastro interno do vendedor.",
               500,
             );
           }
@@ -265,20 +234,28 @@ export const Route = createFileRoute("/api/admin/account-type")({
             .eq("id", linkedSeller.id);
           if (activeError) return errorResponse(activeError.message, 500);
 
-          const { error: teamError } = await supabaseAdmin
-            .from("sellers")
-            .update({ show_on_team: false })
-            .eq("id", linkedSeller.id);
-          if (teamError && !isMissingSellerColumn(teamError, "show_on_team")) {
-            console.error("[account-type] Falha ao ocultar vendedor interno:", teamError.message);
+          const optionalUpdates = [
+            supabaseAdmin
+              .from("sellers")
+              .update({ show_on_team: false })
+              .eq("id", linkedSeller.id),
+            supabaseAdmin
+              .from("sellers")
+              .update({ user_id: userId })
+              .eq("id", linkedSeller.id),
+          ];
+          const [teamResult, userLinkResult] = await Promise.all(optionalUpdates);
+          if (
+            teamResult.error &&
+            !isMissingSellerColumn(teamResult.error, "show_on_team")
+          ) {
+            console.error("[account-type] Falha ao ocultar vendedor interno:", teamResult.error.message);
           }
-
-          const { error: userLinkError } = await supabaseAdmin
-            .from("sellers")
-            .update({ user_id: userId })
-            .eq("id", linkedSeller.id);
-          if (userLinkError && !isMissingSellerColumn(userLinkError, "user_id")) {
-            console.error("[account-type] Falha ao vincular conta ao vendedor:", userLinkError.message);
+          if (
+            userLinkResult.error &&
+            !isMissingSellerColumn(userLinkResult.error, "user_id")
+          ) {
+            console.error("[account-type] Falha ao vincular conta ao vendedor:", userLinkResult.error.message);
           }
 
           const { error: metadataError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
@@ -302,8 +279,15 @@ export const Route = createFileRoute("/api/admin/account-type")({
             .eq("role", "admin");
           if (roleError) return errorResponse(roleError.message, 500);
 
+          invalidateAuthUsersCache();
           return Response.json({ ok: true, accountType: "vendedor" });
         }
+
+        const { error: deactivateError } = await supabaseAdmin
+          .from("sellers")
+          .update({ active: false })
+          .eq("slug", sellerSlug);
+        if (deactivateError) return errorResponse(deactivateError.message, 500);
 
         const { error: metadataError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
           app_metadata: {
@@ -328,7 +312,9 @@ export const Route = createFileRoute("/api/admin/account-type")({
         if (accountType === "admin") {
           const { error: roleError } = await supabaseAdmin
             .from("user_roles")
-            .upsert({ user_id: userId, role: "admin" } as any, { onConflict: "user_id,role" });
+            .upsert({ user_id: userId, role: "admin" } as any, {
+              onConflict: "user_id,role",
+            });
           if (roleError) return errorResponse(roleError.message, 500);
         } else {
           const { error: roleError } = await supabaseAdmin
@@ -339,6 +325,7 @@ export const Route = createFileRoute("/api/admin/account-type")({
           if (roleError) return errorResponse(roleError.message, 500);
         }
 
+        invalidateAuthUsersCache();
         return Response.json({ ok: true, accountType });
       },
     },
