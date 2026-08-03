@@ -11,6 +11,8 @@ export type CartItem = {
 type CartCtx = {
   items: CartItem[];
   add: (item: Omit<CartItem, "quantity">, qty?: number) => void;
+  /** Replaces the complete cart in a single state update (for example, after accepting a quote). */
+  replaceItems: (items: CartItem[]) => void;
   remove: (id: string) => void;
   setQty: (id: string, qty: number) => void;
   clear: () => void;
@@ -47,6 +49,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return [...prev, { ...item, quantity: qty }];
     });
   };
+  const replaceItems: CartCtx["replaceItems"] = (nextItems) => {
+    const normalized = nextItems.map((item) => ({
+      ...item,
+      price: Number(item.price),
+      quantity: Math.max(1, Math.trunc(item.quantity)),
+    }));
+    setItems(normalized);
+  };
   const remove = (id: string) => setItems((p) => p.filter((i) => i.id !== id));
   const setQty = (id: string, qty: number) =>
     setItems((p) => p.map((i) => (i.id === id ? { ...i, quantity: Math.max(1, qty) } : i)));
@@ -55,7 +65,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const count = items.reduce((s, i) => s + i.quantity, 0);
   const total = items.reduce((s, i) => s + i.quantity * i.price, 0);
 
-  return <Ctx.Provider value={{ items, add, remove, setQty, clear, count, total }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ items, add, replaceItems, remove, setQty, clear, count, total }}>{children}</Ctx.Provider>;
 }
 
 export function useCart() {
