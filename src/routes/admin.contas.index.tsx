@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Search, Eye, UserCircle, ShieldAlert } from "lucide-react";
 import { PROTECTED_ADMIN_EMAIL } from "@/lib/constants";
 import { accountTypeLabel, type AccountType, useAuth } from "@/lib/auth";
+import { getManagedSellerIds } from "@/lib/admin-account-type";
 
 export const Route = createFileRoute("/admin/contas/")({
   component: ContasPage,
@@ -32,9 +33,10 @@ function ContasPage() {
     enabled: isMasterAdmin,
     queryKey: ["admin-accounts"],
     queryFn: async () => {
-      const [profilesR, rolesR] = await Promise.all([
+      const [profilesR, rolesR, sellerIds] = await Promise.all([
         supabase.from("profiles").select("id, full_name, email, avatar_url, created_at, account_type" as any),
         supabase.from("user_roles").select("user_id, role"),
+        getManagedSellerIds(),
       ]);
       if (profilesR.error) throw profilesR.error;
       if (rolesR.error) throw rolesR.error;
@@ -43,7 +45,15 @@ function ContasPage() {
       );
       return (profilesR.data ?? [])
         .filter((p: any) => p.email !== PROTECTED_ADMIN_EMAIL)
-        .map((p: any) => ({ ...p, isAdmin: adminSet.has(p.id) }));
+        .map((p: any) => ({
+          ...p,
+          isAdmin: adminSet.has(p.id),
+          account_type: adminSet.has(p.id)
+            ? "admin"
+            : sellerIds.has(p.id)
+              ? "vendedor"
+              : p.account_type,
+        }));
     },
   });
 
