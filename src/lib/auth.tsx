@@ -3,7 +3,19 @@ import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { PROTECTED_ADMIN_EMAIL } from "@/lib/constants";
 
-export type AccountType = "cliente" | "produtor" | "empresa" | "admin";
+export type AccountType = "cliente" | "revendedor" | "produtor" | "empresa" | "vendedor" | "admin";
+
+export function accountTypeLabel(type: AccountType): string {
+  const labels: Record<AccountType, string> = {
+    cliente: "Consumidor",
+    revendedor: "Revendedor",
+    produtor: "Produtor Rural",
+    empresa: "Empresa",
+    vendedor: "Vendedor",
+    admin: "Administrador",
+  };
+  return labels[type];
+}
 
 type AuthCtx = {
   user: User | null;
@@ -153,4 +165,3 @@ export function pixPriceForAccount(p: PixFields, t: AccountType): number | null 
   else v = p.consumer_pix_price ?? p.pix_price;
   return v != null ? Number(v) : null;
 }
-

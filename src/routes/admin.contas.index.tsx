@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Search, Eye, UserCircle, ShieldAlert } from "lucide-react";
 import { PROTECTED_ADMIN_EMAIL } from "@/lib/constants";
-import { useAuth } from "@/lib/auth";
+import { accountTypeLabel, type AccountType, useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/admin/contas/")({
   component: ContasPage,
@@ -111,7 +111,7 @@ function ContasPage() {
                 <TableCell className="text-sm">{u.email}</TableCell>
                 <TableCell>
                   <Badge variant={u.account_type === "admin" ? "default" : u.account_type === "cliente" ? "secondary" : "outline"}>
-                    {u.account_type === "produtor" ? "Produtor Rural" : u.account_type === "admin" ? "Admin" : "Consumidor"}
+                    {accountTypeLabel((u.account_type ?? "cliente") as AccountType)}
                   </Badge>
                 </TableCell>
                 <TableCell className="hidden md:table-cell text-xs text-muted-foreground">

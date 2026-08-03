@@ -14,7 +14,7 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 function Dashboard() {
-  const { user, isAdmin, loading, signOut } = useAuth();
+  const { user, isAdmin, accountType, loading, signOut } = useAuth();
   const { items } = useCart();
   const { ticket, openChat, startTicket } = useSupport();
   const nav = useNavigate();
@@ -23,9 +23,10 @@ function Dashboard() {
     if (loading) return;
     if (!user) nav({ to: "/auth" });
     else if (isAdmin) nav({ to: "/admin" });
-  }, [loading, user, isAdmin, nav]);
+    else if (accountType === "vendedor") nav({ to: "/vendedor" });
+  }, [loading, user, isAdmin, accountType, nav]);
 
-  if (loading || !user || isAdmin) return null;
+  if (loading || !user || isAdmin || accountType === "vendedor") return null;
 
   const cartCount = items.reduce((s, i) => s + i.quantity, 0);
 
