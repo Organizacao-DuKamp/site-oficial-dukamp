@@ -55,9 +55,18 @@ export const Route = createFileRoute("/api/seller/clients")({
 
         const count = filtered.length;
         const from = (page - 1) * pageSize;
-        const rows = filtered
-          .slice(from, from + pageSize)
-          .map(({ user: _user, ...client }) => client);
+        const rows = filtered.slice(from, from + pageSize).map(({ user: clientUser, ...client }) => {
+          const metadata = clientUser.user_metadata ?? {};
+          const ticketId =
+            metadata.seller_chat_seller_id === seller.sellerId &&
+            typeof metadata.seller_chat_ticket_id === "string"
+              ? metadata.seller_chat_ticket_id.trim()
+              : "";
+          return {
+            ...client,
+            chat_ticket_id: ticketId || null,
+          };
+        });
 
         return Response.json(
           {
