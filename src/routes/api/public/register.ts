@@ -133,24 +133,16 @@ export const Route = createFileRoute("/api/public/register")({
         if (sellerId) {
           const { data: seller, error: sellerError } = await supabaseAdmin
             .from("sellers")
-            .select("id, user_id")
+            .select("id, slug, active")
             .eq("id", sellerId)
-            .eq("active", true)
             .maybeSingle();
 
           if (sellerError) {
             console.error("[register] Falha ao validar vendedor:", sellerError.message);
             return errorResponse("Não foi possível validar o vendedor. Tente novamente.", 500);
           }
-          if (!seller?.user_id) return errorResponse("Vendedor inválido ou sem conta cadastrada.");
-
-          const { data: sellerUser, error: sellerUserError } = await supabaseAdmin.auth.admin.getUserById(seller.user_id);
-          if (sellerUserError) {
-            console.error("[register] Falha ao validar conta do vendedor:", sellerUserError.message);
-            return errorResponse("Não foi possível validar o vendedor. Tente novamente.", 500);
-          }
-          if (sellerUser.user?.user_metadata?.account_type_override !== "vendedor") {
-            return errorResponse("Vendedor inválido ou sem conta de vendedor.");
+          if (!seller || !seller.active || !seller.slug?.startsWith("conta-")) {
+            return errorResponse("Vendedor inválido ou inativo.");
           }
         }
 
@@ -162,6 +154,7 @@ export const Route = createFileRoute("/api/public/register")({
             full_name: fullName,
             phone,
             requested_type: accountKind,
+            selected_seller_id: sellerId,
           },
         });
 
@@ -175,22 +168,6 @@ export const Route = createFileRoute("/api/public/register")({
 
         const userId = data.user?.id;
         if (!userId) return errorResponse("Não foi possível criar a conta. Tente novamente.", 500);
-
-        if (sellerId) {
-          const { data: updatedProfile, error: profileError } = await supabaseAdmin
-            .from("profiles")
-            .update({ seller_id: sellerId })
-            .eq("id", userId)
-            .select("id")
-            .maybeSingle();
-
-          if (profileError || !updatedProfile) {
-            console.error("[register] Falha ao associar vendedor:", profileError?.message ?? "perfil não encontrado");
-            const { error: rollbackError } = await supabaseAdmin.auth.admin.deleteUser(userId);
-            if (rollbackError) console.error("[register] Falha ao compensar criação do usuário:", rollbackError.message);
-            return errorResponse("Não foi possível associar o vendedor. Tente novamente.", 500);
-          }
-        }
 
         if (requestedType) {
           const { error: requestError } = await supabaseAdmin.from("account_requests").insert({
