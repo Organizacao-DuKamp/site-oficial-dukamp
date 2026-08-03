@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type Seller = {
   id: string;
+  user_id: string | null;
   slug: string;
   name: string;
   role: string | null;
