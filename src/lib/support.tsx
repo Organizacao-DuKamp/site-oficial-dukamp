@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { getSellerLink } from "@/lib/seller-link";
 
 export type TicketStatus = "open" | "in_progress" | "closed";
 
@@ -43,7 +44,6 @@ type Ctx = {
 };
 
 const SupportCtx = createContext<Ctx | null>(null);
-
 const STORAGE_KEY = "dukamp_chat_open";
 
 export function SupportProvider({ children }: { children: ReactNode }) {
@@ -57,34 +57,43 @@ export function SupportProvider({ children }: { children: ReactNode }) {
   const active = !!user && !isAdmin && accountType !== "vendedor";
 
   useEffect(() => {
-    if (!active || !user) { setSeller(null); return; }
+    if (!active || !user) {
+      setSeller(null);
+      return;
+    }
+
     let cancelled = false;
     (async () => {
-      const { data: profile } = await (supabase as any).from("profiles").select("seller_id").eq("id", user.id).maybeSingle();
-      if (!profile?.seller_id) { if (!cancelled) setSeller(null); return; }
-      const { data } = await (supabase as any).from("sellers").select("id, name").eq("id", profile.seller_id).maybeSingle();
-      if (!cancelled) setSeller(data ?? null);
+      try {
+        const link = await getSellerLink();
+        if (!cancelled) setSeller(link.seller);
+      } catch {
+        if (!cancelled) setSeller(null);
+      }
     })();
-    return () => { cancelled = true; };
+
+    return () => {
+      cancelled = true;
+    };
   }, [active, user]);
 
-  // restore open state
   useEffect(() => {
     if (typeof window === "undefined") return;
     setOpen(window.localStorage.getItem(STORAGE_KEY) === "1");
   }, []);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(STORAGE_KEY, open ? "1" : "0");
   }, [open]);
 
-  // fetch active ticket
   useEffect(() => {
     if (!active || !user || !seller) {
       setTicket(null);
       setMessages([]);
       return;
     }
+
     let cancel = false;
     (async () => {
       setLoading(true);
@@ -101,17 +110,18 @@ export function SupportProvider({ children }: { children: ReactNode }) {
       setTicket((data as SupportTicket | null) ?? null);
       setLoading(false);
     })();
+
     return () => {
       cancel = true;
     };
   }, [active, user, seller]);
 
-  // load messages + realtime for ticket
   useEffect(() => {
     if (!ticket) {
       setMessages([]);
       return;
     }
+
     let cancel = false;
     (async () => {
       const { data } = await (supabase as any)
@@ -149,10 +159,11 @@ export function SupportProvider({ children }: { children: ReactNode }) {
     };
   }, [ticket?.id]);
 
-  // mark admin messages as read while chat is open
   useEffect(() => {
     if (!open || !ticket || !user) return;
-    const unreadIds = messages.filter((m) => (m.sender_role === "seller" || m.sender_role === "admin") && !m.read_by_customer).map((m) => m.id);
+    const unreadIds = messages
+      .filter((m) => (m.sender_role === "seller" || m.sender_role === "admin") && !m.read_by_customer)
+      .map((m) => m.id);
     if (unreadIds.length === 0) return;
     (supabase as any)
       .from("support_messages")
@@ -161,7 +172,9 @@ export function SupportProvider({ children }: { children: ReactNode }) {
       .then(() => {});
   }, [open, messages, ticket, user]);
 
-  const unread = messages.filter((m) => (m.sender_role === "seller" || m.sender_role === "admin") && !m.read_by_customer).length;
+  const unread = messages.filter(
+    (m) => (m.sender_role === "seller" || m.sender_role === "admin") && !m.read_by_customer,
+  ).length;
 
   const startTicket = useCallback(async () => {
     if (!user || !seller || ticket) return;
