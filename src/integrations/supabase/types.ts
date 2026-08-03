@@ -636,6 +636,7 @@ export type Database = {
           municipio_propriedade: string | null
           nome_propriedade: string | null
           phone: string | null
+          seller_id: string | null
           uf: string | null
           updated_at: string
         }
@@ -666,6 +667,7 @@ export type Database = {
           municipio_propriedade?: string | null
           nome_propriedade?: string | null
           phone?: string | null
+          seller_id?: string | null
           uf?: string | null
           updated_at?: string
         }
@@ -696,10 +698,19 @@ export type Database = {
           municipio_propriedade?: string | null
           nome_propriedade?: string | null
           phone?: string | null
+          seller_id?: string | null
           uf?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "sellers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sellers: {
         Row: {
