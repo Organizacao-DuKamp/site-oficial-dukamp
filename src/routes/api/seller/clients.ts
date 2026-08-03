@@ -28,7 +28,7 @@ export const Route = createFileRoute("/api/seller/clients")({
           ? Math.min(50, Math.max(1, Math.trunc(requestedPageSize)))
           : 10;
 
-        let clients;
+        let clients: Awaited<ReturnType<typeof listLinkedClients>>;
         try {
           clients = await listLinkedClients(supabaseAdmin, seller.sellerId);
         } catch (error) {
@@ -46,13 +46,18 @@ export const Route = createFileRoute("/api/seller/clients")({
             )
           : clients;
 
-        filtered.sort((a, b) =>
-          (a.full_name || a.email || "").localeCompare(b.full_name || b.email || "", "pt-BR"),
+        filtered.sort((first, second) =>
+          (first.full_name || first.email || "").localeCompare(
+            second.full_name || second.email || "",
+            "pt-BR",
+          ),
         );
 
         const count = filtered.length;
         const from = (page - 1) * pageSize;
-        const rows = filtered.slice(from, from + pageSize).map(({ user: _user, ...client }) => client);
+        const rows = filtered
+          .slice(from, from + pageSize)
+          .map(({ user: _user, ...client }) => client);
 
         return Response.json(
           {
