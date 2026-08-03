@@ -10,6 +10,7 @@ import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { traduzErroAuth } from "@/lib/auth-errors";
+import { useActiveSellers } from "@/lib/sellers";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({ meta: [{ title: "Entrar — Dukamp" }] }),
@@ -102,12 +103,14 @@ type RegisterResponse = {
 };
 
 function RegisterForm() {
+  const { data: sellers = [], isLoading: sellersLoading } = useActiveSellers();
   const [accountKind, setAccountKind] = useState<AccountKind>("cliente");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [phone, setPhone] = useState("");
+  const [sellerId, setSellerId] = useState("none");
 
   // Produtor/Empresa
   const [cpf, setCpf] = useState("");
@@ -184,6 +187,7 @@ function RegisterForm() {
           email: normalizedEmail,
           password,
           phone: phone.trim(),
+          sellerId: sellerId === "none" ? null : sellerId,
           cpf,
           fazenda,
           cnpjPropriedade,
@@ -285,6 +289,21 @@ function RegisterForm() {
         <div className="sm:col-span-2">
           <Label htmlFor="r-phone">Telefone</Label>
           <Input id="r-phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(11) 99999-9999" required />
+        </div>
+        <div className="sm:col-span-2">
+          <Label>Vendedor Dukamp (opcional)</Label>
+          <Select value={sellerId} onValueChange={setSellerId} disabled={sellersLoading}>
+            <SelectTrigger><SelectValue placeholder="Selecione um vendedor" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Nenhum vendedor</SelectItem>
+              {sellers.map((seller) => (
+                <SelectItem key={seller.id} value={seller.id}>{seller.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-[11px] text-muted-foreground mt-1">
+            Este vendedor será o destinatário do seu chat.
+          </p>
         </div>
       </div>
 

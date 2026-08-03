@@ -9,6 +9,7 @@ type RegisterPayload = {
   email?: string;
   password?: string;
   phone?: string;
+  sellerId?: string | null;
   cpf?: string;
   fazenda?: string;
   cnpjPropriedade?: string;
@@ -32,6 +33,7 @@ type RegisterPayload = {
 
 const ACCOUNT_KINDS: AccountKind[] = ["cliente", "produtor", "empresa"];
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function text(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
@@ -58,6 +60,7 @@ export const Route = createFileRoute("/api/public/register")({
         const email = text(payload.email).toLowerCase();
         const password = typeof payload.password === "string" ? payload.password : "";
         const phone = text(payload.phone);
+        const sellerId = payload.sellerId == null ? null : text(payload.sellerId);
 
         if (!accountKind || !ACCOUNT_KINDS.includes(accountKind)) {
           return errorResponse("Tipo de conta inválido.");
@@ -70,6 +73,9 @@ export const Route = createFileRoute("/api/public/register")({
         if (!EMAIL_RE.test(email)) return errorResponse("E-mail inválido.");
         if (password.length < 6) return errorResponse("A senha deve ter no mínimo 6 caracteres.");
         if (!phone) return errorResponse("Informe o telefone.");
+        if (sellerId !== null && !UUID_RE.test(sellerId)) {
+          return errorResponse("Vendedor inválido.");
+        }
 
         if (
           typeof payload.challengeA !== "number" ||
@@ -123,6 +129,22 @@ export const Route = createFileRoute("/api/public/register")({
         }
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+        if (sellerId) {
+          const { data: seller, error: sellerError } = await supabaseAdmin
+            .from("sellers")
+            .select("id")
+            .eq("id", sellerId)
+            .eq("active", true)
+            .maybeSingle();
+
+          if (sellerError) {
+            console.error("[register] Falha ao validar vendedor:", sellerError.message);
+            return errorResponse("Não foi possível validar o vendedor. Tente novamente.", 500);
+          }
+          if (!seller) return errorResponse("Vendedor inválido ou inativo.");
+        }
+
         const { data, error } = await supabaseAdmin.auth.admin.createUser({
           email,
           password,
@@ -144,6 +166,22 @@ export const Route = createFileRoute("/api/public/register")({
 
         const userId = data.user?.id;
         if (!userId) return errorResponse("Não foi possível criar a conta. Tente novamente.", 500);
+
+        if (sellerId) {
+          const { data: updatedProfile, error: profileError } = await supabaseAdmin
+            .from("profiles")
+            .update({ seller_id: sellerId })
+            .eq("id", userId)
+            .select("id")
+            .maybeSingle();
+
+          if (profileError || !updatedProfile) {
+            console.error("[register] Falha ao associar vendedor:", profileError?.message ?? "perfil não encontrado");
+            const { error: rollbackError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+            if (rollbackError) console.error("[register] Falha ao compensar criação do usuário:", rollbackError.message);
+            return errorResponse("Não foi possível associar o vendedor. Tente novamente.", 500);
+          }
+        }
 
         if (requestedType) {
           const { error: requestError } = await supabaseAdmin.from("account_requests").insert({
