@@ -29,8 +29,10 @@ function AdaptiveMedia({
   onEnded?: () => void;
   active?: boolean;
 }) {
-  // aspect starts at 4/3 and adapts once we know the natural size
-  const [ratio, setRatio] = useState<number>(4 / 3);
+  const video = isVideoUrl(url);
+  // Use a portrait placeholder for videos until metadata supplies the exact
+  // dimensions; images retain their natural ratio after loading.
+  const [ratio, setRatio] = useState<number>(video ? 9 / 16 : 4 / 3);
   const [loaded, setLoaded] = useState(false);
   const [muted, setMuted] = useState(false);
   const [paused, setPaused] = useState(false);
@@ -38,17 +40,16 @@ function AdaptiveMedia({
   const userMutedRef = useRef(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const finishedRef = useRef(false);
-  const video = isVideoUrl(url);
 
   useEffect(() => {
-    setRatio(4 / 3);
+    setRatio(video ? 9 / 16 : 4 / 3);
     setLoaded(false);
     setMuted(false);
     setPaused(false);
     userPausedRef.current = false;
     userMutedRef.current = false;
     finishedRef.current = false;
-  }, [url]);
+  }, [url, video]);
 
   // Autoplay: try with sound first; if the browser blocks it, keep the video
   // playing muted so the user always sees it, and unmute on the first gesture.
@@ -146,8 +147,11 @@ function AdaptiveMedia({
 
   return (
     <div
-      className={`relative w-full overflow-hidden ${!loaded ? "bg-muted animate-pulse" : "bg-muted"}`}
-      style={{ aspectRatio: `${ratio}` }}
+      className={`relative flex w-full items-center justify-center overflow-hidden ${!loaded ? "bg-muted animate-pulse" : "bg-muted"}`}
+      style={{
+        aspectRatio: `${ratio}`,
+        maxHeight: "calc(100vh - var(--site-header-offset, 8rem) - 2rem)",
+      }}
     >
       {video ? (
         <>
@@ -365,7 +369,7 @@ export function InstitutionalSidebar() {
         height: "calc(100vh - var(--site-header-offset, 8rem) - 2rem)",
       }}
     >
-      <div className="lg:h-full lg:overflow-y-auto lg:pr-1">
+      <div className="lg:h-full lg:overflow-hidden lg:pr-1">
         {first && <AdCard ad={first} />}
       </div>
     </aside>
