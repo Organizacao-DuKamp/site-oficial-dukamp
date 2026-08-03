@@ -148,16 +148,95 @@ export const Route = createFileRoute("/api/admin/account-type")({
         const currentMetadata = { ...(targetR.data.user.user_metadata ?? {}) } as Record<string, unknown>;
 
         if (accountType === "vendedor") {
-          // O cargo de vendedor fica nos metadados para funcionar mesmo quando
-          // o enum account_type ou as colunas auxiliares ainda não foram migrados.
           const { error: profileError } = await supabaseAdmin
             .from("profiles")
             .update({ account_type: "cliente" })
             .eq("id", userId);
           if (profileError) return errorResponse(profileError.message, 500);
 
+          const sellerName = profileR.data.full_name || profileR.data.email || targetR.data.user.email || `Vendedor ${userId.slice(0, 8)}`;
+          const sellerSlug = `conta-${userId}`;
+          const metadataSellerId = typeof currentMetadata.seller_record_id === "string"
+            ? currentMetadata.seller_record_id
+            : null;
+
+          let linkedSeller: { id: string } | null = null;
+          let sellerWarning: string | undefined;
+
+          if (metadataSellerId) {
+            const { data, error } = await supabaseAdmin
+              .from("sellers")
+              .select("id")
+              .eq("id", metadataSellerId)
+              .maybeSingle();
+            if (!error) linkedSeller = data;
+          }
+
+          if (!linkedSeller) {
+            const { data, error } = await supabaseAdmin
+              .from("sellers")
+              .select("id")
+              .eq("slug", sellerSlug)
+              .maybeSingle();
+            if (error) {
+              console.error("[account-type] Falha ao procurar vendedor pelo slug:", error.message);
+            } else {
+              linkedSeller = data;
+            }
+          }
+
+          if (!linkedSeller) {
+            const { data, error } = await supabaseAdmin
+              .from("sellers")
+              .insert({ name: sellerName, slug: sellerSlug, active: true })
+              .select("id")
+              .single();
+
+            if (error?.code === "23505") {
+              const retry = await supabaseAdmin
+                .from("sellers")
+                .select("id")
+                .eq("slug", sellerSlug)
+                .maybeSingle();
+              linkedSeller = retry.data;
+            } else if (error) {
+              console.error("[account-type] Falha ao criar registro de vendedor:", error.message);
+              sellerWarning = "Cargo salvo, mas o registro interno do vendedor não pôde ser criado.";
+            } else {
+              linkedSeller = data;
+            }
+          }
+
+          if (linkedSeller) {
+            const { error: activeError } = await supabaseAdmin
+              .from("sellers")
+              .update({ active: true, name: sellerName })
+              .eq("id", linkedSeller.id);
+            if (activeError) console.error("[account-type] Falha ao reativar vendedor:", activeError.message);
+
+            const { error: teamError } = await supabaseAdmin
+              .from("sellers")
+              .update({ show_on_team: false })
+              .eq("id", linkedSeller.id);
+            if (teamError && !isMissingSellerColumn(teamError, "show_on_team")) {
+              console.error("[account-type] Falha ao ocultar vendedor interno:", teamError.message);
+            }
+
+            const { error: userLinkError } = await supabaseAdmin
+              .from("sellers")
+              .update({ user_id: userId })
+              .eq("id", linkedSeller.id);
+            if (userLinkError && !isMissingSellerColumn(userLinkError, "user_id")) {
+              console.error("[account-type] Falha ao vincular conta ao vendedor:", userLinkError.message);
+            }
+          }
+
           const { error: metadataError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-            user_metadata: { ...currentMetadata, account_type_override: "vendedor" },
+            user_metadata: {
+              ...currentMetadata,
+              account_type_override: "vendedor",
+              seller_record_id: linkedSeller?.id ?? null,
+            },
           });
           if (metadataError) return errorResponse(metadataError.message, 500);
 
@@ -168,70 +247,15 @@ export const Route = createFileRoute("/api/admin/account-type")({
             .eq("role", "admin");
           if (roleError) return errorResponse(roleError.message, 500);
 
-          // O vínculo com public.sellers é complementar. Bancos mais antigos
-          // ainda não possuem sellers.user_id/show_on_team, portanto essa etapa
-          // não pode impedir a promoção principal da conta.
-          let sellerWarning: string | undefined;
-          const { data: linkedSeller, error: linkedSellerError } = await supabaseAdmin
-            .from("sellers")
-            .select("id")
-            .eq("user_id", userId)
-            .maybeSingle();
-
-          if (linkedSellerError) {
-            if (isMissingSellerColumn(linkedSellerError, "user_id")) {
-              sellerWarning = "Cargo salvo; o vínculo interno será criado após a atualização do banco.";
-            } else {
-              console.error("[account-type] Falha ao procurar vendedor vinculado:", linkedSellerError.message);
-              sellerWarning = "Cargo salvo, mas o vínculo interno do vendedor não pôde ser atualizado.";
-            }
-          } else if (!linkedSeller) {
-            const sellerName = profileR.data.email
-              ? profileR.data.full_name || profileR.data.email
-              : `Vendedor ${userId.slice(0, 8)}`;
-
-            let { error: sellerError } = await supabaseAdmin.from("sellers").insert({
-              user_id: userId,
-              name: sellerName,
-              slug: `conta-${userId}`,
-              active: true,
-              show_on_team: false,
-            });
-
-            if (sellerError && isMissingSellerColumn(sellerError, "show_on_team")) {
-              const retry = await supabaseAdmin.from("sellers").insert({
-                user_id: userId,
-                name: sellerName,
-                slug: `conta-${userId}`,
-                active: true,
-              });
-              sellerError = retry.error;
-            }
-
-            if (sellerError) {
-              if (isMissingSellerColumn(sellerError, "user_id")) {
-                sellerWarning = "Cargo salvo; o vínculo interno será criado após a atualização do banco.";
-              } else {
-                console.error("[account-type] Falha ao criar vendedor vinculado:", sellerError.message);
-                sellerWarning = "Cargo salvo, mas o vínculo interno do vendedor não pôde ser criado.";
-              }
-            }
-          } else {
-            const { error: sellerError } = await supabaseAdmin
-              .from("sellers")
-              .update({ active: true })
-              .eq("id", linkedSeller.id);
-            if (sellerError) {
-              console.error("[account-type] Falha ao reativar vendedor vinculado:", sellerError.message);
-              sellerWarning = "Cargo salvo, mas o cadastro interno do vendedor não pôde ser reativado.";
-            }
-          }
-
           return Response.json({ ok: true, accountType: "vendedor", warning: sellerWarning });
         }
 
         const { error: metadataError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-          user_metadata: { ...currentMetadata, account_type_override: null },
+          user_metadata: {
+            ...currentMetadata,
+            account_type_override: null,
+            seller_record_id: null,
+          },
         });
         if (metadataError) return errorResponse(metadataError.message, 500);
 
