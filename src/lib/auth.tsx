@@ -32,6 +32,22 @@ type AuthCtx = {
 
 const Ctx = createContext<AuthCtx | null>(null);
 
+async function hasProtectedSellerRole(accessToken?: string): Promise<boolean> {
+  if (!accessToken) return false;
+  try {
+    const response = await fetch("/api/account/effective-role", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      cache: "no-store",
+    });
+    if (!response.ok) return false;
+    const payload = (await response.json()) as { accountTypeOverride?: string | null };
+    return payload.accountTypeOverride === "vendedor";
+  } catch (error) {
+    console.error("[auth] Falha ao resolver cargo protegido:", error);
+    return false;
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -41,77 +57,108 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
-      setSession(s);
-      setUser(s?.user ?? null);
-      if (s?.user) {
-        setTimeout(() => loadProfile(s.user), 0);
+    const { data: subscription } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
+      if (nextSession?.user) {
+        setTimeout(() => void loadProfile(nextSession.user, nextSession.access_token), 0);
       } else {
         setIsAdmin(false);
         setAccountType("cliente");
         setApprovalNotice(null);
       }
     });
-    supabase.auth.getSession().then(({ data }) => {
+
+    void supabase.auth.getSession().then(async ({ data }) => {
       setSession(data.session);
       setUser(data.session?.user ?? null);
-      if (data.session?.user) loadProfile(data.session.user);
+      if (data.session?.user) {
+        await loadProfile(data.session.user, data.session.access_token);
+      }
       setLoading(false);
     });
-    return () => sub.subscription.unsubscribe();
+
+    return () => subscription.subscription.unsubscribe();
   }, []);
 
-  async function loadProfile(authUser: User) {
-    const [rolesR, profileR] = await Promise.all([
-      supabase.from("user_roles").select("role").eq("user_id", authUser.id).eq("role", "admin").maybeSingle(),
-      (supabase as any).from("profiles").select("account_type, approval_notified").eq("id", authUser.id).maybeSingle(),
+  async function loadProfile(authUser: User, accessToken?: string) {
+    const [rolesResult, profileResult, sellerRole] = await Promise.all([
+      supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", authUser.id)
+        .eq("role", "admin")
+        .maybeSingle(),
+      (supabase as any)
+        .from("profiles")
+        .select("account_type, approval_notified")
+        .eq("id", authUser.id)
+        .maybeSingle(),
+      hasProtectedSellerRole(accessToken),
     ]);
 
-    const admin = !!rolesR.data;
+    const admin = Boolean(rolesResult.data);
     setIsAdmin(admin);
 
-    const p: any = profileR.data ?? {};
-    const profileType = (p.account_type ?? "cliente") as AccountType;
-    const metadataType = authUser.user_metadata?.account_type_override;
-    const t: AccountType = !admin && metadataType === "vendedor" ? "vendedor" : profileType;
+    const profile: any = profileResult.data ?? {};
+    const profileType = (profile.account_type ?? "cliente") as AccountType;
+    const effectiveType: AccountType = !admin && sellerRole ? "vendedor" : profileType;
 
-    setAccountType(t);
-    if (p.approval_notified === false && (t === "produtor" || t === "empresa")) {
-      setApprovalNotice(t);
+    setAccountType(effectiveType);
+    if (
+      profile.approval_notified === false &&
+      (effectiveType === "produtor" || effectiveType === "empresa")
+    ) {
+      setApprovalNotice(effectiveType);
     } else {
       setApprovalNotice(null);
     }
   }
 
   async function dismissApprovalNotice() {
-    const u = user;
+    const currentUser = user;
     setApprovalNotice(null);
-    if (!u) return;
-    await (supabase as any).from("profiles").update({ approval_notified: true }).eq("id", u.id);
+    if (!currentUser) return;
+    await (supabase as any)
+      .from("profiles")
+      .update({ approval_notified: true })
+      .eq("id", currentUser.id);
   }
 
   async function signIn(email: string, password: string) {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error: error?.message };
   }
+
   async function signOut() {
     await supabase.auth.signOut();
   }
 
   return (
-    <Ctx.Provider value={{
-      user, session, isAdmin,
-      isMasterAdmin: (user?.email ?? "").toLowerCase() === PROTECTED_ADMIN_EMAIL.toLowerCase(),
-      accountType, approvalNotice, dismissApprovalNotice,
-      loading, signIn, signOut,
-    }}>{children}</Ctx.Provider>
+    <Ctx.Provider
+      value={{
+        user,
+        session,
+        isAdmin,
+        isMasterAdmin:
+          (user?.email ?? "").toLowerCase() === PROTECTED_ADMIN_EMAIL.toLowerCase(),
+        accountType,
+        approvalNotice,
+        dismissApprovalNotice,
+        loading,
+        signIn,
+        signOut,
+      }}
+    >
+      {children}
+    </Ctx.Provider>
   );
 }
 
 export function useAuth() {
-  const c = useContext(Ctx);
-  if (!c) throw new Error("useAuth must be used within AuthProvider");
-  return c;
+  const context = useContext(Ctx);
+  if (!context) throw new Error("useAuth must be used within AuthProvider");
+  return context;
 }
 
 type PriceFields = {
@@ -132,42 +179,44 @@ type PixFields = {
   sale_producer_pix_price?: number | null;
 };
 
-/** Preço "cheio" (sem promoção) conforme o tipo de conta. */
-export function regularPriceForAccount(p: PriceFields, t: AccountType): number {
-  if (t === "produtor" && p.producer_price != null) return Number(p.producer_price);
-  return Number(p.consumer_price ?? p.price ?? 0);
+export function regularPriceForAccount(product: PriceFields, type: AccountType): number {
+  if (type === "produtor" && product.producer_price != null) {
+    return Number(product.producer_price);
+  }
+  return Number(product.consumer_price ?? product.price ?? 0);
 }
 
-/** Resolve price field based on user account type. Falls back to consumer/legacy. */
-export function priceForAccount(p: PriceFields, t: AccountType): number {
-  if (p.on_sale) {
-    const sale = t === "produtor"
-      ? (p.sale_producer_price ?? p.sale_consumer_price)
-      : p.sale_consumer_price;
+export function priceForAccount(product: PriceFields, type: AccountType): number {
+  if (product.on_sale) {
+    const sale =
+      type === "produtor"
+        ? product.sale_producer_price ?? product.sale_consumer_price
+        : product.sale_consumer_price;
     if (sale != null) return Number(sale);
   }
-  return regularPriceForAccount(p, t);
+  return regularPriceForAccount(product, type);
 }
 
-/** True quando o produto está em promoção e tem preço promocional válido para a conta. */
-export function isOnSaleForAccount(p: PriceFields, t: AccountType): boolean {
-  if (!p.on_sale) return false;
-  const sale = t === "produtor"
-    ? (p.sale_producer_price ?? p.sale_consumer_price)
-    : p.sale_consumer_price;
-  return sale != null && Number(sale) < regularPriceForAccount(p, t);
+export function isOnSaleForAccount(product: PriceFields, type: AccountType): boolean {
+  if (!product.on_sale) return false;
+  const sale =
+    type === "produtor"
+      ? product.sale_producer_price ?? product.sale_consumer_price
+      : product.sale_consumer_price;
+  return sale != null && Number(sale) < regularPriceForAccount(product, type);
 }
 
-/** Resolve PIX price for the user's account type. Returns null if no PIX configured for that tier. */
-export function pixPriceForAccount(p: PixFields, t: AccountType): number | null {
-  if (p.on_sale) {
-    const sale = t === "produtor"
-      ? (p.sale_producer_pix_price ?? p.sale_consumer_pix_price)
-      : p.sale_consumer_pix_price;
+export function pixPriceForAccount(product: PixFields, type: AccountType): number | null {
+  if (product.on_sale) {
+    const sale =
+      type === "produtor"
+        ? product.sale_producer_pix_price ?? product.sale_consumer_pix_price
+        : product.sale_consumer_pix_price;
     if (sale != null) return Number(sale);
   }
-  let v: number | null | undefined;
-  if (t === "produtor") v = p.producer_pix_price;
-  else v = p.consumer_pix_price ?? p.pix_price;
-  return v != null ? Number(v) : null;
+
+  let value: number | null | undefined;
+  if (type === "produtor") value = product.producer_pix_price;
+  else value = product.consumer_pix_price ?? product.pix_price;
+  return value != null ? Number(value) : null;
 }
