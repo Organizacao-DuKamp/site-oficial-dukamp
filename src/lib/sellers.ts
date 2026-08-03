@@ -3,9 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type Seller = {
   id: string;
-  user_id: string | null;
+  user_id?: string | null;
   slug: string;
-  show_on_team: boolean;
+  show_on_team?: boolean;
   name: string;
   role: string | null;
   region: string | null;
@@ -28,11 +28,10 @@ export function slugify(input: string): string {
     .slice(0, 80);
 }
 
-function onlyDigits(v?: string | null) {
-  return (v ?? "").replace(/\D/g, "");
+function onlyDigits(value?: string | null) {
+  return (value ?? "").replace(/\D/g, "");
 }
 
-/** Monta URL do WhatsApp com DDI 55 se faltar */
 export function whatsappUrl(number?: string | null, message?: string): string {
   const digits = onlyDigits(number);
   if (!digits) return "#";
@@ -41,20 +40,19 @@ export function whatsappUrl(number?: string | null, message?: string): string {
   return message ? `${base}?text=${encodeURIComponent(message)}` : base;
 }
 
-/** Ex.: "16994118921" → "(16) 99411-8921" */
 export function formatPhoneDisplay(number?: string | null): string {
-  const d = onlyDigits(number);
-  if (!d) return "";
-  const local = d.startsWith("55") ? d.slice(2) : d;
+  const digits = onlyDigits(number);
+  if (!digits) return "";
+  const local = digits.startsWith("55") ? digits.slice(2) : digits;
   if (local.length === 11) return `(${local.slice(0, 2)}) ${local.slice(2, 7)}-${local.slice(7)}`;
   if (local.length === 10) return `(${local.slice(0, 2)}) ${local.slice(2, 6)}-${local.slice(6)}`;
   return number ?? "";
 }
 
 export function telHref(number?: string | null): string {
-  const d = onlyDigits(number);
-  if (!d) return "#";
-  return `tel:+${d.startsWith("55") ? d : `55${d}`}`;
+  const digits = onlyDigits(number);
+  if (!digits) return "#";
+  return `tel:+${digits.startsWith("55") ? digits : `55${digits}`}`;
 }
 
 export function useActiveSellers() {
@@ -65,11 +63,12 @@ export function useActiveSellers() {
         .from("sellers")
         .select("*")
         .eq("active", true)
-        .eq("show_on_team", true)
         .order("display_order", { ascending: true })
         .order("name", { ascending: true });
       if (error) throw error;
-      return (data ?? []) as Seller[];
+
+      // Registros conta-* existem apenas para vínculo interno de login/chat.
+      return ((data ?? []) as Seller[]).filter((seller) => !seller.slug.startsWith("conta-"));
     },
   });
 }
@@ -81,12 +80,11 @@ type RegisteredSellersResponse = {
   error?: string;
 };
 
-/** Vendedores que possuem uma conta ativa com o tipo "vendedor". */
 export function useRegisteredSellers() {
   return useQuery({
     queryKey: ["sellers", "registered"],
     queryFn: async (): Promise<RegisteredSeller[]> => {
-      const response = await fetch("/api/public/registered-sellers");
+      const response = await fetch("/api/public/registered-sellers", { cache: "no-store" });
       const payload = (await response.json().catch(() => ({}))) as RegisteredSellersResponse;
       if (!response.ok) throw new Error(payload.error || "Não foi possível carregar os vendedores.");
       return payload.sellers ?? [];
@@ -98,6 +96,7 @@ export function useSellerBySlug(slug: string) {
   return useQuery({
     queryKey: ["sellers", "slug", slug],
     queryFn: async (): Promise<Seller | null> => {
+      if (slug.startsWith("conta-")) return null;
       const { data, error } = await supabase
         .from("sellers")
         .select("*")
