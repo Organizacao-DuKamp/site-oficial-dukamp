@@ -5,6 +5,7 @@ export type Seller = {
   id: string;
   user_id: string | null;
   slug: string;
+  show_on_team: boolean;
   name: string;
   role: string | null;
   region: string | null;
@@ -64,10 +65,25 @@ export function useActiveSellers() {
         .from("sellers")
         .select("*")
         .eq("active", true)
+        .eq("show_on_team", true)
         .order("display_order", { ascending: true })
         .order("name", { ascending: true });
       if (error) throw error;
       return (data ?? []) as Seller[];
+    },
+  });
+}
+
+export type RegisteredSeller = Pick<Seller, "id" | "name">;
+
+/** Vendedores que possuem uma conta ativa com o tipo "vendedor". */
+export function useRegisteredSellers() {
+  return useQuery({
+    queryKey: ["sellers", "registered"],
+    queryFn: async (): Promise<RegisteredSeller[]> => {
+      const { data, error } = await supabase.rpc("get_registered_sellers");
+      if (error) throw error;
+      return (data ?? []) as RegisteredSeller[];
     },
   });
 }
