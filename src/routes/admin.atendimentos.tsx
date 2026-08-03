@@ -18,118 +18,125 @@ type TicketRow = SupportTicket & {
   user_email: string | null;
 };
 
+type TicketsResponse = {
+  tickets?: TicketRow[];
+  error?: string;
+};
+
 function AtendimentosPage() {
   const [tickets, setTickets] = useState<TicketRow[]>([]);
   const [search, setSearch] = useState("");
   const [openIds, setOpenIds] = useState<string[]>([]);
+  const [loadError, setLoadError] = useState("");
 
   async function load() {
-    const { data: ts } = await (supabase as any)
-      .from("support_tickets")
-      .select("*")
-      .order("last_message_at", { ascending: false });
-    const arr = (ts as SupportTicket[]) ?? [];
-    const userIds = Array.from(new Set(arr.map((t) => t.user_id)));
-    const [{ data: profs }, { data: unreadMsgs }] = await Promise.all([
-      userIds.length
-        ? (supabase as any).from("profiles").select("id, full_name, email").in("id", userIds)
-        : Promise.resolve({ data: [] as any[] }),
-      (supabase as any)
-        .from("support_messages")
-        .select("ticket_id")
-        .in("sender_role", ["user", "customer"])
-        .eq("read_by_admin", false),
-    ]);
-    const pmap = new Map((profs ?? []).map((p: any) => [p.id, p]));
-    const counts = new Map<string, number>();
-    for (const m of (unreadMsgs as any[]) ?? []) {
-      counts.set(m.ticket_id, (counts.get(m.ticket_id) ?? 0) + 1);
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+    if (!token) return;
+
+    const response = await fetch("/api/admin/support-tickets", {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    const payload = (await response.json().catch(() => ({}))) as TicketsResponse;
+    if (!response.ok) {
+      setLoadError(payload.error || "Não foi possível carregar os atendimentos.");
+      return;
     }
-    setTickets(
-      arr.map((t) => ({
-        ...t,
-        unread: counts.get(t.id) ?? 0,
-        user_name: (pmap.get(t.user_id) as any)?.full_name ?? null,
-        user_email: (pmap.get(t.user_id) as any)?.email ?? null,
-      })),
-    );
+
+    setLoadError("");
+    const rows = payload.tickets ?? [];
+    setTickets(rows);
+    setOpenIds((current) => current.filter((id) => rows.some((ticket) => ticket.id === id)));
   }
 
   useEffect(() => {
-    load();
-    const ch = supabase
+    void load();
+    const channel = supabase
       .channel("admin_tickets_feed")
-      .on("postgres_changes", { event: "*", schema: "public", table: "support_tickets" }, () => load())
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "support_messages" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "support_tickets" }, () => void load())
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "support_messages" }, () => void load())
       .subscribe();
     return () => {
-      supabase.removeChannel(ch);
+      void supabase.removeChannel(channel);
     };
   }, []);
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    const arr = q
+    const query = search.trim().toLowerCase();
+    const rows = query
       ? tickets.filter(
-          (t) =>
-            (t.user_name ?? "").toLowerCase().includes(q) ||
-            (t.user_email ?? "").toLowerCase().includes(q),
+          (ticket) =>
+            (ticket.user_name ?? "").toLowerCase().includes(query) ||
+            (ticket.user_email ?? "").toLowerCase().includes(query),
         )
       : tickets;
-    return [...arr].sort((a, b) => {
-      const pa = a.status === "open" ? 0 : a.status === "in_progress" ? 1 : 2;
-      const pb = b.status === "open" ? 0 : b.status === "in_progress" ? 1 : 2;
-      if (pa !== pb) return pa - pb;
-      return new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime();
+    return [...rows].sort((first, second) => {
+      const firstPriority = first.status === "open" ? 0 : first.status === "in_progress" ? 1 : 2;
+      const secondPriority = second.status === "open" ? 0 : second.status === "in_progress" ? 1 : 2;
+      if (firstPriority !== secondPriority) return firstPriority - secondPriority;
+      return new Date(second.last_message_at).getTime() - new Date(first.last_message_at).getTime();
     });
   }, [tickets, search]);
 
   const openTickets = openIds
-    .map((id) => tickets.find((t) => t.id === id))
+    .map((id) => tickets.find((ticket) => ticket.id === id))
     .filter(Boolean) as TicketRow[];
 
   return (
-    <div className="space-y-4 sm:space-y-6 min-w-0">
+    <div className="min-w-0 space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+        <h1 className="flex items-center gap-2 text-xl font-bold sm:text-2xl">
           <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6" /> Atendimentos
         </h1>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4 min-w-0">
-        <div className="space-y-2 min-w-0">
+      {loadError && (
+        <div className="rounded-md border border-destructive/50 p-3 text-sm text-destructive">
+          {loadError}
+        </div>
+      )}
+
+      <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[320px_1fr]">
+        <div className="min-w-0 space-y-2">
           <Input
             placeholder="Buscar por nome ou e-mail..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(event) => setSearch(event.target.value)}
           />
-          <div className="border rounded-lg bg-card divide-y max-h-[40vh] lg:max-h-[70vh] overflow-y-auto">
+          <div className="max-h-[40vh] divide-y overflow-y-auto rounded-lg border bg-card lg:max-h-[70vh]">
             {filtered.length === 0 && (
-              <div className="p-6 text-center text-sm text-muted-foreground">Nenhum atendimento.</div>
+              <div className="p-6 text-center text-sm text-muted-foreground">
+                Nenhum atendimento.
+              </div>
             )}
-            {filtered.map((t) => {
-              const isOpen = openIds.includes(t.id);
+            {filtered.map((ticket) => {
+              const isOpen = openIds.includes(ticket.id);
               return (
                 <button
-                  key={t.id}
+                  key={ticket.id}
                   onClick={() =>
-                    setOpenIds((prev) =>
-                      prev.includes(t.id) ? prev : [...prev, t.id],
+                    setOpenIds((current) =>
+                      current.includes(ticket.id) ? current : [...current, ticket.id],
                     )
                   }
-                  className={`w-full text-left p-3 hover:bg-accent flex flex-col gap-1 ${isOpen ? "bg-accent/50" : ""}`}
+                  className={`flex w-full flex-col gap-1 p-3 text-left hover:bg-accent ${isOpen ? "bg-accent/50" : ""}`}
                 >
-                  <div className="flex items-center justify-between gap-2 min-w-0">
-                    <span className="text-sm font-medium truncate min-w-0">
-                      {t.user_name || t.user_email || t.user_id.slice(0, 8)}
+                  <div className="flex min-w-0 items-center justify-between gap-2">
+                    <span className="min-w-0 truncate text-sm font-medium">
+                      {ticket.user_name || ticket.user_email || ticket.user_id.slice(0, 8)}
                     </span>
-                    {t.unread > 0 && (
-                      <Badge className="bg-destructive text-destructive-foreground shrink-0">{t.unread}</Badge>
+                    {ticket.unread > 0 && (
+                      <Badge className="shrink-0 bg-destructive text-destructive-foreground">
+                        {ticket.unread}
+                      </Badge>
                     )}
                   </div>
-                  <div className="flex items-center justify-between text-[11px] text-muted-foreground gap-2">
-                    <StatusBadge status={t.status} />
-                    <span className="truncate">{new Date(t.last_message_at).toLocaleString("pt-BR")}</span>
+                  <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+                    <StatusBadge status={ticket.status} />
+                    <span className="truncate">
+                      {new Date(ticket.last_message_at).toLocaleString("pt-BR")}
+                    </span>
                   </div>
                 </button>
               );
@@ -137,17 +144,19 @@ function AtendimentosPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 content-start min-w-0">
+        <div className="grid min-w-0 grid-cols-1 content-start gap-4 xl:grid-cols-2">
           {openTickets.length === 0 && (
-            <div className="xl:col-span-2 border rounded-lg bg-card p-6 sm:p-10 text-center text-sm text-muted-foreground">
+            <div className="rounded-lg border bg-card p-6 text-center text-sm text-muted-foreground sm:p-10 xl:col-span-2">
               Selecione um atendimento para responder.
             </div>
           )}
-          {openTickets.map((t) => (
+          {openTickets.map((ticket) => (
             <AdminChatPanel
-              key={t.id}
-              ticket={t}
-              onClose={() => setOpenIds((prev) => prev.filter((id) => id !== t.id))}
+              key={ticket.id}
+              ticket={ticket}
+              onClose={() =>
+                setOpenIds((current) => current.filter((id) => id !== ticket.id))
+              }
             />
           ))}
         </div>
@@ -157,7 +166,7 @@ function AtendimentosPage() {
 }
 
 function StatusBadge({ status }: { status: SupportTicket["status"] }) {
-  if (status === "open") return <span className="text-red-600 font-medium">Não respondido</span>;
-  if (status === "in_progress") return <span className="text-amber-600 font-medium">Em atendimento</span>;
+  if (status === "open") return <span className="font-medium text-red-600">Não respondido</span>;
+  if (status === "in_progress") return <span className="font-medium text-amber-600">Em atendimento</span>;
   return <span className="text-muted-foreground">Finalizado</span>;
 }
