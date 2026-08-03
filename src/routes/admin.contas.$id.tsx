@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth, type AccountType } from "@/lib/auth";
+import { accountTypeLabel, useAuth, type AccountType } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -160,7 +160,7 @@ function ContaDetalhe() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Tipo de conta</CardTitle>
-          <CardDescription>Atual: <span className="font-medium">{currentType === "cliente" ? "Consumidor" : currentType === "produtor" ? "Produtor Rural" : "Admin"}</span></CardDescription>
+          <CardDescription>Atual: <span className="font-medium">{accountTypeLabel(currentType)}</span></CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-end gap-2">
           <div className="flex-1 min-w-[200px]">
@@ -168,9 +168,9 @@ function ContaDetalhe() {
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="cliente">Consumidor</SelectItem>
-                
                 <SelectItem value="produtor">Produtor Rural</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
+                <SelectItem value="vendedor">Vendedor</SelectItem>
+                <SelectItem value="admin">Administrador</SelectItem>
               </SelectContent>
             </Select>
           </div>

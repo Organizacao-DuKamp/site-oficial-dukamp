@@ -25,14 +25,16 @@ function makeChallenge() {
 }
 
 function AuthPage() {
-  const { signIn, user, isAdmin } = useAuth();
+  const { signIn, user, isAdmin, accountType, loading } = useAuth();
   const nav = useNavigate();
   const initialTab = typeof window !== "undefined" && window.location.hash === "#cadastro" ? "register" : "login";
 
   useEffect(() => {
-    if (user && isAdmin) nav({ to: "/admin" });
-    else if (user) nav({ to: "/dashboard" });
-  }, [user, isAdmin, nav]);
+    if (loading || !user) return;
+    if (isAdmin) nav({ to: "/admin" });
+    else if (accountType === "vendedor") nav({ to: "/vendedor" });
+    else nav({ to: "/dashboard" });
+  }, [user, isAdmin, accountType, loading, nav]);
 
   return (
     <div className="min-h-screen grid place-items-center bg-background px-4 py-8">

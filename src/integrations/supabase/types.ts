@@ -885,7 +885,7 @@ export type Database = {
     }
     Enums: {
       account_request_status: "pending" | "approved" | "rejected"
-      account_type: "cliente" | "revendedor" | "produtor" | "admin" | "empresa"
+      account_type: "cliente" | "revendedor" | "produtor" | "admin" | "empresa" | "vendedor"
       app_role: "admin" | "user"
       delivery_status: "preparando" | "a_caminho" | "entregue"
       payment_method: "pix" | "card" | "boleto"
@@ -1026,7 +1026,7 @@ export const Constants = {
   public: {
     Enums: {
       account_request_status: ["pending", "approved", "rejected"],
-      account_type: ["cliente", "revendedor", "produtor", "admin", "empresa"],
+      account_type: ["cliente", "revendedor", "produtor", "admin", "empresa", "vendedor"],
       app_role: ["admin", "user"],
       delivery_status: ["preparando", "a_caminho", "entregue"],
       payment_method: ["pix", "card", "boleto"],
