@@ -7,6 +7,8 @@ export type TicketStatus = "open" | "in_progress" | "closed";
 export type SupportTicket = {
   id: string;
   user_id: string;
+  customer_id: string | null;
+  seller_id: string | null;
   status: TicketStatus;
   last_message_at: string;
   closed_at: string | null;
@@ -17,10 +19,12 @@ export type SupportMessage = {
   id: string;
   ticket_id: string;
   sender_id: string;
-  sender_role: "user" | "admin";
+  sender_role: "user" | "customer" | "seller" | "admin";
   message: string;
   read_by_user: boolean;
   read_by_admin: boolean;
+  read_by_customer: boolean;
+  read_by_seller: boolean;
   created_at: string;
 };
 
@@ -30,6 +34,7 @@ type Ctx = {
   open: boolean;
   unread: number;
   loading: boolean;
+  seller: { id: string; name: string } | null;
   startTicket: () => Promise<void>;
   sendMessage: (text: string) => Promise<void>;
   closeTicket: () => Promise<void>;
@@ -42,13 +47,26 @@ const SupportCtx = createContext<Ctx | null>(null);
 const STORAGE_KEY = "dukamp_chat_open";
 
 export function SupportProvider({ children }: { children: ReactNode }) {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, accountType } = useAuth();
   const [ticket, setTicket] = useState<SupportTicket | null>(null);
   const [messages, setMessages] = useState<SupportMessage[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [seller, setSeller] = useState<{ id: string; name: string } | null>(null);
 
-  const active = !!user && !isAdmin;
+  const active = !!user && !isAdmin && accountType !== "vendedor";
+
+  useEffect(() => {
+    if (!active || !user) { setSeller(null); return; }
+    let cancelled = false;
+    (async () => {
+      const { data: profile } = await (supabase as any).from("profiles").select("seller_id").eq("id", user.id).maybeSingle();
+      if (!profile?.seller_id) { if (!cancelled) setSeller(null); return; }
+      const { data } = await (supabase as any).from("sellers").select("id, name").eq("id", profile.seller_id).maybeSingle();
+      if (!cancelled) setSeller(data ?? null);
+    })();
+    return () => { cancelled = true; };
+  }, [active, user]);
 
   // restore open state
   useEffect(() => {
@@ -62,7 +80,7 @@ export function SupportProvider({ children }: { children: ReactNode }) {
 
   // fetch active ticket
   useEffect(() => {
-    if (!active || !user) {
+    if (!active || !user || !seller) {
       setTicket(null);
       setMessages([]);
       return;
@@ -73,7 +91,8 @@ export function SupportProvider({ children }: { children: ReactNode }) {
       const { data } = await (supabase as any)
         .from("support_tickets")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("customer_id", user.id)
+        .eq("seller_id", seller.id)
         .neq("status", "closed")
         .order("created_at", { ascending: false })
         .limit(1)
@@ -85,7 +104,7 @@ export function SupportProvider({ children }: { children: ReactNode }) {
     return () => {
       cancel = true;
     };
-  }, [active, user]);
+  }, [active, user, seller]);
 
   // load messages + realtime for ticket
   useEffect(() => {
@@ -133,37 +152,35 @@ export function SupportProvider({ children }: { children: ReactNode }) {
   // mark admin messages as read while chat is open
   useEffect(() => {
     if (!open || !ticket || !user) return;
-    const unreadIds = messages.filter((m) => m.sender_role === "admin" && !m.read_by_user).map((m) => m.id);
+    const unreadIds = messages.filter((m) => (m.sender_role === "seller" || m.sender_role === "admin") && !m.read_by_customer).map((m) => m.id);
     if (unreadIds.length === 0) return;
     (supabase as any)
       .from("support_messages")
-      .update({ read_by_user: true })
+      .update({ read_by_customer: true, read_by_user: true })
       .in("id", unreadIds)
       .then(() => {});
   }, [open, messages, ticket, user]);
 
-  const unread = messages.filter((m) => m.sender_role === "admin" && !m.read_by_user).length;
+  const unread = messages.filter((m) => (m.sender_role === "seller" || m.sender_role === "admin") && !m.read_by_customer).length;
 
   const startTicket = useCallback(async () => {
-    if (!user || ticket) return;
+    if (!user || !seller || ticket) return;
     const { data, error } = await (supabase as any)
       .from("support_tickets")
-      .insert({ user_id: user.id, status: "open" })
+      .insert({ user_id: user.id, customer_id: user.id, seller_id: seller.id, status: "open" })
       .select()
       .single();
     if (!error && data) {
       setTicket(data as SupportTicket);
       setOpen(true);
     }
-  }, [user, ticket]);
+  }, [user, seller, ticket]);
 
   const sendMessage = useCallback(
     async (text: string) => {
       if (!user || !ticket || ticket.status === "closed" || !text.trim()) return;
       await (supabase as any).from("support_messages").insert({
         ticket_id: ticket.id,
-        sender_id: user.id,
-        sender_role: "user",
         message: text.trim(),
       });
     },
@@ -187,6 +204,7 @@ export function SupportProvider({ children }: { children: ReactNode }) {
         open,
         unread,
         loading,
+        seller,
         startTicket,
         sendMessage,
         closeTicket,
