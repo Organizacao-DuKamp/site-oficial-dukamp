@@ -119,10 +119,11 @@ export const Route = createFileRoute("/api/admin/account-type")({
           supabaseAdmin.from("profiles").select("id, account_type, email").eq("id", userId).maybeSingle(),
         ]);
 
-        if (targetR.error || !targetR.data.user || !profileR.data) {
+        if (targetR.error || !targetR.data.user) {
           return errorResponse("Conta não encontrada.", 404);
         }
         if (profileR.error) return errorResponse(profileR.error.message, 500);
+        if (!profileR.data) return errorResponse("Conta não encontrada.", 404);
 
         const targetEmail = (targetR.data.user.email ?? profileR.data.email ?? "").toLowerCase();
         if (targetEmail === PROTECTED_ADMIN_EMAIL.toLowerCase()) {
@@ -132,16 +133,16 @@ export const Route = createFileRoute("/api/admin/account-type")({
         const currentMetadata = { ...(targetR.data.user.user_metadata ?? {}) } as Record<string, unknown>;
 
         if (accountType === "vendedor") {
-          const { error: metadataError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-            user_metadata: { ...currentMetadata, account_type_override: "vendedor" },
-          });
-          if (metadataError) return errorResponse(metadataError.message, 500);
-
           const { error: profileError } = await supabaseAdmin
             .from("profiles")
             .update({ account_type: "cliente" })
             .eq("id", userId);
           if (profileError) return errorResponse(profileError.message, 500);
+
+          const { error: metadataError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+            user_metadata: { ...currentMetadata, account_type_override: "vendedor" },
+          });
+          if (metadataError) return errorResponse(metadataError.message, 500);
 
           const { error: roleError } = await supabaseAdmin
             .from("user_roles")
@@ -153,18 +154,16 @@ export const Route = createFileRoute("/api/admin/account-type")({
           return Response.json({ ok: true, accountType: "vendedor" });
         }
 
-        const { account_type_override: _removedOverride, ...metadataWithoutOverride } = currentMetadata;
+        const { error: metadataError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+          user_metadata: { ...currentMetadata, account_type_override: null },
+        });
+        if (metadataError) return errorResponse(metadataError.message, 500);
 
         const { error: profileError } = await supabaseAdmin
           .from("profiles")
           .update({ account_type: accountType })
           .eq("id", userId);
         if (profileError) return errorResponse(profileError.message, 500);
-
-        const { error: metadataError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-          user_metadata: metadataWithoutOverride,
-        });
-        if (metadataError) return errorResponse(metadataError.message, 500);
 
         if (accountType === "admin") {
           const { error: roleError } = await supabaseAdmin
