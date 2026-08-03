@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
-        setTimeout(() => loadProfile(s.user.id), 0);
+        setTimeout(() => loadProfile(s.user), 0);
       } else {
         setIsAdmin(false);
         setAccountType("cliente");
@@ -55,20 +55,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setUser(data.session?.user ?? null);
-      if (data.session?.user) loadProfile(data.session.user.id);
+      if (data.session?.user) loadProfile(data.session.user);
       setLoading(false);
     });
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  async function loadProfile(userId: string) {
+  async function loadProfile(authUser: User) {
     const [rolesR, profileR] = await Promise.all([
-      supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "admin").maybeSingle(),
-      (supabase as any).from("profiles").select("account_type, approval_notified").eq("id", userId).maybeSingle(),
+      supabase.from("user_roles").select("role").eq("user_id", authUser.id).eq("role", "admin").maybeSingle(),
+      (supabase as any).from("profiles").select("account_type, approval_notified").eq("id", authUser.id).maybeSingle(),
     ]);
-    setIsAdmin(!!rolesR.data);
+
+    const admin = !!rolesR.data;
+    setIsAdmin(admin);
+
     const p: any = profileR.data ?? {};
-    const t = (p.account_type ?? "cliente") as AccountType;
+    const profileType = (p.account_type ?? "cliente") as AccountType;
+    const metadataType = authUser.user_metadata?.account_type_override;
+    const t: AccountType = !admin && metadataType === "vendedor" ? "vendedor" : profileType;
+
     setAccountType(t);
     if (p.approval_notified === false && (t === "produtor" || t === "empresa")) {
       setApprovalNotice(t);

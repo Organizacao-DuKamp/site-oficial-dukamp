@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { accountTypeLabel, useAuth, type AccountType } from "@/lib/auth";
+import { getManagedAccountType, setManagedAccountType } from "@/lib/admin-account-type";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -25,21 +26,22 @@ function ContaDetalhe() {
     enabled: isMasterAdmin,
     queryKey: ["account", id],
     queryFn: async () => {
-      const [profileR, rolesR] = await Promise.all([
+      const [profileR, rolesR, effectiveType] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", id).maybeSingle(),
         supabase.from("user_roles").select("*").eq("user_id", id),
+        getManagedAccountType(id),
       ]);
       if (profileR.error) throw profileR.error;
       if (rolesR.error) throw rolesR.error;
       return {
         profile: profileR.data,
+        effectiveType,
         isAdmin: (rolesR.data ?? []).some((r) => r.role === "admin"),
         adminRow: (rolesR.data ?? []).find((r) => r.role === "admin"),
       };
     },
   });
 
-  // Conta protegida: nunca exibir
   useEffect(() => {
     if (data?.profile && (data.profile as any).email === PROTECTED_ADMIN_EMAIL) {
       toast.error("Conta indisponível.");
@@ -74,21 +76,11 @@ function ContaDetalhe() {
   });
 
   const [pendingType, setPendingType] = useState<AccountType | "">("");
-  const currentType: AccountType = ((data?.profile as any)?.account_type ?? "cliente") as AccountType;
+  const currentType: AccountType = data?.effectiveType ?? "cliente";
 
   const changeType = useMutation({
     mutationFn: async (newType: AccountType) => {
-      // 'admin' type is bookkeeping: also manage user_roles
-      const { error } = await (supabase as any).from("profiles").update({ account_type: newType }).eq("id", id);
-      if (error) throw error;
-      if (newType === "admin" && !data?.isAdmin) {
-        const { error: e2 } = await supabase.from("user_roles").insert({ user_id: id, role: "admin" } as any);
-        if (e2) throw e2;
-      }
-      if (newType !== "admin" && data?.isAdmin) {
-        const { error: e3 } = await supabase.from("user_roles").delete().eq("user_id", id).eq("role", "admin");
-        if (e3) throw e3;
-      }
+      await setManagedAccountType(id, newType);
     },
     onSuccess: () => {
       toast.success("Tipo de conta atualizado");
