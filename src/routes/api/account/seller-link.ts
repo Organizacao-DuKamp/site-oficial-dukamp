@@ -92,10 +92,39 @@ export const Route = createFileRoute("/api/account/seller-link")({
         }
 
         const currentMetadata = { ...(user.user_metadata ?? {}) } as Record<string, unknown>;
+        const oldSellerId = typeof currentMetadata.selected_seller_id === "string"
+          ? currentMetadata.selected_seller_id
+          : null;
+        const oldTicketId = typeof currentMetadata.seller_chat_ticket_id === "string"
+          ? currentMetadata.seller_chat_ticket_id
+          : null;
+        const oldTicketSellerId = typeof currentMetadata.seller_chat_seller_id === "string"
+          ? currentMetadata.seller_chat_seller_id
+          : null;
+        const changedSeller = oldSellerId !== (seller?.id ?? null);
+
+        if (changedSeller && oldTicketId && oldTicketSellerId === oldSellerId) {
+          const { error: closeError } = await supabaseAdmin
+            .from("support_tickets")
+            .update({
+              status: "closed",
+              closed_by: user.id,
+              closed_at: new Date().toISOString(),
+            })
+            .eq("id", oldTicketId)
+            .eq("user_id", user.id);
+          if (closeError) {
+            console.error("[seller-link] Falha ao encerrar conversa antiga:", closeError.message);
+          }
+        }
+
         const { error } = await supabaseAdmin.auth.admin.updateUserById(user.id, {
           user_metadata: {
             ...currentMetadata,
             selected_seller_id: seller?.id ?? null,
+            ...(changedSeller
+              ? { seller_chat_ticket_id: null, seller_chat_seller_id: null }
+              : {}),
           },
         });
 
