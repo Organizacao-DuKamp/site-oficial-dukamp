@@ -135,7 +135,7 @@ export const Route = createFileRoute("/api/admin/account-type")({
         if (accountType === "vendedor") {
           const { error: profileError } = await supabaseAdmin
             .from("profiles")
-            .update({ account_type: "cliente" })
+            .update({ account_type: "vendedor" })
             .eq("id", userId);
           if (profileError) return errorResponse(profileError.message, 500);
 
