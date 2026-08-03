@@ -8,10 +8,25 @@ type UpdatePayload = {
   accountType?: AccountType;
 };
 
+type DatabaseError = {
+  code?: string;
+  message?: string;
+} | null;
+
 const WRITABLE_TYPES: AccountType[] = ["cliente", "revendedor", "produtor", "empresa", "vendedor", "admin"];
 
 function errorResponse(error: string, status: number) {
   return Response.json({ error }, { status });
+}
+
+function isMissingSellerColumn(error: DatabaseError, column: string): boolean {
+  if (!error) return false;
+  const message = (error.message ?? "").toLowerCase();
+  const target = column.toLowerCase();
+  return (
+    message.includes(target) &&
+    (error.code === "42703" || error.code === "PGRST204" || message.includes("does not exist") || message.includes("schema cache"))
+  );
 }
 
 function readBearerToken(request: Request): string | null {
@@ -133,40 +148,13 @@ export const Route = createFileRoute("/api/admin/account-type")({
         const currentMetadata = { ...(targetR.data.user.user_metadata ?? {}) } as Record<string, unknown>;
 
         if (accountType === "vendedor") {
-          // "vendedor" is stored in auth metadata for compatibility with
-          // databases whose account_type enum predates the seller role.
+          // O cargo de vendedor fica nos metadados para funcionar mesmo quando
+          // o enum account_type ou as colunas auxiliares ainda não foram migrados.
           const { error: profileError } = await supabaseAdmin
             .from("profiles")
             .update({ account_type: "cliente" })
             .eq("id", userId);
           if (profileError) return errorResponse(profileError.message, 500);
-
-          const { data: linkedSeller, error: linkedSellerError } = await supabaseAdmin
-            .from("sellers")
-            .select("id")
-            .eq("user_id", userId)
-            .maybeSingle();
-          if (linkedSellerError) return errorResponse(linkedSellerError.message, 500);
-
-          if (!linkedSeller) {
-            const sellerName = profileR.data.email
-              ? profileR.data.full_name || profileR.data.email
-              : `Vendedor ${userId.slice(0, 8)}`;
-            const { error: sellerError } = await supabaseAdmin.from("sellers").insert({
-              user_id: userId,
-              name: sellerName,
-              slug: `conta-${userId}`,
-              active: true,
-              show_on_team: false,
-            });
-            if (sellerError) return errorResponse(sellerError.message, 500);
-          } else {
-            const { error: sellerError } = await supabaseAdmin
-              .from("sellers")
-              .update({ active: true })
-              .eq("id", linkedSeller.id);
-            if (sellerError) return errorResponse(sellerError.message, 500);
-          }
 
           const { error: metadataError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
             user_metadata: { ...currentMetadata, account_type_override: "vendedor" },
@@ -180,7 +168,66 @@ export const Route = createFileRoute("/api/admin/account-type")({
             .eq("role", "admin");
           if (roleError) return errorResponse(roleError.message, 500);
 
-          return Response.json({ ok: true, accountType: "vendedor" });
+          // O vínculo com public.sellers é complementar. Bancos mais antigos
+          // ainda não possuem sellers.user_id/show_on_team, portanto essa etapa
+          // não pode impedir a promoção principal da conta.
+          let sellerWarning: string | undefined;
+          const { data: linkedSeller, error: linkedSellerError } = await supabaseAdmin
+            .from("sellers")
+            .select("id")
+            .eq("user_id", userId)
+            .maybeSingle();
+
+          if (linkedSellerError) {
+            if (isMissingSellerColumn(linkedSellerError, "user_id")) {
+              sellerWarning = "Cargo salvo; o vínculo interno será criado após a atualização do banco.";
+            } else {
+              console.error("[account-type] Falha ao procurar vendedor vinculado:", linkedSellerError.message);
+              sellerWarning = "Cargo salvo, mas o vínculo interno do vendedor não pôde ser atualizado.";
+            }
+          } else if (!linkedSeller) {
+            const sellerName = profileR.data.email
+              ? profileR.data.full_name || profileR.data.email
+              : `Vendedor ${userId.slice(0, 8)}`;
+
+            let { error: sellerError } = await supabaseAdmin.from("sellers").insert({
+              user_id: userId,
+              name: sellerName,
+              slug: `conta-${userId}`,
+              active: true,
+              show_on_team: false,
+            });
+
+            if (sellerError && isMissingSellerColumn(sellerError, "show_on_team")) {
+              const retry = await supabaseAdmin.from("sellers").insert({
+                user_id: userId,
+                name: sellerName,
+                slug: `conta-${userId}`,
+                active: true,
+              });
+              sellerError = retry.error;
+            }
+
+            if (sellerError) {
+              if (isMissingSellerColumn(sellerError, "user_id")) {
+                sellerWarning = "Cargo salvo; o vínculo interno será criado após a atualização do banco.";
+              } else {
+                console.error("[account-type] Falha ao criar vendedor vinculado:", sellerError.message);
+                sellerWarning = "Cargo salvo, mas o vínculo interno do vendedor não pôde ser criado.";
+              }
+            }
+          } else {
+            const { error: sellerError } = await supabaseAdmin
+              .from("sellers")
+              .update({ active: true })
+              .eq("id", linkedSeller.id);
+            if (sellerError) {
+              console.error("[account-type] Falha ao reativar vendedor vinculado:", sellerError.message);
+              sellerWarning = "Cargo salvo, mas o cadastro interno do vendedor não pôde ser reativado.";
+            }
+          }
+
+          return Response.json({ ok: true, accountType: "vendedor", warning: sellerWarning });
         }
 
         const { error: metadataError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
