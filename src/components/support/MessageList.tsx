@@ -8,7 +8,7 @@ export function MessageList({
   className,
 }: {
   messages: SupportMessage[];
-  selfRole: "user" | "admin";
+  selfRole: "user" | "customer" | "seller" | "admin";
   className?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);

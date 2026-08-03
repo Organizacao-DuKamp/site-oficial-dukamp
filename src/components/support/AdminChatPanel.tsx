@@ -34,7 +34,7 @@ export function AdminChatPanel({ ticket: initial, onClose }: Props) {
       setMessages((data as SupportMessage[]) ?? []);
       // mark as read by admin
       const unreadIds = ((data as SupportMessage[]) ?? [])
-        .filter((m) => m.sender_role === "user" && !m.read_by_admin)
+        .filter((m) => (m.sender_role === "user" || m.sender_role === "customer") && !m.read_by_admin)
         .map((m) => m.id);
       if (unreadIds.length) {
         await (supabase as any).from("support_messages").update({ read_by_admin: true }).in("id", unreadIds);
@@ -48,7 +48,7 @@ export function AdminChatPanel({ ticket: initial, onClose }: Props) {
         (p) => {
           const m = p.new as SupportMessage;
           setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
-          if (m.sender_role === "user") {
+          if (m.sender_role === "user" || m.sender_role === "customer") {
             (supabase as any).from("support_messages").update({ read_by_admin: true }).eq("id", m.id).then(() => {});
           }
         },
@@ -72,8 +72,6 @@ export function AdminChatPanel({ ticket: initial, onClose }: Props) {
     if (!text.trim() || !user || isClosed) return;
     await (supabase as any).from("support_messages").insert({
       ticket_id: ticket.id,
-      sender_id: user.id,
-      sender_role: "admin",
       message: text.trim(),
     });
     setText("");
