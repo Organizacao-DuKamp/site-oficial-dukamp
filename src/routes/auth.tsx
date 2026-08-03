@@ -10,7 +10,7 @@ import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { traduzErroAuth } from "@/lib/auth-errors";
-import { useActiveSellers } from "@/lib/sellers";
+import { useRegisteredSellers } from "@/lib/sellers";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({ meta: [{ title: "Entrar — Dukamp" }] }),
@@ -103,7 +103,7 @@ type RegisterResponse = {
 };
 
 function RegisterForm() {
-  const { data: sellers = [], isLoading: sellersLoading } = useActiveSellers();
+  const { data: sellers = [], isLoading: sellersLoading } = useRegisteredSellers();
   const [accountKind, setAccountKind] = useState<AccountKind>("cliente");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");

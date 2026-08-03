@@ -116,7 +116,7 @@ export const Route = createFileRoute("/api/admin/account-type")({
 
         const [targetR, profileR] = await Promise.all([
           supabaseAdmin.auth.admin.getUserById(userId),
-          supabaseAdmin.from("profiles").select("id, account_type, email").eq("id", userId).maybeSingle(),
+          supabaseAdmin.from("profiles").select("id, account_type, email, full_name").eq("id", userId).maybeSingle(),
         ]);
 
         if (targetR.error || !targetR.data.user) {
@@ -135,9 +135,36 @@ export const Route = createFileRoute("/api/admin/account-type")({
         if (accountType === "vendedor") {
           const { error: profileError } = await supabaseAdmin
             .from("profiles")
-            .update({ account_type: "cliente" })
+            .update({ account_type: "vendedor" })
             .eq("id", userId);
           if (profileError) return errorResponse(profileError.message, 500);
+
+          const { data: linkedSeller, error: linkedSellerError } = await supabaseAdmin
+            .from("sellers")
+            .select("id")
+            .eq("user_id", userId)
+            .maybeSingle();
+          if (linkedSellerError) return errorResponse(linkedSellerError.message, 500);
+
+          if (!linkedSeller) {
+            const sellerName = profileR.data.email
+              ? profileR.data.full_name || profileR.data.email
+              : `Vendedor ${userId.slice(0, 8)}`;
+            const { error: sellerError } = await supabaseAdmin.from("sellers").insert({
+              user_id: userId,
+              name: sellerName,
+              slug: `conta-${userId}`,
+              active: true,
+              show_on_team: false,
+            });
+            if (sellerError) return errorResponse(sellerError.message, 500);
+          } else {
+            const { error: sellerError } = await supabaseAdmin
+              .from("sellers")
+              .update({ active: true })
+              .eq("id", linkedSeller.id);
+            if (sellerError) return errorResponse(sellerError.message, 500);
+          }
 
           const { error: metadataError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
             user_metadata: { ...currentMetadata, account_type_override: "vendedor" },

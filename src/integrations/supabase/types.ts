@@ -726,6 +726,7 @@ export type Database = {
           region: string | null
           role: string | null
           slug: string
+          show_on_team: boolean
           updated_at: string
           user_id: string | null
           whatsapp: string | null
@@ -743,6 +744,7 @@ export type Database = {
           region?: string | null
           role?: string | null
           slug: string
+          show_on_team?: boolean
           updated_at?: string
           user_id?: string | null
           whatsapp?: string | null
@@ -760,6 +762,7 @@ export type Database = {
           region?: string | null
           role?: string | null
           slug?: string
+          show_on_team?: boolean
           updated_at?: string
           user_id?: string | null
           whatsapp?: string | null
@@ -895,6 +898,13 @@ export type Database = {
       approve_account_request: {
         Args: { _request_id: string; _reviewer: string }
         Returns: undefined
+      }
+      get_registered_sellers: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          name: string
+        }[]
       }
       has_role: {
         Args: {
