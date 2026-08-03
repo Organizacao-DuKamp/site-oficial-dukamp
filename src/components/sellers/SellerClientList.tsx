@@ -11,6 +11,7 @@ export type SellerClient = {
   phone: string | null;
   municipio_propriedade: string | null;
   uf: string | null;
+  chat_ticket_id?: string | null;
 };
 
 type Props = {
@@ -53,7 +54,7 @@ export function SellerClientList({
             <p className="text-sm text-muted-foreground">
               {search
                 ? "Tente buscar por outro termo."
-                : "Os clientes atribuídos a você aparecerão aqui."}
+                : "Os clientes que escolherem você como vendedor aparecerão aqui."}
             </p>
           </CardContent>
         </Card>
@@ -76,15 +77,24 @@ export function SellerClientList({
                     </div>
                   </div>
                   <div className="flex shrink-0 flex-wrap gap-2">
-                    <Button variant="outline" size="sm" asChild>
-                      <a href={`/vendedor/chat?cliente=${encodeURIComponent(client.id)}`}>
-                        <MessageCircle className="h-4 w-4" /> Abrir chat
-                      </a>
-                    </Button>
-                    <Button size="sm" asChild>
-                      <a
-                        href={`/vendedor/orcamentos/novo?cliente=${encodeURIComponent(client.id)}`}
+                    {client.chat_ticket_id ? (
+                      <Button variant="outline" size="sm" asChild>
+                        <a href={`/vendedor/chat?ticket=${encodeURIComponent(client.chat_ticket_id)}`}>
+                          <MessageCircle className="h-4 w-4" /> Abrir chat
+                        </a>
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled
+                        title="O chat aparecerá quando o cliente enviar a primeira mensagem."
                       >
+                        <MessageCircle className="h-4 w-4" /> Aguardando mensagem
+                      </Button>
+                    )}
+                    <Button size="sm" asChild>
+                      <a href={`/vendedor/orcamentos/novo?cliente=${encodeURIComponent(client.id)}`}>
                         <FilePlus2 className="h-4 w-4" /> Criar orçamento
                       </a>
                     </Button>
