@@ -26,7 +26,7 @@ export const Route = createFileRoute("/api/account/quotes")({
           const quotes = [];
           for (const row of rows.filter((quote) => quote.client_id === user.id)) {
             const quote = await refreshExpiration(supabaseAdmin, row);
-            if (pendingOnly && quote.status !== "sent") continue;
+            if (pendingOnly && (quote.status !== "sent" || quote.viewed_at)) continue;
             quotes.push(publicQuote(quote));
           }
           quotes.sort(
