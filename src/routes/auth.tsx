@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -126,17 +126,20 @@ function RegisterForm() {
   const [challenge, setChallenge] = useState(makeChallenge);
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
+  const [pendingConfirmationEmail, setPendingConfirmationEmail] = useState<string | null>(null);
+  const submittingRef = useRef(false);
 
   const needsExtra = accountKind !== "cliente";
 
   const helper = useMemo(() => {
-    if (accountKind === "cliente") return "Conta padrão. Acesso imediato.";
+    if (accountKind === "cliente") return "Conta padrão. Pode ser necessário confirmar o e-mail antes do primeiro acesso.";
     if (accountKind === "produtor") return "Solicitação enviada para análise da equipe Dukamp. Após aprovação seu acesso como Produtor Rural será liberado.";
     return "Solicitação de conta Empresa enviada para análise da equipe Dukamp. Após aprovação seu acesso Empresa será liberado.";
   }, [accountKind]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (submittingRef.current) return;
     if (!fullName.trim()) return toast.error("Informe seu nome completo.");
     if (password.length < 6) return toast.error("A senha deve ter no mínimo 6 caracteres.");
     if (password !== confirm) return toast.error("As senhas não conferem.");
@@ -162,61 +165,125 @@ function RegisterForm() {
       return toast.error("Resposta do desafio incorreta.");
     }
 
+    const normalizedEmail = email.trim().toLowerCase();
+    submittingRef.current = true;
     setLoading(true);
-    const { data: signUpData, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: typeof window !== "undefined" ? window.location.origin : undefined,
-        data: { full_name: fullName },
-      },
-    });
 
-    if (error) {
-      setLoading(false);
-      toast.error(traduzErroAuth(error.message));
-      setChallenge(makeChallenge());
-      setAnswer("");
-      return;
-    }
-
-    if (needsExtra && signUpData.user?.id) {
-      const { error: reqErr } = await (supabase as any).from("account_requests").insert({
-        user_id: signUpData.user.id,
-        full_name: fullName,
-        email,
-        requested_type: accountKind,
-        uf,
-        cnpj: accountKind === "empresa" ? cnpjPropriedade : null,
-        cpf,
-        phone,
-        contact_email: cobEmail,
-        fazenda,
-        cnpj_propriedade: cnpjPropriedade,
-        nome_propriedade: nomePropriedade,
-        inscricao_estadual: inscricaoEstadual,
-        municipio_propriedade: municipioPropriedade,
-        estado_propriedade: uf,
-        cobranca_rua: cobRua,
-        cobranca_bairro: cobBairro,
-        cobranca_numero: cobNumero,
-        cobranca_municipio: cobMunicipio,
-        cobranca_cep: cobCep,
-        cobranca_telefone: cobTelefone,
-        cobranca_email: cobEmail,
-        is_apartamento: isApto,
-        apartamento_info: isApto ? aptoInfo : null,
+    try {
+      const { data: signUpData, error } = await supabase.auth.signUp({
+        email: normalizedEmail,
+        password,
+        options: {
+          emailRedirectTo: typeof window !== "undefined" ? `${window.location.origin}/auth` : undefined,
+          data: {
+            full_name: fullName.trim(),
+            phone: phone.trim(),
+            requested_type: accountKind,
+          },
+        },
       });
-      if (reqErr) {
-        setLoading(false);
-        toast.error("Conta criada, mas a solicitação falhou: " + reqErr.message);
+
+      if (error) {
+        toast.error(traduzErroAuth(error.message));
+        setChallenge(makeChallenge());
+        setAnswer("");
         return;
       }
-      toast.success("Solicitação enviada! Aguarde aprovação da equipe Dukamp.");
-    } else {
-      toast.success("Conta criada! Você já está conectado.");
+
+      if (!signUpData.user?.id) {
+        toast.error("O cadastro não foi concluído. Tente novamente.");
+        return;
+      }
+
+      if (needsExtra) {
+        const { error: reqErr } = await (supabase as any).from("account_requests").insert({
+          user_id: signUpData.user.id,
+          full_name: fullName.trim(),
+          email: normalizedEmail,
+          requested_type: accountKind,
+          uf,
+          cnpj: accountKind === "empresa" ? cnpjPropriedade.trim() : null,
+          cpf: cpf.trim(),
+          phone: phone.trim(),
+          contact_email: cobEmail.trim(),
+          fazenda: fazenda.trim(),
+          cnpj_propriedade: cnpjPropriedade.trim(),
+          nome_propriedade: nomePropriedade.trim(),
+          inscricao_estadual: inscricaoEstadual.trim(),
+          municipio_propriedade: municipioPropriedade.trim(),
+          estado_propriedade: uf,
+          cobranca_rua: cobRua.trim(),
+          cobranca_bairro: cobBairro.trim(),
+          cobranca_numero: cobNumero.trim(),
+          cobranca_municipio: cobMunicipio.trim(),
+          cobranca_cep: cobCep.trim(),
+          cobranca_telefone: cobTelefone.trim(),
+          cobranca_email: cobEmail.trim(),
+          is_apartamento: isApto,
+          apartamento_info: isApto ? aptoInfo.trim() : null,
+        });
+
+        if (reqErr) {
+          if (!signUpData.session) {
+            setPendingConfirmationEmail(normalizedEmail);
+            toast.error("A conta foi criada, mas a solicitação não pôde ser registrada. Não tente cadastrar novamente. Confirme o e-mail e fale com a equipe Dukamp.");
+          } else {
+            toast.error("Conta criada, mas a solicitação falhou: " + reqErr.message);
+          }
+          return;
+        }
+
+        if (signUpData.session) {
+          toast.success("Solicitação enviada! Aguarde aprovação da equipe Dukamp.");
+        } else {
+          setPendingConfirmationEmail(normalizedEmail);
+          toast.success("Conta criada e solicitação enviada! Confirme seu e-mail para concluir o acesso.");
+        }
+        return;
+      }
+
+      if (signUpData.session) {
+        toast.success("Conta criada! Você já está conectado.");
+      } else {
+        setPendingConfirmationEmail(normalizedEmail);
+        toast.success("Conta criada! Confira seu e-mail para confirmar o cadastro.");
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : null;
+      toast.error(traduzErroAuth(message));
+      setChallenge(makeChallenge());
+      setAnswer("");
+    } finally {
+      submittingRef.current = false;
+      setLoading(false);
     }
-    setLoading(false);
+  }
+
+  if (pendingConfirmationEmail) {
+    return (
+      <div className="space-y-4 rounded-md border bg-muted/40 p-4 text-center">
+        <div>
+          <h3 className="font-semibold">Confira seu e-mail</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            A conta de <strong>{pendingConfirmationEmail}</strong> já foi criada. Abra o e-mail da Dukamp e confirme o cadastro antes de tentar entrar.
+          </p>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Não envie o cadastro novamente, pois isso pode bloquear temporariamente novos e-mails de confirmação.
+        </p>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            setPendingConfirmationEmail(null);
+            setChallenge(makeChallenge());
+            setAnswer("");
+          }}
+        >
+          Cadastrar outro e-mail
+        </Button>
+      </div>
+    );
   }
 
   return (
