@@ -7,7 +7,8 @@ const MAP: Array<[RegExp, string]> = [
   [/password should be at least (\d+)/i, "A senha deve ter no mínimo $1 caracteres."],
   [/password.*(short|weak)/i, "A senha é muito curta ou fraca."],
   [/passwords?.*(do not|don't)\s*match/i, "As senhas não coincidem."],
-  [/rate limit|too many requests/i, "Muitas tentativas. Aguarde alguns instantes e tente novamente."],
+  [/email rate limit exceeded|over_email_send_rate_limit|rate limit|too many requests/i, "Muitas tentativas de cadastro. Aguarde alguns minutos, confira sua caixa de entrada e tente novamente somente se não tiver recebido o e-mail."],
+  [/database error saving new user/i, "Não foi possível concluir o cadastro. Tente novamente; se o problema continuar, entre em contato com o suporte."],
   [/network|failed to fetch/i, "Falha de conexão. Verifique sua internet."],
   [/user not found/i, "Usuário não encontrado."],
   [/signup.*disabled/i, "Cadastros estão temporariamente desativados."],
@@ -16,12 +17,19 @@ const MAP: Array<[RegExp, string]> = [
   [/unauthorized/i, "Não autorizado."],
 ];
 
+function applyCaptures(template: string, match: RegExpMatchArray): string {
+  return template.replace(/\$(\d+)/g, (_, index: string) => match[Number(index)] ?? "");
+}
+
 export function traduzErroAuth(msg?: string | null): string {
   if (!msg) return "Ocorreu um erro inesperado. Tente novamente.";
+
   for (const [re, pt] of MAP) {
-    if (re.test(msg)) return msg.replace(re, pt);
+    const match = msg.match(re);
+    if (match) return applyCaptures(pt, match);
   }
-  // se já estiver em PT (tem acento ou palavras comuns), mantém
+
+  // Se já estiver em PT-BR, mantém a mensagem original.
   if (/[áéíóúãõç]|senha|e-mail|cadastr|conta/i.test(msg)) return msg;
   return "Ocorreu um erro inesperado. Tente novamente.";
 }
