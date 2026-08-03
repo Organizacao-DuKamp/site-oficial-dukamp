@@ -11,6 +11,16 @@ function cleanMessage(value: unknown): string {
   return typeof value === "string" ? value.trim().slice(0, 4000) : "";
 }
 
+function ticketHistory(metadata: Record<string, unknown>, nextId?: string): string[] {
+  const current = Array.isArray(metadata.seller_chat_ticket_ids)
+    ? metadata.seller_chat_ticket_ids.filter(
+        (value): value is string => typeof value === "string" && Boolean(value.trim()),
+      )
+    : [];
+  if (nextId?.trim()) current.push(nextId.trim());
+  return Array.from(new Set(current)).slice(-100);
+}
+
 async function resolveSelectedSeller(supabaseAdmin: any, user: any) {
   const sellerId =
     typeof user.user_metadata?.selected_seller_id === "string"
@@ -73,6 +83,7 @@ async function loadTicket(supabaseAdmin: any, user: any, sellerId: string) {
       ...appMetadata,
       seller_chat_ticket_id: ticket.id,
       seller_chat_seller_id: sellerId,
+      seller_chat_ticket_ids: ticketHistory(appMetadata, ticket.id),
     },
     user_metadata: {
       ...userMetadata,
@@ -168,6 +179,7 @@ export const Route = createFileRoute("/api/account/seller-chat")({
                   ...currentAppMetadata,
                   seller_chat_ticket_id: ticket.id,
                   seller_chat_seller_id: seller.id,
+                  seller_chat_ticket_ids: ticketHistory(currentAppMetadata, ticket.id),
                 },
                 user_metadata: {
                   ...currentUserMetadata,
