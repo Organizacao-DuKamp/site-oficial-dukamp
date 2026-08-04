@@ -150,6 +150,11 @@ function OrderPage() {
         )}
 
         <div className="border rounded-lg p-4 bg-card">
+          <OrderTracking order={order} />
+        </div>
+
+        <div className="border rounded-lg p-4 bg-card">
+
           <h2 className="font-semibold mb-3">Itens</h2>
           <div className="divide-y text-sm">
             {items.map((i, idx) => (
