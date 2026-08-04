@@ -71,19 +71,21 @@ export function SellerQuoteNotifications() {
   });
 
   if (!current) return null;
+  const activeQuote = current;
 
   const total =
-    current.seller_quote_items?.reduce(
+    activeQuote.seller_quote_items?.reduce(
       (sum, item) => sum + item.quantity * Number(item.unit_price_snapshot ?? 0),
       0,
     ) ?? 0;
 
   function dismiss() {
-    const id = current.id;
+    const id = activeQuote.id;
     setDismissedIds((previous) => new Set(previous).add(id));
     setCurrent(null);
     viewed.mutate(id);
   }
+
 
   return (
     <Dialog open onOpenChange={(open) => !open && dismiss()}>

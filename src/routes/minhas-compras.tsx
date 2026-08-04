@@ -9,6 +9,9 @@ import { formatBRL } from "@/lib/cart";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader2, Package, Truck, CheckCircle2, Clock } from "lucide-react";
+import { OrderTracking } from "@/components/site/OrderTracking";
+import { paymentStatusLabel } from "@/lib/shipping-status";
+
 
 export const Route = createFileRoute("/minhas-compras")({
   ssr: false,
@@ -58,44 +61,49 @@ function MyOrdersPage() {
             const dl = DELIVERY_LABEL[o.delivery_status as keyof typeof DELIVERY_LABEL] ?? DELIVERY_LABEL.preparando;
             const Icon = dl.icon;
             return (
-              <Link
-                key={o.id}
-                to="/pedido/$id"
-                params={{ id: o.id }}
-                className="block border rounded-lg p-4 bg-card hover:border-primary transition-colors"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <div className="font-semibold">Pedido {o.order_number}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {new Date(o.created_at).toLocaleString("pt-BR")}
+              <div key={o.id} className="border rounded-lg bg-card overflow-hidden">
+                <Link
+                  to="/pedido/$id"
+                  params={{ id: o.id }}
+                  className="block p-4 hover:bg-muted/40 transition-colors"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <div className="font-semibold">Pedido {o.order_number}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {new Date(o.created_at).toLocaleString("pt-BR")}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-bold">{formatBRL(Number(o.total))}</div>
+                      <div className="text-xs text-muted-foreground">{paymentStatusLabel(o.payment_status)}</div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="font-bold">{formatBRL(Number(o.total))}</div>
-                    <div className="text-xs text-muted-foreground uppercase">{o.payment_status}</div>
-                  </div>
-                </div>
-                {isApproved && (
-                  <div className="mt-3 flex items-center gap-2">
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${dl.color}`}>
-                      <Icon className="h-3.5 w-3.5" /> {dl.label}
-                    </span>
-                    {o.delivered_at && (
-                      <span className="text-xs text-muted-foreground">
-                        em {new Date(o.delivered_at).toLocaleDateString("pt-BR")}
+                  {isApproved && (
+                    <div className="mt-3 flex items-center gap-2">
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${dl.color}`}>
+                        <Icon className="h-3.5 w-3.5" /> {dl.label}
                       </span>
-                    )}
-                  </div>
-                )}
-                {!isApproved && o.payment_status === "pending" && (
-                  <div className="mt-3 flex items-center gap-1.5 text-xs text-amber-700">
-                    <Clock className="h-3.5 w-3.5" /> Aguardando pagamento
-                  </div>
-                )}
-              </Link>
+                      {o.delivered_at && (
+                        <span className="text-xs text-muted-foreground">
+                          em {new Date(o.delivered_at).toLocaleDateString("pt-BR")}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {!isApproved && o.payment_status === "pending" && (
+                    <div className="mt-3 flex items-center gap-1.5 text-xs text-amber-700">
+                      <Clock className="h-3.5 w-3.5" /> Aguardando pagamento
+                    </div>
+                  )}
+                </Link>
+                <div className="border-t px-4 py-3">
+                  <OrderTracking order={o} />
+                </div>
+              </div>
             );
           })}
+
         </div>
       </div>
     </SiteLayout>

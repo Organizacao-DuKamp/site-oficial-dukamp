@@ -237,13 +237,14 @@ export const Route = createFileRoute("/api/admin/account-type")({
           const optionalUpdates = [
             supabaseAdmin
               .from("sellers")
-              .update({ show_on_team: false })
+              .update({ show_on_team: false } as never)
               .eq("id", linkedSeller.id),
             supabaseAdmin
               .from("sellers")
-              .update({ user_id: userId })
+              .update({ user_id: userId } as never)
               .eq("id", linkedSeller.id),
           ];
+
           const [teamResult, userLinkResult] = await Promise.all(optionalUpdates);
           if (
             teamResult.error &&

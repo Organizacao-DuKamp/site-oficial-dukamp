@@ -55,8 +55,10 @@ function AdminSellersPage() {
 
   const save = useMutation({
     mutationFn: async (values: FormState) => {
+      const name = values.name?.trim();
+      if (!name) throw new Error("Nome é obrigatório");
       const payload = {
-        name: values.name?.trim(),
+        name,
         role: values.role || null,
         region: values.region || null,
         phone: values.phone || null,
@@ -67,7 +69,7 @@ function AdminSellersPage() {
         active: values.active ?? true,
         display_order: values.display_order ?? 0,
       };
-      if (!payload.name) throw new Error("Nome é obrigatório");
+
 
       const baseSlug = slugify(values.slug?.trim() || payload.name);
       if (!baseSlug || baseSlug.startsWith("conta-")) {

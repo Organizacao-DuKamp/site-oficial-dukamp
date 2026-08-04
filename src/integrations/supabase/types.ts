@@ -375,6 +375,7 @@ export type Database = {
           cep: string
           cidade: string
           complemento: string | null
+          correios_prepostagem_id: string | null
           cpf_cnpj: string | null
           created_at: string
           customer_name: string
@@ -384,6 +385,7 @@ export type Database = {
           email: string
           estado: string
           id: string
+          label_created_at: string | null
           mp_expires_at: string | null
           mp_payment_id: string | null
           mp_qr_code: string | null
@@ -397,12 +399,19 @@ export type Database = {
           payment_method: Database["public"]["Enums"]["payment_method"]
           payment_status: Database["public"]["Enums"]["payment_status"]
           phone: string
+          posted_at: string | null
           rua: string
           shipping_cost: number
           shipping_deadline_days: number | null
+          shipping_error: string | null
+          shipping_label_url: string | null
           shipping_service: string | null
+          shipping_service_code: string | null
           subtotal: number
           total: number
+          tracking_code: string | null
+          tracking_status: string | null
+          tracking_updated_at: string | null
           updated_at: string
           user_id: string | null
         }
@@ -412,6 +421,7 @@ export type Database = {
           cep: string
           cidade: string
           complemento?: string | null
+          correios_prepostagem_id?: string | null
           cpf_cnpj?: string | null
           created_at?: string
           customer_name: string
@@ -421,6 +431,7 @@ export type Database = {
           email: string
           estado: string
           id?: string
+          label_created_at?: string | null
           mp_expires_at?: string | null
           mp_payment_id?: string | null
           mp_qr_code?: string | null
@@ -434,12 +445,19 @@ export type Database = {
           payment_method?: Database["public"]["Enums"]["payment_method"]
           payment_status?: Database["public"]["Enums"]["payment_status"]
           phone: string
+          posted_at?: string | null
           rua: string
           shipping_cost?: number
           shipping_deadline_days?: number | null
+          shipping_error?: string | null
+          shipping_label_url?: string | null
           shipping_service?: string | null
+          shipping_service_code?: string | null
           subtotal: number
           total: number
+          tracking_code?: string | null
+          tracking_status?: string | null
+          tracking_updated_at?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -449,6 +467,7 @@ export type Database = {
           cep?: string
           cidade?: string
           complemento?: string | null
+          correios_prepostagem_id?: string | null
           cpf_cnpj?: string | null
           created_at?: string
           customer_name?: string
@@ -458,6 +477,7 @@ export type Database = {
           email?: string
           estado?: string
           id?: string
+          label_created_at?: string | null
           mp_expires_at?: string | null
           mp_payment_id?: string | null
           mp_qr_code?: string | null
@@ -471,12 +491,19 @@ export type Database = {
           payment_method?: Database["public"]["Enums"]["payment_method"]
           payment_status?: Database["public"]["Enums"]["payment_status"]
           phone?: string
+          posted_at?: string | null
           rua?: string
           shipping_cost?: number
           shipping_deadline_days?: number | null
+          shipping_error?: string | null
+          shipping_label_url?: string | null
           shipping_service?: string | null
+          shipping_service_code?: string | null
           subtotal?: number
           total?: number
+          tracking_code?: string | null
+          tracking_status?: string | null
+          tracking_updated_at?: string | null
           updated_at?: string
           user_id?: string | null
         }

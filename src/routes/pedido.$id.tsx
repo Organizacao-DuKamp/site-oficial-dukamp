@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2, Clock, XCircle, Copy, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRef } from "react";
+import { OrderTracking } from "@/components/site/OrderTracking";
+
 
 export const Route = createFileRoute("/pedido/$id")({
   ssr: false,
@@ -150,6 +152,11 @@ function OrderPage() {
         )}
 
         <div className="border rounded-lg p-4 bg-card">
+          <OrderTracking order={order} />
+        </div>
+
+        <div className="border rounded-lg p-4 bg-card">
+
           <h2 className="font-semibold mb-3">Itens</h2>
           <div className="divide-y text-sm">
             {items.map((i, idx) => (
