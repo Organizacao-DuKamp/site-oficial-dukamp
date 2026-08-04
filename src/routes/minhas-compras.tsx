@@ -9,6 +9,9 @@ import { formatBRL } from "@/lib/cart";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader2, Package, Truck, CheckCircle2, Clock } from "lucide-react";
+import { OrderTracking } from "@/components/site/OrderTracking";
+import { paymentStatusLabel } from "@/lib/shipping-status";
+
 
 export const Route = createFileRoute("/minhas-compras")({
   ssr: false,
