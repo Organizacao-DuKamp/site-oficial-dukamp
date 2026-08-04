@@ -636,7 +636,6 @@ export type Database = {
           municipio_propriedade: string | null
           nome_propriedade: string | null
           phone: string | null
-          seller_id: string | null
           uf: string | null
           updated_at: string
         }
@@ -667,7 +666,6 @@ export type Database = {
           municipio_propriedade?: string | null
           nome_propriedade?: string | null
           phone?: string | null
-          seller_id?: string | null
           uf?: string | null
           updated_at?: string
         }
@@ -698,19 +696,10 @@ export type Database = {
           municipio_propriedade?: string | null
           nome_propriedade?: string | null
           phone?: string | null
-          seller_id?: string | null
           uf?: string | null
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_seller_id_fkey"
-            columns: ["seller_id"]
-            isOneToOne: false
-            referencedRelation: "sellers"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       sellers: {
         Row: {
@@ -726,9 +715,7 @@ export type Database = {
           region: string | null
           role: string | null
           slug: string
-          show_on_team: boolean
           updated_at: string
-          user_id: string | null
           whatsapp: string | null
         }
         Insert: {
@@ -744,9 +731,7 @@ export type Database = {
           region?: string | null
           role?: string | null
           slug: string
-          show_on_team?: boolean
           updated_at?: string
-          user_id?: string | null
           whatsapp?: string | null
         }
         Update: {
@@ -762,20 +747,10 @@ export type Database = {
           region?: string | null
           role?: string | null
           slug?: string
-          show_on_team?: boolean
           updated_at?: string
-          user_id?: string | null
           whatsapp?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "sellers_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       site_settings: {
         Row: {
@@ -899,13 +874,6 @@ export type Database = {
         Args: { _request_id: string; _reviewer: string }
         Returns: undefined
       }
-      get_registered_sellers: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          id: string
-          name: string
-        }[]
-      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -917,7 +885,7 @@ export type Database = {
     }
     Enums: {
       account_request_status: "pending" | "approved" | "rejected"
-      account_type: "cliente" | "revendedor" | "produtor" | "admin" | "empresa" | "vendedor"
+      account_type: "cliente" | "revendedor" | "produtor" | "admin" | "empresa"
       app_role: "admin" | "user"
       delivery_status: "preparando" | "a_caminho" | "entregue"
       payment_method: "pix" | "card" | "boleto"
@@ -1058,7 +1026,7 @@ export const Constants = {
   public: {
     Enums: {
       account_request_status: ["pending", "approved", "rejected"],
-      account_type: ["cliente", "revendedor", "produtor", "admin", "empresa", "vendedor"],
+      account_type: ["cliente", "revendedor", "produtor", "admin", "empresa"],
       app_role: ["admin", "user"],
       delivery_status: ["preparando", "a_caminho", "entregue"],
       payment_method: ["pix", "card", "boleto"],
