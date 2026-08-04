@@ -106,7 +106,20 @@ export const Route = createFileRoute("/api/public/mercadopago-webhook")({
             const newStock = Math.max(0, (prod?.stock ?? 0) - it.quantity);
             await supa.from("products").update({ stock: newStock }).eq("id", it.product_id);
           }
+
+          // Tenta gerar a pré-postagem dos Correios (código de rastreio real).
+          // Se falhar, o erro fica registrado no pedido e o admin refaz pelo painel.
+          try {
+            const { generateLabelForOrder } = await import("@/lib/shipping-generate.server");
+            await generateLabelForOrder(supa, p.external_reference);
+          } catch (e) {
+            console.error("[Correios] geração automática de etiqueta falhou", {
+              orderId: p.external_reference,
+              message: (e as Error).message,
+            });
+          }
         }
+
 
         return new Response("ok", { status: 200 });
       },
