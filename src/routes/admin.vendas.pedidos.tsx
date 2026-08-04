@@ -3,6 +3,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminListOrders, adminUpdateDeliveryStatus, type DeliveryStatus } from "@/lib/orders.functions";
 import { Loader2, Package, Truck, CheckCircle2 } from "lucide-react";
+import { OrderShippingPanel } from "@/components/admin/OrderShippingPanel";
+
 import { formatBRL } from "@/lib/cart";
 import { toast } from "sonner";
 import {
