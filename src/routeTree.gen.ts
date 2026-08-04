@@ -65,10 +65,12 @@ import { Route as ApiPublicRegisteredSellersRouteImport } from './routes/api/pub
 import { Route as ApiPublicRegisterRouteImport } from './routes/api/public/register'
 import { Route as ApiPublicMercadopagoWebhookRouteImport } from './routes/api/public/mercadopago-webhook'
 import { Route as ApiPublicInitAdminRouteImport } from './routes/api/public/init-admin'
+import { Route as ApiAdminSupportTicketsRouteImport } from './routes/api/admin/support-tickets'
 import { Route as ApiAdminAccountTypeRouteImport } from './routes/api/admin/account-type'
 import { Route as ApiAccountSellerLinkRouteImport } from './routes/api/account/seller-link'
 import { Route as ApiAccountSellerChatRouteImport } from './routes/api/account/seller-chat'
 import { Route as ApiAccountQuotesRouteImport } from './routes/api/account/quotes'
+import { Route as ApiAccountEffectiveRoleRouteImport } from './routes/api/account/effective-role'
 import { Route as AdminVendasPedidosRouteImport } from './routes/admin.vendas.pedidos'
 import { Route as AdminVendasPainelRouteImport } from './routes/admin.vendas.painel'
 import { Route as AdminVendasHistoricoRouteImport } from './routes/admin.vendas.historico'
@@ -359,6 +361,11 @@ const ApiPublicInitAdminRoute = ApiPublicInitAdminRouteImport.update({
   path: '/api/public/init-admin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminSupportTicketsRoute = ApiAdminSupportTicketsRouteImport.update({
+  id: '/api/admin/support-tickets',
+  path: '/api/admin/support-tickets',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminAccountTypeRoute = ApiAdminAccountTypeRouteImport.update({
   id: '/api/admin/account-type',
   path: '/api/admin/account-type',
@@ -377,6 +384,11 @@ const ApiAccountSellerChatRoute = ApiAccountSellerChatRouteImport.update({
 const ApiAccountQuotesRoute = ApiAccountQuotesRouteImport.update({
   id: '/api/account/quotes',
   path: '/api/account/quotes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAccountEffectiveRoleRoute = ApiAccountEffectiveRoleRouteImport.update({
+  id: '/api/account/effective-role',
+  path: '/api/account/effective-role',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminVendasPedidosRoute = AdminVendasPedidosRouteImport.update({
@@ -449,10 +461,12 @@ export interface FileRoutesByFullPath {
   '/admin/vendas/historico': typeof AdminVendasHistoricoRoute
   '/admin/vendas/painel': typeof AdminVendasPainelRoute
   '/admin/vendas/pedidos': typeof AdminVendasPedidosRoute
+  '/api/account/effective-role': typeof ApiAccountEffectiveRoleRoute
   '/api/account/quotes': typeof ApiAccountQuotesRoute
   '/api/account/seller-chat': typeof ApiAccountSellerChatRoute
   '/api/account/seller-link': typeof ApiAccountSellerLinkRoute
   '/api/admin/account-type': typeof ApiAdminAccountTypeRoute
+  '/api/admin/support-tickets': typeof ApiAdminSupportTicketsRoute
   '/api/public/init-admin': typeof ApiPublicInitAdminRoute
   '/api/public/mercadopago-webhook': typeof ApiPublicMercadopagoWebhookRoute
   '/api/public/register': typeof ApiPublicRegisterRoute
@@ -511,10 +525,12 @@ export interface FileRoutesByTo {
   '/admin/vendas/historico': typeof AdminVendasHistoricoRoute
   '/admin/vendas/painel': typeof AdminVendasPainelRoute
   '/admin/vendas/pedidos': typeof AdminVendasPedidosRoute
+  '/api/account/effective-role': typeof ApiAccountEffectiveRoleRoute
   '/api/account/quotes': typeof ApiAccountQuotesRoute
   '/api/account/seller-chat': typeof ApiAccountSellerChatRoute
   '/api/account/seller-link': typeof ApiAccountSellerLinkRoute
   '/api/admin/account-type': typeof ApiAdminAccountTypeRoute
+  '/api/admin/support-tickets': typeof ApiAdminSupportTicketsRoute
   '/api/public/init-admin': typeof ApiPublicInitAdminRoute
   '/api/public/mercadopago-webhook': typeof ApiPublicMercadopagoWebhookRoute
   '/api/public/register': typeof ApiPublicRegisterRoute
@@ -578,10 +594,12 @@ export interface FileRoutesById {
   '/admin/vendas/historico': typeof AdminVendasHistoricoRoute
   '/admin/vendas/painel': typeof AdminVendasPainelRoute
   '/admin/vendas/pedidos': typeof AdminVendasPedidosRoute
+  '/api/account/effective-role': typeof ApiAccountEffectiveRoleRoute
   '/api/account/quotes': typeof ApiAccountQuotesRoute
   '/api/account/seller-chat': typeof ApiAccountSellerChatRoute
   '/api/account/seller-link': typeof ApiAccountSellerLinkRoute
   '/api/admin/account-type': typeof ApiAdminAccountTypeRoute
+  '/api/admin/support-tickets': typeof ApiAdminSupportTicketsRoute
   '/api/public/init-admin': typeof ApiPublicInitAdminRoute
   '/api/public/mercadopago-webhook': typeof ApiPublicMercadopagoWebhookRoute
   '/api/public/register': typeof ApiPublicRegisterRoute
@@ -646,10 +664,12 @@ export interface FileRouteTypes {
     | '/admin/vendas/historico'
     | '/admin/vendas/painel'
     | '/admin/vendas/pedidos'
+    | '/api/account/effective-role'
     | '/api/account/quotes'
     | '/api/account/seller-chat'
     | '/api/account/seller-link'
     | '/api/admin/account-type'
+    | '/api/admin/support-tickets'
     | '/api/public/init-admin'
     | '/api/public/mercadopago-webhook'
     | '/api/public/register'
@@ -708,10 +728,12 @@ export interface FileRouteTypes {
     | '/admin/vendas/historico'
     | '/admin/vendas/painel'
     | '/admin/vendas/pedidos'
+    | '/api/account/effective-role'
     | '/api/account/quotes'
     | '/api/account/seller-chat'
     | '/api/account/seller-link'
     | '/api/admin/account-type'
+    | '/api/admin/support-tickets'
     | '/api/public/init-admin'
     | '/api/public/mercadopago-webhook'
     | '/api/public/register'
@@ -774,10 +796,12 @@ export interface FileRouteTypes {
     | '/admin/vendas/historico'
     | '/admin/vendas/painel'
     | '/admin/vendas/pedidos'
+    | '/api/account/effective-role'
     | '/api/account/quotes'
     | '/api/account/seller-chat'
     | '/api/account/seller-link'
     | '/api/admin/account-type'
+    | '/api/admin/support-tickets'
     | '/api/public/init-admin'
     | '/api/public/mercadopago-webhook'
     | '/api/public/register'
@@ -815,10 +839,12 @@ export interface RootRouteChildren {
   PaginasSlugRoute: typeof PaginasSlugRoute
   PedidoIdRoute: typeof PedidoIdRoute
   EquipeDeVendasIndexRoute: typeof EquipeDeVendasIndexRoute
+  ApiAccountEffectiveRoleRoute: typeof ApiAccountEffectiveRoleRoute
   ApiAccountQuotesRoute: typeof ApiAccountQuotesRoute
   ApiAccountSellerChatRoute: typeof ApiAccountSellerChatRoute
   ApiAccountSellerLinkRoute: typeof ApiAccountSellerLinkRoute
   ApiAdminAccountTypeRoute: typeof ApiAdminAccountTypeRoute
+  ApiAdminSupportTicketsRoute: typeof ApiAdminSupportTicketsRoute
   ApiPublicInitAdminRoute: typeof ApiPublicInitAdminRoute
   ApiPublicMercadopagoWebhookRoute: typeof ApiPublicMercadopagoWebhookRoute
   ApiPublicRegisterRoute: typeof ApiPublicRegisterRoute
@@ -1223,6 +1249,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicInitAdminRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/support-tickets': {
+      id: '/api/admin/support-tickets'
+      path: '/api/admin/support-tickets'
+      fullPath: '/api/admin/support-tickets'
+      preLoaderRoute: typeof ApiAdminSupportTicketsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/account-type': {
       id: '/api/admin/account-type'
       path: '/api/admin/account-type'
@@ -1249,6 +1282,13 @@ declare module '@tanstack/react-router' {
       path: '/api/account/quotes'
       fullPath: '/api/account/quotes'
       preLoaderRoute: typeof ApiAccountQuotesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/account/effective-role': {
+      id: '/api/account/effective-role'
+      path: '/api/account/effective-role'
+      fullPath: '/api/account/effective-role'
+      preLoaderRoute: typeof ApiAccountEffectiveRoleRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/vendas/pedidos': {
@@ -1403,10 +1443,12 @@ const rootRouteChildren: RootRouteChildren = {
   PaginasSlugRoute: PaginasSlugRoute,
   PedidoIdRoute: PedidoIdRoute,
   EquipeDeVendasIndexRoute: EquipeDeVendasIndexRoute,
+  ApiAccountEffectiveRoleRoute: ApiAccountEffectiveRoleRoute,
   ApiAccountQuotesRoute: ApiAccountQuotesRoute,
   ApiAccountSellerChatRoute: ApiAccountSellerChatRoute,
   ApiAccountSellerLinkRoute: ApiAccountSellerLinkRoute,
   ApiAdminAccountTypeRoute: ApiAdminAccountTypeRoute,
+  ApiAdminSupportTicketsRoute: ApiAdminSupportTicketsRoute,
   ApiPublicInitAdminRoute: ApiPublicInitAdminRoute,
   ApiPublicMercadopagoWebhookRoute: ApiPublicMercadopagoWebhookRoute,
   ApiPublicRegisterRoute: ApiPublicRegisterRoute,
