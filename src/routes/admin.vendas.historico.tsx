@@ -39,6 +39,7 @@ function HistoricoVendas() {
               <th className="p-3">Data</th>
               <th className="p-3">Pagamento</th>
               <th className="p-3">Entrega</th>
+              <th className="p-3">Rastreio</th>
               <th className="p-3 text-right">Total</th>
             </tr>
           </thead>
@@ -61,13 +62,26 @@ function HistoricoVendas() {
                   <td className="p-3">
                     <span className={`inline-block px-2 py-0.5 rounded-full text-xs ${dl.className}`}>{dl.label}</span>
                   </td>
+                  <td className="p-3 text-xs">
+                    {o.tracking_code ? (
+                      <div>
+                        <div className="font-mono">{o.tracking_code}</div>
+                        <div className="text-muted-foreground">
+                          {trackingStatusLabel(o.tracking_status) ?? "Etiqueta gerada"}
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </td>
                   <td className="p-3 text-right font-semibold">{formatBRL(Number(o.total))}</td>
                 </tr>
               );
             })}
             {q.data && q.data.length === 0 && (
-              <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">Nenhuma venda ainda.</td></tr>
+              <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">Nenhuma venda ainda.</td></tr>
             )}
+
           </tbody>
         </table>
       </div>
