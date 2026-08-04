@@ -5,6 +5,8 @@ import { adminListOrders } from "@/lib/orders.functions";
 import { Loader2 } from "lucide-react";
 import { formatBRL } from "@/lib/cart";
 import { Badge } from "@/components/ui/badge";
+import { trackingStatusLabel } from "@/lib/shipping-status";
+
 
 export const Route = createFileRoute("/admin/vendas/historico")({
   component: HistoricoVendas,
