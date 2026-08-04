@@ -76,7 +76,9 @@ function PedidosAtivos() {
                 </SelectContent>
               </Select>
             </div>
+            <OrderShippingPanel order={o} />
           </div>
+
         ))}
       </div>
     </div>
