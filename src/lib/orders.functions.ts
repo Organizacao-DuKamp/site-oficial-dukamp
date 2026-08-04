@@ -85,7 +85,7 @@ export const adminListOrders = createServerFn({ method: "GET" })
     let q = supabase
       .from("orders")
       .select(
-        "id,order_number,customer_name,email,phone,cidade,estado,total,payment_status,delivery_status,delivered_at,created_at",
+        "id,order_number,customer_name,email,phone,cidade,estado,total,payment_status,delivery_status,delivered_at,created_at,shipping_service,tracking_code,tracking_status,correios_prepostagem_id,shipping_label_url,shipping_service_code,shipping_error,posted_at,label_created_at,tracking_updated_at",
       )
       .order("created_at", { ascending: false })
       .limit(500);
