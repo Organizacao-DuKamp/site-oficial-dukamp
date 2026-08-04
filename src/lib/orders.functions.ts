@@ -11,7 +11,7 @@ export const listMyOrders = createServerFn({ method: "GET" })
     const { data, error } = await supabase
       .from("orders")
       .select(
-        "id,order_number,total,payment_status,delivery_status,delivered_at,created_at,shipping_service",
+        "id,order_number,total,payment_status,delivery_status,delivered_at,created_at,shipping_service,tracking_code,tracking_status,posted_at,label_created_at,tracking_updated_at",
       )
       .eq("user_id", userId)
       .in("payment_status", ["approved", "in_process"])
