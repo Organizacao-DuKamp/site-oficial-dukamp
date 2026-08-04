@@ -902,7 +902,7 @@ export const getOrderPublic = createServerFn({ method: "GET" })
     const { data: order, error } = await supa
       .from("orders")
       .select(
-        "id,order_number,customer_name,email,total,subtotal,shipping_cost,shipping_service,shipping_deadline_days,payment_method,payment_status,mp_qr_code,mp_qr_code_base64,mp_ticket_url,mp_expires_at,created_at",
+        "id,order_number,customer_name,email,total,subtotal,shipping_cost,shipping_service,shipping_deadline_days,payment_method,payment_status,mp_qr_code,mp_qr_code_base64,mp_ticket_url,mp_expires_at,created_at,tracking_code,tracking_status,posted_at,label_created_at",
       )
       .eq("id", data.id)
       .single();
