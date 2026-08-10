@@ -10,51 +10,41 @@ function CustomersAdmin() {
     <div className="space-y-6">
       <ResourceCrud
         title="Clientes"
-        table="profiles"
-        orderBy={{ column: "full_name", ascending: true }}
-        searchField="full_name"
+        table="customers"
+        orderBy={{ column: "cliente", ascending: true }}
+        searchField="cliente"
         searchPlaceholder="Pesquisar cliente por nome..."
         columns={[
-          { key: "full_name", label: "Cliente" },
-          { key: "id", label: "Código", format: (v) => v?.slice(0, 8) ?? "—" },
-          { key: "municipio_propriedade", label: "Cidade" },
+          { key: "cliente", label: "Cliente" },
+          { key: "codigo", label: "Código" },
+          { key: "cidade", label: "Cidade" },
           { key: "uf", label: "UF" },
-          { key: "full_name", label: "Contato", format: (v) => v || "—" },
-          { key: "phone", label: "Telefone" },
-          { key: "account_type", label: "REPR", format: (v) => v === "reseller" ? "1" : "0" },
-          { 
-            key: "updated_at", 
-            label: "Últ. Compra", 
-            format: (v) => v ? new Date(v).toLocaleDateString("pt-BR") : "—" 
+          { key: "contato", label: "Contato", format: (v) => v || "—" },
+          { key: "telefone", label: "Telefone", format: (v) => v || "—" },
+          { key: "repr", label: "REPR", format: (v) => v || "—" },
+          {
+            key: "ultima_compra",
+            label: "Últ. Compra",
+            format: (v) => v ? new Date(`${v}T12:00:00`).toLocaleDateString("pt-BR") : "—",
           },
-          { key: "cobranca_municipio", label: "COB", format: (v) => v || "—" },
-          { 
-            key: "cpf", 
-            label: "CNPJ/CPF", 
-            format: (_, row: any) => row.cpf || row.cnpj || "—" 
-          },
-          { key: "phone", label: "Celular" },
-          { key: "email", label: "Email" },
+          { key: "cob", label: "COB", format: (v) => v || "—" },
+          { key: "cnpj_cpf", label: "CNPJ/CPF", format: (v) => v || "—" },
+          { key: "celular", label: "Celular", format: (v) => v || "—" },
+          { key: "email", label: "Email", format: (v) => v || "—" },
         ]}
         fields={[
-          { name: "full_name", label: "Cliente", required: true },
-          { name: "email", label: "Email", required: true },
-          { name: "phone", label: "Telefone/Celular" },
-          { name: "cpf", label: "CPF" },
-          { name: "cnpj", label: "CNPJ" },
+          { name: "cliente", label: "Cliente", required: true },
+          { name: "codigo", label: "Código", required: true },
+          { name: "cidade", label: "Cidade" },
           { name: "uf", label: "UF" },
-          { name: "municipio_propriedade", label: "Cidade" },
-          { name: "cobranca_municipio", label: "Cidade Cobrança" },
-          { 
-            name: "account_type", 
-            label: "Tipo de Conta", 
-            type: "select", 
-            options: [
-              { value: "consumer", label: "Consumidor" },
-              { value: "producer", label: "Produtor" },
-              { value: "reseller", label: "Revendedor" }
-            ] 
-          },
+          { name: "contato", label: "Contato" },
+          { name: "telefone", label: "Telefone" },
+          { name: "repr", label: "REPR" },
+          { name: "ultima_compra", label: "Última Compra" },
+          { name: "cob", label: "COB" },
+          { name: "cnpj_cpf", label: "CNPJ/CPF" },
+          { name: "celular", label: "Celular" },
+          { name: "email", label: "Email" },
         ]}
       />
     </div>
