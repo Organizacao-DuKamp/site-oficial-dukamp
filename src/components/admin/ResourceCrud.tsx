@@ -179,8 +179,8 @@ export function ResourceCrud({ title, table, columns, fields, orderBy, searchFie
       )}
 
 
-      <div className="rounded-lg border bg-card overflow-hidden">
-        <Table>
+      <div className="rounded-lg border bg-card overflow-x-auto">
+        <Table className="min-w-[1200px]">
           <TableHeader>
             <TableRow>
               {columns.map((c) => <TableHead key={c.key}>{c.label}</TableHead>)}
