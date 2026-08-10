@@ -74,6 +74,7 @@ import { Route as ApiAccountEffectiveRoleRouteImport } from './routes/api/accoun
 import { Route as AdminVendasPedidosRouteImport } from './routes/admin.vendas.pedidos'
 import { Route as AdminVendasPainelRouteImport } from './routes/admin.vendas.painel'
 import { Route as AdminVendasHistoricoRouteImport } from './routes/admin.vendas.historico'
+import { Route as AdminVendasClientesRouteImport } from './routes/admin.vendas.clientes'
 import { Route as AdminContasIdRouteImport } from './routes/admin.contas.$id'
 
 const VendedorRoute = VendedorRouteImport.update({
@@ -406,6 +407,11 @@ const AdminVendasHistoricoRoute = AdminVendasHistoricoRouteImport.update({
   path: '/vendas/historico',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminVendasClientesRoute = AdminVendasClientesRouteImport.update({
+  id: '/vendas/clientes',
+  path: '/vendas/clientes',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminContasIdRoute = AdminContasIdRouteImport.update({
   id: '/contas/$id',
   path: '/contas/$id',
@@ -458,6 +464,7 @@ export interface FileRoutesByFullPath {
   '/produtos/': typeof ProdutosIndexRoute
   '/vendedor/': typeof VendedorIndexRoute
   '/admin/contas/$id': typeof AdminContasIdRoute
+  '/admin/vendas/clientes': typeof AdminVendasClientesRoute
   '/admin/vendas/historico': typeof AdminVendasHistoricoRoute
   '/admin/vendas/painel': typeof AdminVendasPainelRoute
   '/admin/vendas/pedidos': typeof AdminVendasPedidosRoute
@@ -522,6 +529,7 @@ export interface FileRoutesByTo {
   '/produtos': typeof ProdutosIndexRoute
   '/vendedor': typeof VendedorIndexRoute
   '/admin/contas/$id': typeof AdminContasIdRoute
+  '/admin/vendas/clientes': typeof AdminVendasClientesRoute
   '/admin/vendas/historico': typeof AdminVendasHistoricoRoute
   '/admin/vendas/painel': typeof AdminVendasPainelRoute
   '/admin/vendas/pedidos': typeof AdminVendasPedidosRoute
@@ -591,6 +599,7 @@ export interface FileRoutesById {
   '/produtos/': typeof ProdutosIndexRoute
   '/vendedor/': typeof VendedorIndexRoute
   '/admin/contas/$id': typeof AdminContasIdRoute
+  '/admin/vendas/clientes': typeof AdminVendasClientesRoute
   '/admin/vendas/historico': typeof AdminVendasHistoricoRoute
   '/admin/vendas/painel': typeof AdminVendasPainelRoute
   '/admin/vendas/pedidos': typeof AdminVendasPedidosRoute
@@ -661,6 +670,7 @@ export interface FileRouteTypes {
     | '/produtos/'
     | '/vendedor/'
     | '/admin/contas/$id'
+    | '/admin/vendas/clientes'
     | '/admin/vendas/historico'
     | '/admin/vendas/painel'
     | '/admin/vendas/pedidos'
@@ -725,6 +735,7 @@ export interface FileRouteTypes {
     | '/produtos'
     | '/vendedor'
     | '/admin/contas/$id'
+    | '/admin/vendas/clientes'
     | '/admin/vendas/historico'
     | '/admin/vendas/painel'
     | '/admin/vendas/pedidos'
@@ -793,6 +804,7 @@ export interface FileRouteTypes {
     | '/produtos/'
     | '/vendedor/'
     | '/admin/contas/$id'
+    | '/admin/vendas/clientes'
     | '/admin/vendas/historico'
     | '/admin/vendas/painel'
     | '/admin/vendas/pedidos'
@@ -1312,6 +1324,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminVendasHistoricoRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/vendas/clientes': {
+      id: '/admin/vendas/clientes'
+      path: '/vendas/clientes'
+      fullPath: '/admin/vendas/clientes'
+      preLoaderRoute: typeof AdminVendasClientesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/contas/$id': {
       id: '/admin/contas/$id'
       path: '/contas/$id'
@@ -1338,6 +1357,7 @@ interface AdminRouteChildren {
   AdminSolicitacoesRoute: typeof AdminSolicitacoesRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminContasIdRoute: typeof AdminContasIdRoute
+  AdminVendasClientesRoute: typeof AdminVendasClientesRoute
   AdminVendasHistoricoRoute: typeof AdminVendasHistoricoRoute
   AdminVendasPainelRoute: typeof AdminVendasPainelRoute
   AdminVendasPedidosRoute: typeof AdminVendasPedidosRoute
@@ -1360,6 +1380,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminSolicitacoesRoute: AdminSolicitacoesRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminContasIdRoute: AdminContasIdRoute,
+  AdminVendasClientesRoute: AdminVendasClientesRoute,
   AdminVendasHistoricoRoute: AdminVendasHistoricoRoute,
   AdminVendasPainelRoute: AdminVendasPainelRoute,
   AdminVendasPedidosRoute: AdminVendasPedidosRoute,
@@ -1461,13 +1482,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
