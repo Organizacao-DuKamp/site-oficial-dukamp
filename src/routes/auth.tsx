@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { traduzErroAuth } from "@/lib/auth-errors";
 import { useRegisteredSellers } from "@/lib/sellers";
+import logoAsset from "@/assets/dukamp-logo.png.asset.json";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({ meta: [{ title: "Entrar — Dukamp" }] }),
@@ -40,9 +41,8 @@ function AuthPage() {
   return (
     <div className="min-h-screen grid place-items-center bg-background px-4 py-8">
       <div className="w-full max-w-2xl">
-        <Link to="/" className="flex items-center justify-center gap-2 mb-6">
-          <div className="h-10 w-10 rounded-lg bg-primary grid place-items-center text-primary-foreground font-bold">D</div>
-          <div className="font-bold">Dukamp Saúde Animal</div>
+        <Link to="/" className="flex items-center justify-center mb-6">
+          <img src={logoAsset.url} alt="Dukamp Saúde Animal" className="h-16 object-contain" />
         </Link>
         <div className="rounded-lg border bg-card p-6">
           <Tabs defaultValue={initialTab}>
