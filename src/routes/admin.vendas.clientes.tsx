@@ -1,19 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ResourceCrud } from "@/components/admin/ResourceCrud";
-import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/admin/vendas/clientes")({
   component: CustomersAdmin,
 });
 
 function CustomersAdmin() {
-  // Fetch profiles with a manually calculated last_purchase from orders
-  // ResourceCrud expects a table name and handles fetching, 
-  // so we'll use a custom query for the data if we want the last_purchase,
-  // but to keep it simple and consistent with the project's Crud pattern,
-  // we will map the columns to profiles table fields.
-  
   return (
     <div className="space-y-6">
       <ResourceCrud
@@ -30,7 +22,11 @@ function CustomersAdmin() {
           { key: "full_name", label: "Contato", format: (v) => v || "—" },
           { key: "phone", label: "Telefone" },
           { key: "account_type", label: "REPR", format: (v) => v === "reseller" ? "1" : "0" },
-          { key: "updated_at", label: "Últ. Compra", format: (v) => v ? new Date(v).toLocaleDateString("pt-BR") : "—" },
+          { 
+            key: "updated_at", 
+            label: "Últ. Compra", 
+            format: (v) => v ? new Date(v).toLocaleDateString("pt-BR") : "—" 
+          },
           { key: "cobranca_municipio", label: "COB", format: (v) => v || "—" },
           { 
             key: "cpf", 
