@@ -35,6 +35,7 @@ const NAV: NavEntry[] = [
     label: "Vendas", icon: ShoppingBag, basePath: "/admin/vendas",
     children: [
       { to: "/admin/vendas/pedidos", label: "Lista de Pedidos", icon: ListOrdered },
+      { to: "/admin/vendas/clientes", label: "Clientes", icon: Users },
       { to: "/admin/vendas/historico", label: "Histórico de Vendas", icon: History },
       { to: "/admin/vendas/painel", label: "Painel", icon: BarChart3 },
     ],
