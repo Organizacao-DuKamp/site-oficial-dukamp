@@ -95,8 +95,8 @@ function CustomerImporter() {
       for (let i = 0; i < uniqueCustomers.length; i += batchSize) {
         const batch = uniqueCustomers.slice(i, i + batchSize);
         const { error } = await supabase
-          .from("customers" as any)
-          .upsert(batch as any, { onConflict: "codigo" });
+          .from("customers")
+          .upsert(batch, { onConflict: "codigo" });
         if (error) throw error;
       }
 
