@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { isVideoUrl } from "@/components/admin/ImageUpload";
 import { optimizedImage, optimizedSrcset } from "@/lib/image-url";
 
-
 type Ad = {
   id: string;
   title: string;
@@ -13,6 +12,17 @@ type Ad = {
   link_url: string | null;
   media: string[] | null;
 };
+
+type VideoVisitState = {
+  currentTime: number;
+  userPaused: boolean;
+  mutePreference: boolean | null;
+};
+
+// Mantido apenas em memória durante a visita atual. Assim, navegar pelo SPA não
+// reinicia a mídia, mas um refresh/nova visita começa normalmente do zero.
+const videoVisitState = new Map<string, VideoVisitState>();
+const adVisitIndex = new Map<string, number>();
 
 function mediaList(ad: Ad): string[] {
   const arr = Array.isArray(ad.media) ? ad.media.filter(Boolean) : [];
@@ -30,52 +40,65 @@ function AdaptiveMedia({
   active?: boolean;
 }) {
   const video = isVideoUrl(url);
-  // Use a portrait placeholder for videos until metadata supplies the exact
-  // dimensions; images retain their natural ratio after loading.
+  const remembered = videoVisitState.get(url);
   const [ratio, setRatio] = useState<number>(video ? 9 / 16 : 4 / 3);
   const [loaded, setLoaded] = useState(false);
-  const [muted, setMuted] = useState(false);
-  const [paused, setPaused] = useState(false);
-  const userPausedRef = useRef(false);
-  const userMutedRef = useRef(false);
+  const [muted, setMuted] = useState(remembered?.mutePreference ?? false);
+  const [paused, setPaused] = useState(remembered?.userPaused ?? false);
+  const userPausedRef = useRef(remembered?.userPaused ?? false);
+  const mutePreferenceRef = useRef<boolean | null>(remembered?.mutePreference ?? null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const finishedRef = useRef(false);
 
-  useEffect(() => {
-    setRatio(video ? 9 / 16 : 4 / 3);
-    setLoaded(false);
-    setMuted(false);
-    setPaused(false);
-    userPausedRef.current = false;
-    userMutedRef.current = false;
-    finishedRef.current = false;
+  const persistState = useCallback(() => {
+    if (!video) return;
+    const element = videoRef.current;
+    const previous = videoVisitState.get(url);
+    videoVisitState.set(url, {
+      currentTime: element?.currentTime ?? previous?.currentTime ?? 0,
+      userPaused: userPausedRef.current,
+      mutePreference: mutePreferenceRef.current,
+    });
   }, [url, video]);
 
-  // Autoplay: try with sound first; if the browser blocks it, keep the video
-  // playing muted so the user always sees it, and unmute on the first gesture.
-  const startPlayback = useCallback(async (restartFromBeginning = false) => {
+  useEffect(() => {
+    const saved = videoVisitState.get(url);
+    setRatio(video ? 9 / 16 : 4 / 3);
+    setLoaded(false);
+    setMuted(saved?.mutePreference ?? false);
+    setPaused(saved?.userPaused ?? false);
+    userPausedRef.current = saved?.userPaused ?? false;
+    mutePreferenceRef.current = saved?.mutePreference ?? null;
+    finishedRef.current = false;
+
+    return () => persistState();
+  }, [url, video, persistState]);
+
+  const startPlayback = useCallback(async () => {
     const v = videoRef.current;
     if (!v || !active || userPausedRef.current) return;
 
-    if (restartFromBeginning) {
-      try {
-        v.currentTime = 0;
-      } catch {
-        // Some streaming videos may not allow seeking before metadata is ready.
-      }
-    }
-
-    if (!userMutedRef.current) {
-      v.muted = false;
-      v.volume = 1;
+    if (mutePreferenceRef.current === true) {
+      v.muted = true;
+      setMuted(true);
       try {
         await v.play();
-        setMuted(false);
         setPaused(false);
-        return;
       } catch {
-        // Autoplay with sound blocked - fall back to muted playback below.
+        setPaused(true);
       }
+      return;
+    }
+
+    v.muted = false;
+    v.volume = 1;
+    try {
+      await v.play();
+      setMuted(false);
+      setPaused(false);
+      return;
+    } catch {
+      // Navegadores normalmente bloqueiam autoplay com som.
     }
 
     v.muted = true;
@@ -88,12 +111,13 @@ function AdaptiveMedia({
     }
   }, [active]);
 
-  // Unmute automatically on the first user interaction anywhere on the page.
+  // Se o navegador silenciou automaticamente, tenta devolver o som na primeira
+  // interação. Nunca desfaz um mute escolhido explicitamente pelo usuário.
   useEffect(() => {
-    if (!video || !active || !muted || userMutedRef.current) return;
+    if (!video || !active || !muted || mutePreferenceRef.current === true) return;
     const unmute = () => {
       const v = videoRef.current;
-      if (!v || userMutedRef.current) return;
+      if (!v || mutePreferenceRef.current === true) return;
       v.muted = false;
       v.volume = 1;
       setMuted(false);
@@ -101,9 +125,7 @@ function AdaptiveMedia({
     };
     const events: Array<keyof WindowEventMap> = ["pointerdown", "keydown", "touchstart", "scroll"];
     events.forEach((ev) => window.addEventListener(ev, unmute, { once: true, passive: true } as AddEventListenerOptions));
-    return () => {
-      events.forEach((ev) => window.removeEventListener(ev, unmute));
-    };
+    return () => events.forEach((ev) => window.removeEventListener(ev, unmute));
   }, [video, active, muted]);
 
   const toggleMute = useCallback(() => {
@@ -112,9 +134,10 @@ function AdaptiveMedia({
     const next = !v.muted;
     v.muted = next;
     if (!next) v.volume = 1;
-    userMutedRef.current = next;
+    mutePreferenceRef.current = next;
     setMuted(next);
-  }, []);
+    persistState();
+  }, [persistState]);
 
   const togglePlay = useCallback(() => {
     const v = videoRef.current;
@@ -128,30 +151,34 @@ function AdaptiveMedia({
       v.pause();
       setPaused(true);
     }
-  }, []);
+    persistState();
+  }, [persistState]);
 
   const finishVideo = useCallback(
     (videoEl: HTMLVideoElement) => {
       if (!active || finishedRef.current) return;
-
       const duration = videoEl.duration;
-      if (Number.isFinite(duration) && duration > 0 && videoEl.currentTime < duration - 0.35) {
-        return;
-      }
+      if (Number.isFinite(duration) && duration > 0 && videoEl.currentTime < duration - 0.35) return;
 
       finishedRef.current = true;
+      // Quando o vídeo termina de verdade, a próxima volta no carrossel deve
+      // começar do início, sem perder as preferências de pausa/som do usuário.
+      const previous = videoVisitState.get(url);
+      videoVisitState.set(url, {
+        currentTime: 0,
+        userPaused: false,
+        mutePreference: previous?.mutePreference ?? mutePreferenceRef.current,
+      });
+      userPausedRef.current = false;
       onEnded?.();
     },
-    [active, onEnded],
+    [active, onEnded, url],
   );
 
   return (
     <div
       className={`relative flex w-full items-center justify-center overflow-hidden ${!loaded ? "bg-muted animate-pulse" : "bg-muted"}`}
-      style={{
-        aspectRatio: `${ratio}`,
-        maxHeight: "calc(100vh - var(--site-header-offset, 8rem) - 2rem)",
-      }}
+      style={{ aspectRatio: `${ratio}`, maxHeight: "calc(100vh - var(--site-header-offset, 8rem) - 2rem)" }}
     >
       {video ? (
         <>
@@ -160,7 +187,7 @@ function AdaptiveMedia({
             ref={videoRef}
             src={url}
             className="w-full h-full object-contain"
-            autoPlay={active}
+            autoPlay={active && !userPausedRef.current}
             playsInline
             preload={active ? "auto" : "metadata"}
             controls={false}
@@ -179,7 +206,24 @@ function AdaptiveMedia({
                 return;
               }
 
-              void startPlayback(true);
+              const saved = videoVisitState.get(url);
+              if (saved && saved.currentTime > 0 && (!Number.isFinite(v.duration) || saved.currentTime < v.duration - 0.35)) {
+                try { v.currentTime = saved.currentTime; } catch {}
+              }
+
+              if (saved?.mutePreference != null) {
+                v.muted = saved.mutePreference;
+                setMuted(saved.mutePreference);
+              }
+
+              if (saved?.userPaused) {
+                userPausedRef.current = true;
+                v.pause();
+                setPaused(true);
+                return;
+              }
+
+              void startPlayback();
             }}
           />
 
@@ -188,11 +232,7 @@ function AdaptiveMedia({
               <button
                 type="button"
                 aria-label={paused ? "Reproduzir vídeo" : "Pausar vídeo"}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  togglePlay();
-                }}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); togglePlay(); }}
                 className="h-7 w-7 rounded-full bg-black/55 text-white text-xs flex items-center justify-center hover:bg-black/75 transition-colors"
               >
                 {paused ? "▶" : "❚❚"}
@@ -200,11 +240,7 @@ function AdaptiveMedia({
               <button
                 type="button"
                 aria-label={muted ? "Ativar som" : "Desativar som"}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  toggleMute();
-                }}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleMute(); }}
                 className="h-7 w-7 rounded-full bg-black/55 text-white text-xs flex items-center justify-center hover:bg-black/75 transition-colors"
               >
                 {muted ? "🔇" : "🔊"}
@@ -232,15 +268,15 @@ function AdaptiveMedia({
   );
 }
 
-
-
 function AdCard({ ad }: { ad: Ad }) {
   const items = useMemo(() => mediaList(ad), [ad]);
-  const [idx, setIdx] = useState(0);
+  const [idx, setIdx] = useState(() => {
+    const rememberedIndex = adVisitIndex.get(ad.id) ?? 0;
+    return rememberedIndex >= 0 && rememberedIndex < items.length ? rememberedIndex : 0;
+  });
   const timer = useRef<number | null>(null);
   const itemsKey = items.join("|");
 
-  // Preload all images so crossfades never flash white
   useEffect(() => {
     items.forEach((url) => {
       if (!isVideoUrl(url)) {
@@ -253,38 +289,37 @@ function AdCard({ ad }: { ad: Ad }) {
   useEffect(() => {
     setIdx((i) => {
       if (items.length === 0) return 0;
-      return Math.min(i, items.length - 1);
+      const next = Math.min(i, items.length - 1);
+      adVisitIndex.set(ad.id, next);
+      return next;
     });
-  }, [items.length, itemsKey]);
-
-  const advance = useCallback(
-    (expectedUrl?: string) => {
-      setIdx((i) => {
-        if (items.length <= 1) return i;
-        if (expectedUrl && items[i] !== expectedUrl) return i;
-        return (i + 1) % items.length;
-      });
-    },
-    [items],
-  );
+  }, [ad.id, items.length, itemsKey]);
 
   useEffect(() => {
-    if (timer.current) {
-      window.clearTimeout(timer.current);
-      timer.current = null;
-    }
+    adVisitIndex.set(ad.id, idx);
+  }, [ad.id, idx]);
 
+  const advance = useCallback((expectedUrl?: string) => {
+    setIdx((i) => {
+      if (items.length <= 1) return i;
+      if (expectedUrl && items[i] !== expectedUrl) return i;
+      const next = (i + 1) % items.length;
+      adVisitIndex.set(ad.id, next);
+      return next;
+    });
+  }, [ad.id, items]);
+
+  useEffect(() => {
+    if (timer.current) window.clearTimeout(timer.current);
+    timer.current = null;
     if (items.length <= 1) return;
     const currentItem = items[idx];
-    // Only auto-advance on non-video items; videos advance via onEnded
     if (!currentItem || isVideoUrl(currentItem)) return;
 
     timer.current = window.setTimeout(() => advance(currentItem), 6000);
     return () => {
-      if (timer.current) {
-        window.clearTimeout(timer.current);
-        timer.current = null;
-      }
+      if (timer.current) window.clearTimeout(timer.current);
+      timer.current = null;
     };
   }, [advance, idx, items]);
 
@@ -297,7 +332,6 @@ function AdCard({ ad }: { ad: Ad }) {
     if (lastUrl.current && lastUrl.current !== current) {
       setPrev(lastUrl.current);
       setFading(false);
-      // next frame: trigger opacity transition
       requestAnimationFrame(() => requestAnimationFrame(() => setFading(true)));
       const t = window.setTimeout(() => setPrev(null), 800);
       lastUrl.current = current;
@@ -312,38 +346,23 @@ function AdCard({ ad }: { ad: Ad }) {
         <div className="relative">
           <AdaptiveMedia url={current} onEnded={() => advance(current)} active />
           {prev && prev !== current && (
-            <div
-              className={`absolute inset-0 pointer-events-none transition-opacity duration-700 ease-in-out ${
-                fading ? "opacity-0" : "opacity-100"
-              }`}
-            >
+            <div className={`absolute inset-0 pointer-events-none transition-opacity duration-700 ease-in-out ${fading ? "opacity-0" : "opacity-100"}`}>
               <AdaptiveMedia url={prev} active={false} />
             </div>
           )}
           {items.length > 1 && (
             <div className="absolute bottom-1.5 left-0 right-0 flex justify-center gap-1">
               {items.map((_, i) => (
-                <span
-                  key={i}
-                  className={`h-1.5 rounded-full transition-all ${
-                    i === idx ? "w-4 bg-white" : "w-1.5 bg-white/60"
-                  }`}
-                />
+                <span key={i} className={`h-1.5 rounded-full transition-all ${i === idx ? "w-4 bg-white" : "w-1.5 bg-white/60"}`} />
               ))}
             </div>
           )}
         </div>
       )}
-
-
     </div>
   );
 
-  return ad.link_url ? (
-    <a href={ad.link_url} className="block">{inner}</a>
-  ) : (
-    <div>{inner}</div>
-  );
+  return ad.link_url ? <a href={ad.link_url} className="block">{inner}</a> : <div>{inner}</div>;
 }
 
 export function InstitutionalSidebar() {
