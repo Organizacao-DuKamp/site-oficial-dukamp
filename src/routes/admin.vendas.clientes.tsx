@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { ResourceCrud } from "@/components/admin/ResourceCrud";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { parseCustomerReport } from "@/lib/customers-report";
+import { CalendarDays, FileText, MapPin, Phone, Route as RouteIcon, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/vendas/clientes")({
@@ -36,6 +37,145 @@ function formatDocument(value: unknown) {
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Falha ao importar clientes.";
+}
+
+type CustomerRecord = Record<string, unknown>;
+
+function CustomerDetailField({ label, value }: { label: string; value: ReactNode }) {
+  const hasValue = value !== null && value !== undefined && value !== "";
+  return (
+    <div>
+      <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</dt>
+      <dd className="mt-1 whitespace-pre-line text-sm font-medium">{hasValue ? value : "—"}</dd>
+    </div>
+  );
+}
+
+function CustomerDetailSection({
+  title,
+  icon,
+  children,
+}: {
+  title: string;
+  icon: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <section className="rounded-xl border bg-card p-4 shadow-sm">
+      <h3 className="mb-4 flex items-center gap-2 font-semibold">
+        <span className="text-primary">{icon}</span>
+        {title}
+      </h3>
+      {children}
+    </section>
+  );
+}
+
+function formatAddress(customer: CustomerRecord, payment = false) {
+  const suffix = payment ? "_pagamento" : "";
+  const street = [customer[`endereco${suffix}`], customer[`numero${suffix}`]]
+    .filter(Boolean)
+    .join(", ");
+  const city = [customer[`cidade${suffix}`], customer[`uf${suffix}`]].filter(Boolean).join("/");
+  const location = [customer[`bairro${suffix}`], city, customer[`cep${suffix}`]]
+    .filter(Boolean)
+    .join(" • ");
+  return [street, location].filter(Boolean).join("\n") || "—";
+}
+
+function formatDelay(value: unknown) {
+  if (value === null || value === undefined || value === "") return "—";
+  return `${value} dia${Number(value) === 1 ? "" : "s"}`;
+}
+
+function CustomerDetails({ customer }: { customer: CustomerRecord }) {
+  const hasRoute = Boolean(String(customer.roteiro ?? "").trim());
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col gap-3 rounded-xl border bg-muted/30 p-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Código {emptyValue(customer.codigo)}
+          </p>
+          <h2 className="mt-1 text-xl font-bold">{emptyValue(customer.cliente)}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {[customer.cidade, customer.uf].filter(Boolean).join("/") || "Cidade não informada"}
+          </p>
+        </div>
+        <span
+          className={
+            hasRoute
+              ? "w-fit rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800"
+              : "w-fit rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground"
+          }
+        >
+          {hasRoute ? "Roteiro disponível" : "Sem roteiro"}
+        </span>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <CustomerDetailSection title="Cadastro" icon={<FileText className="h-4 w-4" />}>
+          <dl className="grid gap-4 sm:grid-cols-2">
+            <CustomerDetailField label="CNPJ/CPF" value={formatDocument(customer.cnpj_cpf)} />
+            <CustomerDetailField label="Inscrição estadual" value={emptyValue(customer.inscricao_estadual)} />
+            <CustomerDetailField label="Data de cadastro" value={formatDate(customer.data_cadastro)} />
+            <CustomerDetailField label="Contato" value={emptyValue(customer.contato)} />
+            <CustomerDetailField label="Representante" value={emptyValue(customer.repr)} />
+            <CustomerDetailField label="COB" value={emptyValue(customer.cob)} />
+            <CustomerDetailField label="Classificação L" value={emptyValue(customer.classificacao_l)} />
+            <CustomerDetailField label="Conceito" value={emptyValue(customer.conceito)} />
+          </dl>
+        </CustomerDetailSection>
+
+        <CustomerDetailSection title="Contato" icon={<Phone className="h-4 w-4" />}>
+          <dl className="grid gap-4 sm:grid-cols-2">
+            <CustomerDetailField label="Telefone" value={emptyValue(customer.telefone)} />
+            <CustomerDetailField label="Telefone 2" value={emptyValue(customer.telefone_2)} />
+            <CustomerDetailField label="Celular" value={emptyValue(customer.celular)} />
+            <CustomerDetailField label="E-mail" value={emptyValue(customer.email)} />
+          </dl>
+        </CustomerDetailSection>
+
+        <CustomerDetailSection title="Endereços" icon={<MapPin className="h-4 w-4" />}>
+          <dl className="space-y-4">
+            <CustomerDetailField label="Endereço principal" value={formatAddress(customer)} />
+            <CustomerDetailField label="Endereço de pagamento" value={formatAddress(customer, true)} />
+          </dl>
+        </CustomerDetailSection>
+
+        <CustomerDetailSection title="Compras" icon={<ShoppingCart className="h-4 w-4" />}>
+          <dl className="grid gap-4 sm:grid-cols-2">
+            <CustomerDetailField label="Última compra" value={formatDate(customer.ultima_compra)} />
+            <CustomerDetailField label="Valor da última" value={formatCurrency(customer.valor_ultima_compra)} />
+            <CustomerDetailField label="Maior compra" value={formatDate(customer.data_maior_compra)} />
+            <CustomerDetailField label="Valor da maior" value={formatCurrency(customer.valor_maior_compra)} />
+            <CustomerDetailField label="Compra no ano" value={formatCurrency(customer.compra_ano)} />
+            <CustomerDetailField label="Ano anterior" value={formatCurrency(customer.compra_ano_anterior)} />
+            <CustomerDetailField label="Média de atraso" value={formatDelay(customer.media_atraso_dias)} />
+            <CustomerDetailField label="Maior atraso" value={formatDelay(customer.maior_atraso_dias)} />
+          </dl>
+        </CustomerDetailSection>
+      </div>
+
+      <CustomerDetailSection title="Roteiro de entrega" icon={<RouteIcon className="h-4 w-4" />}>
+        {hasRoute ? (
+          <pre className="max-h-80 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-muted/50 p-4 font-sans text-sm leading-relaxed">
+            {String(customer.roteiro)}
+          </pre>
+        ) : (
+          <p className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground">
+            Nenhum roteiro foi cadastrado para este cliente.
+          </p>
+        )}
+      </CustomerDetailSection>
+
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <CalendarDays className="h-4 w-4" />
+        Dados do relatório atualizados em {formatDate(customer.dados_relatorio_atualizados_em)}
+      </div>
+    </div>
+  );
 }
 
 function CustomerImporter() {
@@ -135,37 +275,40 @@ function CustomersAdmin() {
         table="customers"
         orderBy={{ column: "cliente", ascending: true }}
         searchField="cliente"
-        searchPlaceholder="Pesquisar cliente por nome..."
+        searchFields={["cliente", "codigo", "cnpj_cpf", "cidade"]}
+        searchPlaceholder="Pesquisar por nome, código, CNPJ/CPF ou cidade..."
         columns={[
           { key: "cliente", label: "Cliente" },
           { key: "codigo", label: "Código" },
-          { key: "cnpj_cpf", label: "CNPJ/CPF", format: formatDocument },
-          { key: "inscricao_estadual", label: "IE", format: emptyValue },
-          {
-            key: "endereco",
-            label: "Endereço",
-            format: (value, row) => [value, row.numero].filter(Boolean).join(", ") || "—",
-          },
           {
             key: "cidade",
             label: "Cidade/UF",
             format: (value, row) => [value, row.uf].filter(Boolean).join("/") || "—",
           },
-          { key: "telefone", label: "Telefone", format: emptyValue },
-          { key: "celular", label: "Celular", format: emptyValue },
-          { key: "data_cadastro", label: "Cadastro", format: formatDate },
+          {
+            key: "telefone",
+            label: "Contato",
+            format: (value, row) => value || row.celular || "—",
+          },
           { key: "ultima_compra", label: "Últ. compra", format: formatDate },
           { key: "valor_ultima_compra", label: "Valor últ.", format: formatCurrency },
-          { key: "data_maior_compra", label: "Maior compra", format: formatDate },
-          { key: "valor_maior_compra", label: "Valor maior", format: formatCurrency },
-          { key: "compra_ano", label: "Compra ano", format: formatCurrency },
-          { key: "compra_ano_anterior", label: "Ano anterior", format: formatCurrency },
-          { key: "media_atraso_dias", label: "Média atraso", format: emptyValue },
-          { key: "maior_atraso_dias", label: "Maior atraso", format: emptyValue },
-          { key: "repr", label: "REPR", format: emptyValue },
-          { key: "classificacao_l", label: "L", format: emptyValue },
-          { key: "conceito", label: "Conceito", format: emptyValue },
+          {
+            key: "roteiro",
+            label: "Roteiro",
+            format: (value) => (
+              <span
+                className={
+                  value
+                    ? "rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800"
+                    : "rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground"
+                }
+              >
+                {value ? "Disponível" : "Sem roteiro"}
+              </span>
+            ),
+          },
         ]}
+        renderDetails={(customer) => <CustomerDetails customer={customer} />}
         fields={[
           { name: "cliente", label: "Cliente", required: true },
           { name: "codigo", label: "Código", required: true },
@@ -202,6 +345,7 @@ function CustomersAdmin() {
           { name: "conceito", label: "Conceito" },
           { name: "marcador_relatorio", label: "Marcador do relatório" },
           { name: "cob", label: "COB" },
+          { name: "roteiro", label: "Roteiro de entrega", type: "textarea" },
         ]}
       />
     </div>
