@@ -224,6 +224,132 @@ export type Database = {
         }
         Relationships: []
       }
+      customers: {
+        Row: {
+          bairro: string | null
+          bairro_pagamento: string | null
+          celular: string | null
+          cep: string | null
+          cep_pagamento: string | null
+          cidade: string | null
+          cidade_pagamento: string | null
+          classificacao_l: string | null
+          cliente: string
+          cnpj_cpf: string | null
+          cob: string | null
+          codigo: string
+          compra_ano: number | null
+          compra_ano_anterior: number | null
+          conceito: string | null
+          contato: string | null
+          created_at: string
+          dados_relatorio_atualizados_em: string | null
+          data_cadastro: string | null
+          data_maior_compra: string | null
+          email: string | null
+          endereco: string | null
+          endereco_pagamento: string | null
+          id: string
+          inscricao_estadual: string | null
+          maior_atraso_dias: number | null
+          marcador_relatorio: string | null
+          media_atraso_dias: number | null
+          numero: string | null
+          numero_pagamento: string | null
+          repr: string | null
+          telefone: string | null
+          telefone_2: string | null
+          uf: string | null
+          uf_pagamento: string | null
+          ultima_compra: string | null
+          updated_at: string
+          valor_maior_compra: number | null
+          valor_ultima_compra: number | null
+        }
+        Insert: {
+          bairro?: string | null
+          bairro_pagamento?: string | null
+          celular?: string | null
+          cep?: string | null
+          cep_pagamento?: string | null
+          cidade?: string | null
+          cidade_pagamento?: string | null
+          classificacao_l?: string | null
+          cliente: string
+          cnpj_cpf?: string | null
+          cob?: string | null
+          codigo: string
+          compra_ano?: number | null
+          compra_ano_anterior?: number | null
+          conceito?: string | null
+          contato?: string | null
+          created_at?: string
+          dados_relatorio_atualizados_em?: string | null
+          data_cadastro?: string | null
+          data_maior_compra?: string | null
+          email?: string | null
+          endereco?: string | null
+          endereco_pagamento?: string | null
+          id?: string
+          inscricao_estadual?: string | null
+          maior_atraso_dias?: number | null
+          marcador_relatorio?: string | null
+          media_atraso_dias?: number | null
+          numero?: string | null
+          numero_pagamento?: string | null
+          repr?: string | null
+          telefone?: string | null
+          telefone_2?: string | null
+          uf?: string | null
+          uf_pagamento?: string | null
+          ultima_compra?: string | null
+          updated_at?: string
+          valor_maior_compra?: number | null
+          valor_ultima_compra?: number | null
+        }
+        Update: {
+          bairro?: string | null
+          bairro_pagamento?: string | null
+          celular?: string | null
+          cep?: string | null
+          cep_pagamento?: string | null
+          cidade?: string | null
+          cidade_pagamento?: string | null
+          classificacao_l?: string | null
+          cliente?: string
+          cnpj_cpf?: string | null
+          cob?: string | null
+          codigo?: string
+          compra_ano?: number | null
+          compra_ano_anterior?: number | null
+          conceito?: string | null
+          contato?: string | null
+          created_at?: string
+          dados_relatorio_atualizados_em?: string | null
+          data_cadastro?: string | null
+          data_maior_compra?: string | null
+          email?: string | null
+          endereco?: string | null
+          endereco_pagamento?: string | null
+          id?: string
+          inscricao_estadual?: string | null
+          maior_atraso_dias?: number | null
+          marcador_relatorio?: string | null
+          media_atraso_dias?: number | null
+          numero?: string | null
+          numero_pagamento?: string | null
+          repr?: string | null
+          telefone?: string | null
+          telefone_2?: string | null
+          uf?: string | null
+          uf_pagamento?: string | null
+          ultima_compra?: string | null
+          updated_at?: string
+          valor_maior_compra?: number | null
+          valor_ultima_compra?: number | null
+        }
+        Relationships: []
+      }
       import_logs: {
         Row: {
           activated_count: number
