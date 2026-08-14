@@ -12,7 +12,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Eye, Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUpload, ImageListUpload, MediaListUpload } from "./ImageUpload";
 
@@ -48,16 +48,19 @@ type Props = {
   fields: FieldDef[];
   orderBy?: { column: string; ascending?: boolean };
   searchField?: string;
+  searchFields?: string[];
   searchPlaceholder?: string;
   filters?: FilterDef[];
+  renderDetails?: (row: any) => ReactNode;
 };
 
 const PAGE_SIZE = 25;
 
-export function ResourceCrud({ title, table, columns, fields, orderBy, searchField, searchPlaceholder, filters }: Props) {
+export function ResourceCrud({ title, table, columns, fields, orderBy, searchField, searchFields, searchPlaceholder, filters, renderDetails }: Props) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any | null>(null);
+  const [viewing, setViewing] = useState<any | null>(null);
   const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
@@ -68,8 +71,14 @@ export function ResourceCrud({ title, table, columns, fields, orderBy, searchFie
     queryFn: async () => {
       const from = (page - 1) * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
+      const searchColumns = searchFields?.length ? searchFields : searchField ? [searchField] : [];
+      const safeSearch = search.replace(/[(),]/g, " ").trim();
       let q = supabase.from(table as any).select("*", { count: "exact" });
-      if (searchField && search) q = q.ilike(searchField, `%${search}%`);
+      if (searchColumns.length === 1 && safeSearch) {
+        q = q.ilike(searchColumns[0], `%${safeSearch}%`);
+      } else if (searchColumns.length > 1 && safeSearch) {
+        q = q.or(searchColumns.map((column) => `${column}.ilike.%${safeSearch}%`).join(","));
+      }
       for (const [col, val] of Object.entries(filterValues)) {
         if (val) q = q.eq(col, val);
       }
@@ -130,7 +139,18 @@ export function ResourceCrud({ title, table, columns, fields, orderBy, searchFie
         </Dialog>
       </div>
 
-      {searchField && (
+      {renderDetails && (
+        <Dialog open={!!viewing} onOpenChange={(isOpen) => { if (!isOpen) setViewing(null); }}>
+          <DialogContent className="max-w-5xl max-h-[90vh] overflow-auto">
+            <DialogHeader>
+              <DialogTitle>Ficha completa do cliente</DialogTitle>
+            </DialogHeader>
+            {viewing && renderDetails(viewing)}
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {(searchField || searchFields?.length) && (
         <form
           onSubmit={(e) => { e.preventDefault(); setPage(1); setSearch(searchInput.trim()); }}
           className="mb-4 flex gap-2"
@@ -184,7 +204,7 @@ export function ResourceCrud({ title, table, columns, fields, orderBy, searchFie
           <TableHeader>
             <TableRow>
               {columns.map((c) => <TableHead key={c.key}>{c.label}</TableHead>)}
-              <TableHead className="w-24 text-right">Ações</TableHead>
+              <TableHead className="w-48 text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -193,8 +213,13 @@ export function ResourceCrud({ title, table, columns, fields, orderBy, searchFie
                 {columns.map((c) => (
                   <TableCell key={c.key}>{c.format ? c.format(row[c.key], row) : String(row[c.key] ?? "")}</TableCell>
                 ))}
-                <TableCell className="text-right">
-                  <Button variant="ghost" size="icon" onClick={() => { setEditing(row); setOpen(true); }}>
+                <TableCell className="whitespace-nowrap text-right">
+                  {renderDetails && (
+                    <Button variant="outline" size="sm" className="mr-1" onClick={() => setViewing(row)}>
+                      <Eye className="mr-1 h-4 w-4" /> Ver ficha
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="icon" title="Editar cliente" onClick={() => { setEditing(row); setOpen(true); }}>
                     <Pencil className="h-4 w-4" />
                   </Button>
                   <Button variant="ghost" size="icon" onClick={() => {
