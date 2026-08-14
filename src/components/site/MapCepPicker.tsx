@@ -26,11 +26,13 @@ type ReverseResult = {
   bairro?: string;
   cidade?: string;
   estado?: string;
+  latitude: number;
+  longitude: number;
 };
 
-async function reverseGeocode(pos: LatLng): Promise<ReverseResult | null> {
+async function reverseGeocode(pos: LatLng, signal?: AbortSignal): Promise<ReverseResult | null> {
   const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${pos.lat}&lon=${pos.lng}&addressdetails=1&accept-language=pt-BR`;
-  const r = await fetch(url, { headers: { Accept: "application/json" } });
+  const r = await fetch(url, { headers: { Accept: "application/json" }, signal });
   if (!r.ok) return null;
   const j = await r.json();
   const a = j.address ?? {};
@@ -43,6 +45,8 @@ async function reverseGeocode(pos: LatLng): Promise<ReverseResult | null> {
     bairro: a.suburb || a.neighbourhood || a.village || a.hamlet,
     cidade: a.city || a.town || a.municipality || a.village,
     estado: (a.state_code || a["ISO3166-2-lvl4"] || a.state || "").toString().slice(-2).toUpperCase(),
+    latitude: pos.lat,
+    longitude: pos.lng,
   };
 }
 
@@ -79,7 +83,7 @@ export function MapCepPicker({
     abortRef.current?.abort();
     abortRef.current = new AbortController();
     try {
-      const r = await reverseGeocode(p);
+      const r = await reverseGeocode(p, abortRef.current.signal);
       if (!r) {
         toast.error("Não foi possível identificar o CEP nesse ponto. Tente marcar mais próximo de uma rua.");
         return;

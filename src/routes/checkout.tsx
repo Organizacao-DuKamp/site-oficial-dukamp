@@ -11,6 +11,7 @@ import {
   processCardPayment,
   type CardInstallments,
 } from "@/lib/checkout.functions";
+import { calculateDukampShipping, DUKAMP_FREIGHT_SERVICE } from "@/lib/dukamp-shipping.functions";
 import { useSiteSettings } from "@/lib/site-settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,6 +63,24 @@ type Form = {
   estado: string;
 };
 
+type ShippingOption = {
+  valor: number;
+  prazoDias: number;
+  servico: string;
+  dataMaxima?: string;
+  distanciaKm?: number;
+  faixaKm?: number;
+  kmCobrados?: number;
+  idaVolta?: boolean;
+  totalSacos?: number;
+};
+
+type DukampFreightStatus = {
+  eligible: boolean;
+  available: boolean;
+  reason?: string | null;
+};
+
 const emptyForm: Form = {
   customer_name: "",
   email: "",
@@ -81,16 +100,19 @@ function CheckoutPage() {
   const { data: settings } = useSiteSettings();
   const nav = useNavigate();
   const [form, setForm] = useState<Form>(emptyForm);
+  const [deliveryCoords, setDeliveryCoords] = useState({ latitude: "", longitude: "" });
+  const [dukampFreightStatus, setDukampFreightStatus] = useState<DukampFreightStatus | null>(null);
   const [loadingCep, setLoadingCep] = useState(false);
   const [loadingPay, setLoadingPay] = useState(false);
   const [loadingFrete, setLoadingFrete] = useState(false);
   const [method, setMethod] = useState<"pix" | "card" | "boleto">("pix");
   const [installments, setInstallments] = useState<CardInstallments>(1);
-  const [frete, setFrete] = useState<{ valor: number; prazoDias: number; servico: string; dataMaxima?: string } | null>(null);
-  const [freteOpcoes, setFreteOpcoes] = useState<Array<{ valor: number; prazoDias: number; servico: string; dataMaxima?: string }>>([]);
+  const [frete, setFrete] = useState<ShippingOption | null>(null);
+  const [freteOpcoes, setFreteOpcoes] = useState<ShippingOption[]>([]);
 
   const createOrder = useServerFn(createPixOrder);
   const calcFrete = useServerFn(calculateShipping);
+  const calcDukampFrete = useServerFn(calculateDukampShipping);
   const fetchMpKey = useServerFn(getMpPublicKey);
   const payCard = useServerFn(processCardPayment);
 
@@ -106,6 +128,17 @@ function CheckoutPage() {
 
   function set<K extends keyof Form>(k: K, v: string) {
     setForm((f) => ({ ...f, [k]: v }));
+  }
+
+  function parseDeliveryCoordinates() {
+    const rawLat = deliveryCoords.latitude.trim().replace(",", ".");
+    const rawLng = deliveryCoords.longitude.trim().replace(",", ".");
+    if (!rawLat || !rawLng) return {};
+    const latitude = Number(rawLat);
+    const longitude = Number(rawLng);
+    if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90) return {};
+    if (!Number.isFinite(longitude) || longitude < -180 || longitude > 180) return {};
+    return { latitude, longitude };
   }
 
   async function lookupCep(cep: string) {
@@ -131,7 +164,10 @@ function CheckoutPage() {
     }
   }
 
-  async function handleCalcFreteFor(rawCep: string) {
+  async function handleCalcFreteFor(
+    rawCep: string,
+    coordinatesOverride?: { latitude: number; longitude: number },
+  ) {
     const cep = rawCep.replace(/\D/g, "");
     if (cep.length !== 8) {
       toast.error("Informe um CEP válido (8 números)");
@@ -140,13 +176,57 @@ function CheckoutPage() {
     if (items.length === 0) return;
     setLoadingFrete(true);
     try {
-      const r = await calcFrete({
-        data: {
-          cepDestino: cep,
-          items: items.map((i) => ({ product_id: i.id, quantity: i.quantity })),
-        },
-      });
-      const opcoes = (r as any).opcoes ?? [r];
+      const itemPayload = items.map((i) => ({ product_id: i.id, quantity: i.quantity }));
+      const coordinates = coordinatesOverride ?? parseDeliveryCoordinates();
+
+      // Correios e Frete Dukamp são calculados de forma independente. Assim,
+      // se uma integração estiver indisponível a outra continua podendo aparecer.
+      const [correiosResult, dukampResult] = await Promise.allSettled([
+        calcFrete({
+          data: {
+            cepDestino: cep,
+            items: itemPayload,
+          },
+        }),
+        calcDukampFrete({
+          data: {
+            items: itemPayload,
+            ...coordinates,
+          },
+        }),
+      ]);
+
+      const opcoes: ShippingOption[] = [];
+      const technicalErrors: string[] = [];
+
+      if (correiosResult.status === "fulfilled") {
+        const correiosOptions = ((correiosResult.value as any).opcoes ?? [correiosResult.value]) as ShippingOption[];
+        opcoes.push(...correiosOptions);
+      } else {
+        const reason = correiosResult.reason instanceof Error ? correiosResult.reason.message : String(correiosResult.reason ?? "");
+        technicalErrors.push(reason);
+        console.error("[Frete] Correios indisponível", correiosResult.reason);
+      }
+
+      if (dukampResult.status === "fulfilled") {
+        const result = dukampResult.value as any;
+        setDukampFreightStatus(result.status ?? null);
+        if (result.option) opcoes.push(result.option as ShippingOption);
+      } else {
+        const reason = dukampResult.reason instanceof Error ? dukampResult.reason.message : String(dukampResult.reason ?? "");
+        setDukampFreightStatus({
+          eligible: false,
+          available: false,
+          reason: "Não foi possível validar o Frete Dukamp agora. Tente novamente em instantes.",
+        });
+        technicalErrors.push(reason);
+        console.error("[Frete] Frete Dukamp indisponível", dukampResult.reason);
+      }
+
+      if (!opcoes.length) {
+        throw new Error(technicalErrors.filter(Boolean).join(" | ") || "Nenhuma opção de frete disponível");
+      }
+
       setFreteOpcoes(opcoes);
       // seleciona a opção mais barata por padrão
       const barata = [...opcoes].sort((a, b) => a.valor - b.valor)[0];
@@ -480,7 +560,7 @@ function CheckoutPage() {
                 <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-4">
                   <Label className="text-sm font-semibold flex items-center gap-2 mb-3">
                     <Truck className="h-4 w-4 text-primary" />
-                    Calcule seu frete pelos Correios
+                    Calcule seu frete
                   </Label>
                   <Tabs defaultValue="cep" className="w-full">
                     <TabsList className="grid w-full grid-cols-2 mb-3">
@@ -515,10 +595,39 @@ function CheckoutPage() {
                           <span className="sm:hidden">Calcular</span>
                         </Button>
                       </div>
+
+                      <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <Field label="Latitude (opcional — Frete Dukamp)">
+                          <Input
+                            type="text"
+                            inputMode="decimal"
+                            placeholder="Ex: -20.764110"
+                            value={deliveryCoords.latitude}
+                            onChange={(e) => setDeliveryCoords((c) => ({ ...c, latitude: e.target.value }))}
+                          />
+                        </Field>
+                        <Field label="Longitude (opcional — Frete Dukamp)">
+                          <Input
+                            type="text"
+                            inputMode="decimal"
+                            placeholder="Ex: -49.709500"
+                            value={deliveryCoords.longitude}
+                            onChange={(e) => setDeliveryCoords((c) => ({ ...c, longitude: e.target.value }))}
+                          />
+                        </Field>
+                      </div>
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        As coordenadas são opcionais para Correios, mas necessárias para calcular o Frete Dukamp. Você também pode escolher o local no mapa e elas serão preenchidas automaticamente.
+                      </p>
                     </TabsContent>
                     <TabsContent value="map" className="mt-0">
                       <MapCepPicker
                         onResult={async (r) => {
+                          const coordinates = { latitude: r.latitude, longitude: r.longitude };
+                          setDeliveryCoords({
+                            latitude: r.latitude.toFixed(6),
+                            longitude: r.longitude.toFixed(6),
+                          });
                           setForm((f) => ({
                             ...f,
                             cep: r.cep,
@@ -527,7 +636,7 @@ function CheckoutPage() {
                             cidade: r.cidade || f.cidade,
                             estado: r.estado || f.estado,
                           }));
-                          await handleCalcFreteFor(r.cep);
+                          await handleCalcFreteFor(r.cep, coordinates);
                         }}
                       />
                     </TabsContent>
@@ -539,6 +648,7 @@ function CheckoutPage() {
                       </div>
                       {freteOpcoes.map((op) => {
                         const selected = frete?.servico === op.servico;
+                        const isDukamp = op.servico === DUKAMP_FREIGHT_SERVICE;
                         return (
                           <button
                             key={op.servico}
@@ -556,9 +666,19 @@ function CheckoutPage() {
                             <div className="text-sm min-w-0">
                               <span className="font-semibold">{op.servico}</span>
                               <span className="text-muted-foreground">
-                                {" "}
-                                — entrega em até {op.prazoDias} dia(s)
-                                {op.dataMaxima ? ` (${op.dataMaxima})` : ""}
+                                {isDukamp ? (
+                                  <>
+                                    {" "}— entrega própria
+                                    {op.distanciaKm != null ? ` • rota ${op.distanciaKm.toFixed(1).replace(".", ",")} km` : ""}
+                                    {op.faixaKm != null ? ` • faixa até ${op.faixaKm} km` : ""}
+                                    {" • prazo a combinar"}
+                                  </>
+                                ) : (
+                                  <>
+                                    {" "}— entrega em até {op.prazoDias} dia(s)
+                                    {op.dataMaxima ? ` (${op.dataMaxima})` : ""}
+                                  </>
+                                )}
                               </span>
                             </div>
                             <div className="ml-auto text-base font-bold text-primary">
@@ -567,6 +687,12 @@ function CheckoutPage() {
                           </button>
                         );
                       })}
+                    </div>
+                  )}
+                  {dukampFreightStatus?.reason && !dukampFreightStatus.available && (
+                    <div className="mt-3 rounded-md border bg-background/70 px-3 py-2 text-xs text-muted-foreground">
+                      <span className="font-semibold text-foreground">Frete Dukamp: </span>
+                      {dukampFreightStatus.reason}
                     </div>
                   )}
                 </div>
@@ -762,9 +888,15 @@ function CheckoutPage() {
                     value={frete ? formatBRL(frete.valor) : <span className="text-muted-foreground text-sm">A calcular</span>}
                   />
                   {frete && (
-                    <div className="text-xs text-muted-foreground">
-                      Entrega em até <b className="text-foreground">{frete.prazoDias} dia{frete.prazoDias === 1 ? "" : "s"} úte{frete.prazoDias === 1 ? "l" : "is"}</b>
-                    </div>
+                    frete.servico === DUKAMP_FREIGHT_SERVICE ? (
+                      <div className="text-xs text-muted-foreground">
+                        <b className="text-foreground">Frete Dukamp</b> · entrega própria · prazo a combinar
+                      </div>
+                    ) : (
+                      <div className="text-xs text-muted-foreground">
+                        Entrega em até <b className="text-foreground">{frete.prazoDias} dia{frete.prazoDias === 1 ? "" : "s"} úte{frete.prazoDias === 1 ? "l" : "is"}</b>
+                      </div>
+                    )
                   )}
                   {method === "card" && totals.feeAmount > 0 && (
                     <Row
