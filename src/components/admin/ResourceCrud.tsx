@@ -19,7 +19,7 @@ import { ImageUpload, ImageListUpload, MediaListUpload } from "./ImageUpload";
 export type FieldDef = {
   name: string;
   label: string;
-  type?: "text" | "textarea" | "number" | "boolean" | "select" | "image" | "imageList" | "mediaList";
+  type?: "text" | "textarea" | "number" | "date" | "boolean" | "select" | "image" | "imageList" | "mediaList";
   options?: { value: string; label: string }[];
   required?: boolean;
   defaultValue?: any;
@@ -284,7 +284,7 @@ function ResourceForm({ fields, initial, onSubmit, submitting }: {
               <MediaListUpload value={Array.isArray(values[f.name]) ? values[f.name] : []} onChange={(v) => handleChange(f.name, v)} />
             ) : (
               <Input
-                type={f.type === "number" ? "number" : "text"}
+                type={f.type === "number" ? "number" : f.type === "date" ? "date" : "text"}
                 step={f.step}
                 value={values[f.name] ?? ""}
                 onChange={(e) => handleChange(f.name, e.target.value)}
