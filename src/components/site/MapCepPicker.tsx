@@ -30,21 +30,101 @@ type ReverseResult = {
   longitude: number;
 };
 
+type AddressParts = {
+  cep: string;
+  rua?: string;
+  bairro?: string;
+  cidade?: string;
+  estado?: string;
+};
+
+function normalizeCep(value: unknown) {
+  const cep = String(value ?? "").replace(/\D/g, "");
+  return cep.length === 8 ? cep : "";
+}
+
+async function findCepViaAddress(parts: AddressParts, signal?: AbortSignal) {
+  const estado = (parts.estado || "").trim().toUpperCase();
+  const cidade = (parts.cidade || "").trim();
+  const rua = (parts.rua || "").trim();
+  if (estado.length !== 2 || cidade.length < 3 || rua.length < 3) return "";
+
+  try {
+    const url = `https://viacep.com.br/ws/${encodeURIComponent(estado)}/${encodeURIComponent(cidade)}/${encodeURIComponent(rua)}/json/`;
+    const response = await fetch(url, { headers: { Accept: "application/json" }, signal });
+    if (!response.ok) return "";
+    const rows = (await response.json()) as Array<{ cep?: string; localidade?: string; uf?: string }>;
+    if (!Array.isArray(rows)) return "";
+
+    const sameCity = rows.find(
+      (row) =>
+        (row.uf || "").toUpperCase() === estado &&
+        (row.localidade || "").localeCompare(cidade, "pt-BR", { sensitivity: "base" }) === 0,
+    );
+    return normalizeCep(sameCity?.cep || rows[0]?.cep);
+  } catch (error) {
+    if ((error as { name?: string })?.name === "AbortError") throw error;
+    return "";
+  }
+}
+
+async function findCepViaNominatimSearch(parts: AddressParts, signal?: AbortSignal) {
+  const cidade = (parts.cidade || "").trim();
+  const estado = (parts.estado || "").trim();
+  if (!cidade) return "";
+
+  try {
+    const params = new URLSearchParams({
+      format: "jsonv2",
+      addressdetails: "1",
+      limit: "5",
+      country: "Brasil",
+      city: cidade,
+    });
+    if (estado) params.set("state", estado);
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, {
+      headers: { Accept: "application/json" },
+      signal,
+    });
+    if (!response.ok) return "";
+    const rows = (await response.json()) as Array<{ address?: { postcode?: string } }>;
+    if (!Array.isArray(rows)) return "";
+    for (const row of rows) {
+      const cep = normalizeCep(row.address?.postcode);
+      if (cep) return cep;
+    }
+    return "";
+  } catch (error) {
+    if ((error as { name?: string })?.name === "AbortError") throw error;
+    return "";
+  }
+}
+
 async function reverseGeocode(pos: LatLng, signal?: AbortSignal): Promise<ReverseResult | null> {
   const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${pos.lat}&lon=${pos.lng}&addressdetails=1&accept-language=pt-BR`;
-  const r = await fetch(url, { headers: { Accept: "application/json" }, signal });
-  if (!r.ok) return null;
-  const j = await r.json();
-  const a = j.address ?? {};
-  const cepRaw: string | undefined = a.postcode;
-  const cep = (cepRaw ?? "").replace(/\D/g, "");
-  if (cep.length !== 8) return null;
+  const response = await fetch(url, { headers: { Accept: "application/json" }, signal });
+  if (!response.ok) return null;
+
+  const json = await response.json();
+  const address = json.address ?? {};
+  const parts: AddressParts = {
+    cep: normalizeCep(address.postcode),
+    rua: address.road || address.pedestrian || address.path || address.cycleway,
+    bairro: address.suburb || address.neighbourhood || address.village || address.hamlet,
+    cidade: address.city || address.town || address.municipality || address.village,
+    estado: (address.state_code || address["ISO3166-2-lvl4"] || address.state || "")
+      .toString()
+      .slice(-2)
+      .toUpperCase(),
+  };
+
+  // Alguns pontos do OpenStreetMap têm cidade/rua, mas não trazem o postcode no reverse.
+  // Nesses casos tentamos descobrir o CEP pelo endereço antes de desistir.
+  if (!parts.cep) parts.cep = await findCepViaAddress(parts, signal);
+  if (!parts.cep) parts.cep = await findCepViaNominatimSearch(parts, signal);
+
   return {
-    cep,
-    rua: a.road || a.pedestrian || a.path || a.cycleway,
-    bairro: a.suburb || a.neighbourhood || a.village || a.hamlet,
-    cidade: a.city || a.town || a.municipality || a.village,
-    estado: (a.state_code || a["ISO3166-2-lvl4"] || a.state || "").toString().slice(-2).toUpperCase(),
+    ...parts,
     latitude: pos.lat,
     longitude: pos.lng,
   };
@@ -83,16 +163,23 @@ export function MapCepPicker({
     abortRef.current?.abort();
     abortRef.current = new AbortController();
     try {
-      const r = await reverseGeocode(p, abortRef.current.signal);
-      if (!r) {
-        toast.error("Não foi possível identificar o CEP nesse ponto. Tente marcar mais próximo de uma rua.");
+      const result = await reverseGeocode(p, abortRef.current.signal);
+      if (!result) {
+        toast.error("Não foi possível identificar esse ponto. Tente marcar mais próximo de uma rua.");
         return;
       }
-      onResult(r);
-      toast.success(`CEP encontrado: ${r.cep.replace(/(\d{5})(\d{3})/, "$1-$2")}`);
+      onResult(result);
+      if (result.cep) {
+        toast.success(`CEP encontrado: ${result.cep.replace(/(\d{5})(\d{3})/, "$1-$2")}`);
+      } else {
+        toast.info(
+          "Localização encontrada pelas coordenadas. O CEP não apareceu nessa base, mas o Frete Dukamp pode ser calculado; preencha o CEP antes de finalizar o pedido.",
+          { duration: 7000 },
+        );
+      }
     } catch (e) {
       if ((e as { name?: string })?.name !== "AbortError") {
-        toast.error("Erro ao buscar CEP do ponto selecionado.");
+        toast.error("Erro ao identificar o endereço do ponto selecionado.");
       }
     } finally {
       setLoading(false);
@@ -143,7 +230,7 @@ export function MapCepPicker({
           <div className="absolute inset-0 z-[500] grid place-items-center bg-background/50 backdrop-blur-sm">
             <div className="flex items-center gap-2 rounded-md bg-background border px-3 py-2 shadow-md text-sm font-medium">
               <Loader2 className="h-4 w-4 animate-spin text-primary" />
-              Buscando CEP…
+              Identificando endereço…
             </div>
           </div>
         )}
