@@ -257,6 +257,7 @@ export type Database = {
           numero: string | null
           numero_pagamento: string | null
           repr: string | null
+          roteiro: string | null
           telefone: string | null
           telefone_2: string | null
           uf: string | null
@@ -298,6 +299,7 @@ export type Database = {
           numero?: string | null
           numero_pagamento?: string | null
           repr?: string | null
+          roteiro?: string | null
           telefone?: string | null
           telefone_2?: string | null
           uf?: string | null
@@ -339,6 +341,7 @@ export type Database = {
           numero?: string | null
           numero_pagamento?: string | null
           repr?: string | null
+          roteiro?: string | null
           telefone?: string | null
           telefone_2?: string | null
           uf?: string | null
