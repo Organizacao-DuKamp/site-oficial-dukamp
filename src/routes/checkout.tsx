@@ -81,6 +81,20 @@ type DukampFreightStatus = {
   reason?: string | null;
 };
 
+type DeliveryCoordinates = {
+  latitude: number;
+  longitude: number;
+};
+
+type CepLookupResult = {
+  cep: string;
+  rua?: string;
+  bairro?: string;
+  cidade?: string;
+  estado?: string;
+  coordinates?: DeliveryCoordinates;
+};
+
 const emptyForm: Form = {
   customer_name: "",
   email: "",
@@ -95,12 +109,116 @@ const emptyForm: Form = {
   estado: "",
 };
 
+function validCoordinates(latitude: number, longitude: number): DeliveryCoordinates | null {
+  if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90) return null;
+  if (!Number.isFinite(longitude) || longitude < -180 || longitude > 180) return null;
+  return { latitude, longitude };
+}
+
+function parseCoordinatePair(value: string): DeliveryCoordinates | null {
+  const raw = value.trim();
+  if (!raw) return null;
+
+  let decoded = raw;
+  try {
+    decoded = decodeURIComponent(raw);
+  } catch {
+    // mantém a entrada original
+  }
+
+  const patterns = [
+    /@([+-]?\d{1,2}(?:\.\d+)?),([+-]?\d{1,3}(?:\.\d+)?)/,
+    /(?:query|q)=([+-]?\d{1,2}(?:\.\d+)?),([+-]?\d{1,3}(?:\.\d+)?)/i,
+    /^\s*([+-]?\d{1,2}(?:\.\d+)?)\s*,\s*([+-]?\d{1,3}(?:\.\d+)?)\s*$/,
+    /^\s*([+-]?\d{1,2}(?:[.,]\d+)?)\s*;\s*([+-]?\d{1,3}(?:[.,]\d+)?)\s*$/,
+    /^\s*([+-]?\d{1,2}(?:[.,]\d+)?)\s+([+-]?\d{1,3}(?:[.,]\d+)?)\s*$/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = decoded.match(pattern);
+    if (!match) continue;
+    const latitude = Number(match[1].replace(",", "."));
+    const longitude = Number(match[2].replace(",", "."));
+    const coordinates = validCoordinates(latitude, longitude);
+    if (coordinates) return coordinates;
+  }
+
+  return null;
+}
+
+function formatCoordinatePair(coordinates: DeliveryCoordinates) {
+  return `${coordinates.latitude.toFixed(6)}, ${coordinates.longitude.toFixed(6)}`;
+}
+
+async function lookupCepWithFallback(digits: string): Promise<CepLookupResult> {
+  const brasilApiRequest = fetch(`https://brasilapi.com.br/api/cep/v2/${digits}`, {
+    headers: { Accept: "application/json" },
+  }).then(async (response) => {
+    if (!response.ok) throw new Error(`BrasilAPI HTTP ${response.status}`);
+    const data = (await response.json()) as {
+      cep?: string;
+      state?: string;
+      city?: string;
+      neighborhood?: string;
+      street?: string;
+      location?: { coordinates?: { latitude?: string | number; longitude?: string | number } };
+    };
+    const latitude = Number(data.location?.coordinates?.latitude);
+    const longitude = Number(data.location?.coordinates?.longitude);
+    return {
+      cep: String(data.cep || digits).replace(/\D/g, ""),
+      rua: data.street || "",
+      bairro: data.neighborhood || "",
+      cidade: data.city || "",
+      estado: data.state || "",
+      coordinates: validCoordinates(latitude, longitude) || undefined,
+    } satisfies CepLookupResult;
+  });
+
+  const viaCepRequest = fetch(`https://viacep.com.br/ws/${digits}/json/`, {
+    headers: { Accept: "application/json" },
+  }).then(async (response) => {
+    if (!response.ok) throw new Error(`ViaCEP HTTP ${response.status}`);
+    const data = (await response.json()) as {
+      erro?: boolean;
+      cep?: string;
+      logradouro?: string;
+      bairro?: string;
+      localidade?: string;
+      uf?: string;
+    };
+    if (data.erro) throw new Error("CEP não encontrado no ViaCEP");
+    return {
+      cep: String(data.cep || digits).replace(/\D/g, ""),
+      rua: data.logradouro || "",
+      bairro: data.bairro || "",
+      cidade: data.localidade || "",
+      estado: data.uf || "",
+    } satisfies CepLookupResult;
+  });
+
+  const [brasilApiResult, viaCepResult] = await Promise.allSettled([brasilApiRequest, viaCepRequest]);
+  const brasilApi = brasilApiResult.status === "fulfilled" ? brasilApiResult.value : null;
+  const viaCep = viaCepResult.status === "fulfilled" ? viaCepResult.value : null;
+
+  if (!brasilApi && !viaCep) throw new Error("CEP não encontrado nas bases consultadas");
+
+  return {
+    cep: brasilApi?.cep || viaCep?.cep || digits,
+    rua: brasilApi?.rua || viaCep?.rua || "",
+    bairro: brasilApi?.bairro || viaCep?.bairro || "",
+    cidade: brasilApi?.cidade || viaCep?.cidade || "",
+    estado: brasilApi?.estado || viaCep?.estado || "",
+    coordinates: brasilApi?.coordinates,
+  };
+}
+
 function CheckoutPage() {
   const { items, total: subtotal, clear } = useCart();
   const { data: settings } = useSiteSettings();
   const nav = useNavigate();
   const [form, setForm] = useState<Form>(emptyForm);
-  const [deliveryCoords, setDeliveryCoords] = useState({ latitude: "", longitude: "" });
+  const [deliveryCoordinates, setDeliveryCoordinates] = useState("");
   const [dukampFreightStatus, setDukampFreightStatus] = useState<DukampFreightStatus | null>(null);
   const [loadingCep, setLoadingCep] = useState(false);
   const [loadingPay, setLoadingPay] = useState(false);
@@ -130,33 +248,23 @@ function CheckoutPage() {
     setForm((f) => ({ ...f, [k]: v }));
   }
 
-  function parseDeliveryCoordinates() {
-    const rawLat = deliveryCoords.latitude.trim().replace(",", ".");
-    const rawLng = deliveryCoords.longitude.trim().replace(",", ".");
-    if (!rawLat || !rawLng) return {};
-    const latitude = Number(rawLat);
-    const longitude = Number(rawLng);
-    if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90) return {};
-    if (!Number.isFinite(longitude) || longitude < -180 || longitude > 180) return {};
-    return { latitude, longitude };
-  }
-
   async function lookupCep(cep: string) {
     const digits = cep.replace(/\D/g, "");
     if (digits.length !== 8) return;
     setLoadingCep(true);
     try {
-      const r = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
-      const j = await r.json();
-      if (j.erro) throw new Error("CEP não encontrado");
+      const result = await lookupCepWithFallback(digits);
       setForm((f) => ({
         ...f,
-        cep: digits,
-        rua: j.logradouro || f.rua,
-        bairro: j.bairro || f.bairro,
-        cidade: j.localidade || f.cidade,
-        estado: j.uf || f.estado,
+        cep: result.cep || digits,
+        rua: result.rua || f.rua,
+        bairro: result.bairro || f.bairro,
+        cidade: result.cidade || f.cidade,
+        estado: result.estado || f.estado,
       }));
+      if (result.coordinates) {
+        setDeliveryCoordinates((current) => current.trim() || formatCoordinatePair(result.coordinates!));
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao buscar CEP");
     } finally {
@@ -166,43 +274,50 @@ function CheckoutPage() {
 
   async function handleCalcFreteFor(
     rawCep: string,
-    coordinatesOverride?: { latitude: number; longitude: number },
+    coordinatesOverride?: DeliveryCoordinates,
   ) {
     const cep = rawCep.replace(/\D/g, "");
-    if (cep.length !== 8) {
-      toast.error("Informe um CEP válido (8 números)");
+    const hasValidCep = cep.length === 8;
+    const coordinates = coordinatesOverride ?? parseCoordinatePair(deliveryCoordinates) ?? undefined;
+
+    if (!hasValidCep && !coordinates) {
+      toast.error("Informe um CEP válido ou as coordenadas do local de entrega");
       return;
     }
     if (items.length === 0) return;
+
     setLoadingFrete(true);
     try {
       const itemPayload = items.map((i) => ({ product_id: i.id, quantity: i.quantity }));
-      const coordinates = coordinatesOverride ?? parseDeliveryCoordinates();
 
-      // Correios e Frete Dukamp são calculados de forma independente. Assim,
-      // se uma integração estiver indisponível a outra continua podendo aparecer.
-      const [correiosResult, dukampResult] = await Promise.allSettled([
-        calcFrete({
-          data: {
-            cepDestino: cep,
-            items: itemPayload,
-          },
-        }),
-        calcDukampFrete({
-          data: {
-            items: itemPayload,
-            ...coordinates,
-          },
-        }),
-      ]);
+      // Correios e Frete Dukamp são calculados de forma independente. Se não houver
+      // CEP, ainda calculamos o Frete Dukamp pelas coordenadas; Correios é ignorado.
+      const correiosPromise = hasValidCep
+        ? calcFrete({
+            data: {
+              cepDestino: cep,
+              items: itemPayload,
+            },
+          })
+        : Promise.resolve(null);
+
+      const dukampPromise = calcDukampFrete({
+        data: {
+          items: itemPayload,
+          ...(coordinates || {}),
+        },
+      });
+
+      const [correiosResult, dukampResult] = await Promise.allSettled([correiosPromise, dukampPromise]);
 
       const opcoes: ShippingOption[] = [];
       const technicalErrors: string[] = [];
+      let dukampUnavailableReason = "";
 
-      if (correiosResult.status === "fulfilled") {
+      if (correiosResult.status === "fulfilled" && correiosResult.value) {
         const correiosOptions = ((correiosResult.value as any).opcoes ?? [correiosResult.value]) as ShippingOption[];
         opcoes.push(...correiosOptions);
-      } else {
+      } else if (correiosResult.status === "rejected") {
         const reason = correiosResult.reason instanceof Error ? correiosResult.reason.message : String(correiosResult.reason ?? "");
         technicalErrors.push(reason);
         console.error("[Frete] Correios indisponível", correiosResult.reason);
@@ -211,6 +326,7 @@ function CheckoutPage() {
       if (dukampResult.status === "fulfilled") {
         const result = dukampResult.value as any;
         setDukampFreightStatus(result.status ?? null);
+        dukampUnavailableReason = result.status?.reason || "";
         if (result.option) opcoes.push(result.option as ShippingOption);
       } else {
         const reason = dukampResult.reason instanceof Error ? dukampResult.reason.message : String(dukampResult.reason ?? "");
@@ -224,7 +340,11 @@ function CheckoutPage() {
       }
 
       if (!opcoes.length) {
-        throw new Error(technicalErrors.filter(Boolean).join(" | ") || "Nenhuma opção de frete disponível");
+        throw new Error(
+          dukampUnavailableReason ||
+            technicalErrors.filter(Boolean).join(" | ") ||
+            "Nenhuma opção de frete disponível para os dados informados",
+        );
       }
 
       setFreteOpcoes(opcoes);
@@ -238,7 +358,7 @@ function CheckoutPage() {
       const raw = e instanceof Error ? e.message : String(e ?? "");
       console.error("[Frete] Falha ao calcular", { cep, itens: items.length, error: e });
       const detail = raw && raw !== "Invalid API Error" ? raw : "resposta inesperada do servidor (Invalid API Error). Verifique CORREIOS_TOKEN, CORREIOS_CONTRATO e CORREIOS_CEP_ORIGEM nas Environment variables da Netlify e faça Clear cache and deploy.";
-      toast.error(`Frete (CEP ${cep}): ${detail}`, { duration: 10000 });
+      toast.error(`Frete: ${detail}`, { duration: 10000 });
     } finally {
       setLoadingFrete(false);
     }
@@ -496,6 +616,9 @@ function CheckoutPage() {
   const totalItens = items.reduce((n, i) => n + i.quantity, 0);
   const suportePhoneDigits = (settings?.phone ?? "").replace(/\D/g, "");
   const suportePhoneDisplay = settings?.phone || "";
+  const hasValidCepForFreight = form.cep.replace(/\D/g, "").length === 8;
+  const parsedDeliveryCoordinates = parseCoordinatePair(deliveryCoordinates);
+  const canCalculateFreight = hasValidCepForFreight || Boolean(parsedDeliveryCoordinates);
 
   if (items.length === 0) {
     return (
@@ -586,7 +709,7 @@ function CheckoutPage() {
                         <Button
                           type="button"
                           onClick={handleCalcFrete}
-                          disabled={loadingFrete || form.cep.replace(/\D/g, "").length !== 8}
+                          disabled={loadingFrete || !canCalculateFreight}
                           size="lg"
                           className="h-11 px-4 sm:px-6 gap-2"
                         >
@@ -596,47 +719,35 @@ function CheckoutPage() {
                         </Button>
                       </div>
 
-                      <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <Field label="Latitude (opcional — Frete Dukamp)">
+                      <div className="mt-3">
+                        <Field label="Coordenadas (opcional — Frete Dukamp)">
                           <Input
                             type="text"
-                            inputMode="decimal"
-                            placeholder="Ex: -20.764110"
-                            value={deliveryCoords.latitude}
-                            onChange={(e) => setDeliveryCoords((c) => ({ ...c, latitude: e.target.value }))}
-                          />
-                        </Field>
-                        <Field label="Longitude (opcional — Frete Dukamp)">
-                          <Input
-                            type="text"
-                            inputMode="decimal"
-                            placeholder="Ex: -49.709500"
-                            value={deliveryCoords.longitude}
-                            onChange={(e) => setDeliveryCoords((c) => ({ ...c, longitude: e.target.value }))}
+                            inputMode="text"
+                            placeholder="Ex: -20.764110, -49.709500"
+                            value={deliveryCoordinates}
+                            onChange={(e) => setDeliveryCoordinates(e.target.value)}
                           />
                         </Field>
                       </div>
                       <p className="mt-2 text-xs text-muted-foreground">
-                        As coordenadas são opcionais para Correios, mas necessárias para calcular o Frete Dukamp. Você também pode escolher o local no mapa e elas serão preenchidas automaticamente.
+                        Cole latitude e longitude no mesmo campo, por exemplo <b>-20.764110, -49.709500</b>. Também aceitamos coordenadas copiadas de um link do Google Maps. Ao consultar o CEP, tentamos preencher as coordenadas automaticamente quando a base disponibilizar.
                       </p>
                     </TabsContent>
                     <TabsContent value="map" className="mt-0">
                       <MapCepPicker
                         onResult={async (r) => {
                           const coordinates = { latitude: r.latitude, longitude: r.longitude };
-                          setDeliveryCoords({
-                            latitude: r.latitude.toFixed(6),
-                            longitude: r.longitude.toFixed(6),
-                          });
+                          setDeliveryCoordinates(formatCoordinatePair(coordinates));
                           setForm((f) => ({
                             ...f,
-                            cep: r.cep,
+                            cep: r.cep || f.cep,
                             rua: r.rua || f.rua,
                             bairro: r.bairro || f.bairro,
                             cidade: r.cidade || f.cidade,
                             estado: r.estado || f.estado,
                           }));
-                          await handleCalcFreteFor(r.cep, coordinates);
+                          await handleCalcFreteFor(r.cep || "", coordinates);
                         }}
                       />
                     </TabsContent>
