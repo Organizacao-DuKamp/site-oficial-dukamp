@@ -5,7 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { parseCustomerReport } from "@/lib/customers-report";
-import { CalendarDays, FileText, MapPin, Phone, Route as RouteIcon, ShoppingCart } from "lucide-react";
+import {
+  CalendarDays,
+  FileText,
+  MapPin,
+  Phone,
+  Route as RouteIcon,
+  ShoppingCart,
+  UserRound,
+} from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/vendas/clientes")({
@@ -22,6 +30,13 @@ function formatDate(value: unknown) {
 function formatCurrency(value: unknown) {
   if (value === null || value === undefined || value === "") return "—";
   return Number(value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function formatPercent(value: unknown) {
+  if (value === null || value === undefined || value === "") return "—";
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return "—";
+  return `${numeric.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`;
 }
 
 function formatDocument(value: unknown) {
@@ -90,6 +105,9 @@ function formatDelay(value: unknown) {
 
 function CustomerDetails({ customer }: { customer: CustomerRecord }) {
   const hasRoute = Boolean(String(customer.roteiro ?? "").trim());
+  const sellerCode = String(customer.vendedor_codigo ?? "").trim();
+  const sellerName = String(customer.vendedor_nome ?? "").trim();
+  const sellerLabel = [sellerCode, sellerName].filter(Boolean).join(" - ") || "—";
 
   return (
     <div className="space-y-4">
@@ -125,6 +143,29 @@ function CustomerDetails({ customer }: { customer: CustomerRecord }) {
             <CustomerDetailField label="COB" value={emptyValue(customer.cob)} />
             <CustomerDetailField label="Classificação L" value={emptyValue(customer.classificacao_l)} />
             <CustomerDetailField label="Conceito" value={emptyValue(customer.conceito)} />
+          </dl>
+        </CustomerDetailSection>
+
+        <CustomerDetailSection title="Vendedor responsável" icon={<UserRound className="h-4 w-4" />}>
+          <dl className="grid gap-4 sm:grid-cols-2">
+            <CustomerDetailField label="Vendedor" value={sellerLabel} />
+            <CustomerDetailField
+              label="Última compra com vendedor"
+              value={formatDate(customer.vendedor_ultima_compra)}
+            />
+            <CustomerDetailField
+              label="Total acumulado com vendedor"
+              value={formatCurrency(customer.vendedor_total_acumulado)}
+            />
+            <CustomerDetailField label="% no vendedor" value={formatPercent(customer.vendedor_percentual)} />
+            <CustomerDetailField
+              label="% acumulado no vendedor"
+              value={formatPercent(customer.vendedor_percentual_acumulado)}
+            />
+            <CustomerDetailField
+              label="ABC (S / C / L)"
+              value={[customer.abc_s, customer.abc_c, customer.abc_l].map(emptyValue).join(" / ")}
+            />
           </dl>
         </CustomerDetailSection>
 
@@ -170,9 +211,15 @@ function CustomerDetails({ customer }: { customer: CustomerRecord }) {
         )}
       </CustomerDetailSection>
 
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <CalendarDays className="h-4 w-4" />
-        Dados do relatório atualizados em {formatDate(customer.dados_relatorio_atualizados_em)}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+        <span className="flex items-center gap-2">
+          <CalendarDays className="h-4 w-4" />
+          Dados do relatório completo atualizados em {formatDate(customer.dados_relatorio_atualizados_em)}
+        </span>
+        <span className="flex items-center gap-2">
+          <UserRound className="h-4 w-4" />
+          Vendedor atualizado em {formatDate(customer.dados_vendedor_atualizados_em)}
+        </span>
       </div>
     </div>
   );
@@ -275,8 +322,8 @@ function CustomersAdmin() {
         table="customers"
         orderBy={{ column: "cliente", ascending: true }}
         searchField="cliente"
-        searchFields={["cliente", "codigo", "cnpj_cpf", "cidade"]}
-        searchPlaceholder="Pesquisar por nome, código, CNPJ/CPF ou cidade..."
+        searchFields={["cliente", "codigo", "cnpj_cpf", "cidade", "vendedor_nome"]}
+        searchPlaceholder="Pesquisar por nome, código, CNPJ/CPF, cidade ou vendedor..."
         columns={[
           { key: "cliente", label: "Cliente" },
           { key: "codigo", label: "Código" },
@@ -284,6 +331,12 @@ function CustomersAdmin() {
             key: "cidade",
             label: "Cidade/UF",
             format: (value, row) => [value, row.uf].filter(Boolean).join("/") || "—",
+          },
+          {
+            key: "vendedor_nome",
+            label: "Vendedor",
+            format: (value, row) =>
+              [row.vendedor_codigo, value].filter(Boolean).join(" - ") || "—",
           },
           {
             key: "telefone",
@@ -345,6 +398,15 @@ function CustomersAdmin() {
           { name: "conceito", label: "Conceito" },
           { name: "marcador_relatorio", label: "Marcador do relatório" },
           { name: "cob", label: "COB" },
+          { name: "vendedor_codigo", label: "Código do vendedor" },
+          { name: "vendedor_nome", label: "Vendedor responsável" },
+          { name: "vendedor_ultima_compra", label: "Última compra com vendedor", type: "date" },
+          { name: "vendedor_total_acumulado", label: "Total acumulado com vendedor", type: "number", step: "0.01" },
+          { name: "vendedor_percentual", label: "% no vendedor", type: "number", step: "0.01" },
+          { name: "vendedor_percentual_acumulado", label: "% acumulado no vendedor", type: "number", step: "0.01" },
+          { name: "abc_s", label: "ABC - S" },
+          { name: "abc_c", label: "ABC - C" },
+          { name: "abc_l", label: "ABC - L" },
           { name: "roteiro", label: "Roteiro de entrega", type: "textarea" },
         ]}
       />
