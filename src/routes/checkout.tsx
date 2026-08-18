@@ -286,57 +286,59 @@ function CheckoutPage() {
     }
     if (items.length === 0) return;
 
+    setFrete(null);
+    setFreteOpcoes([]);
     setLoadingFrete(true);
     try {
       const itemPayload = items.map((i) => ({ product_id: i.id, quantity: i.quantity }));
-
-      // Correios e Frete Dukamp são calculados de forma independente. Se não houver
-      // CEP, ainda calculamos o Frete Dukamp pelas coordenadas; Correios é ignorado.
-      const correiosPromise = hasValidCep
-        ? calcFrete({
-            data: {
-              cepDestino: cep,
-              items: itemPayload,
-            },
-          })
-        : Promise.resolve(null);
-
-      const dukampPromise = calcDukampFrete({
-        data: {
-          items: itemPayload,
-          ...(coordinates || {}),
-        },
-      });
-
-      const [correiosResult, dukampResult] = await Promise.allSettled([correiosPromise, dukampPromise]);
-
       const opcoes: ShippingOption[] = [];
       const technicalErrors: string[] = [];
       let dukampUnavailableReason = "";
+      let dukampOption: ShippingOption | null = null;
 
-      if (correiosResult.status === "fulfilled" && correiosResult.value) {
-        const correiosOptions = ((correiosResult.value as any).opcoes ?? [correiosResult.value]) as ShippingOption[];
-        opcoes.push(...correiosOptions);
-      } else if (correiosResult.status === "rejected") {
-        const reason = correiosResult.reason instanceof Error ? correiosResult.reason.message : String(correiosResult.reason ?? "");
-        technicalErrors.push(reason);
-        console.error("[Frete] Correios indisponível", correiosResult.reason);
-      }
-
-      if (dukampResult.status === "fulfilled") {
-        const result = dukampResult.value as any;
+      // O Frete Dukamp tem prioridade. Somente consultamos os Correios quando
+      // ele não estiver disponível para estes itens/local de entrega.
+      try {
+        const result = (await calcDukampFrete({
+          data: {
+            items: itemPayload,
+            ...(coordinates || {}),
+          },
+        })) as any;
         setDukampFreightStatus(result.status ?? null);
         dukampUnavailableReason = result.status?.reason || "";
-        if (result.option) opcoes.push(result.option as ShippingOption);
-      } else {
-        const reason = dukampResult.reason instanceof Error ? dukampResult.reason.message : String(dukampResult.reason ?? "");
+        if (result.option) dukampOption = result.option as ShippingOption;
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : String(error ?? "");
         setDukampFreightStatus({
           eligible: false,
           available: false,
           reason: "Não foi possível validar o Frete Dukamp agora. Tente novamente em instantes.",
         });
         technicalErrors.push(reason);
-        console.error("[Frete] Frete Dukamp indisponível", dukampResult.reason);
+        console.error("[Frete] Frete Dukamp indisponível", error);
+      }
+
+      if (dukampOption) {
+        // Exclusividade: se Frete Dukamp existe, PAC/Correios não são oferecidos.
+        opcoes.push(dukampOption);
+      } else if (hasValidCep) {
+        try {
+          const correiosResult = await calcFrete({
+            data: {
+              cepDestino: cep,
+              items: itemPayload,
+            },
+          });
+          if (correiosResult) {
+            const correiosOptions = ((correiosResult as any).opcoes ?? [correiosResult]) as ShippingOption[];
+            opcoes.push(...correiosOptions);
+          }
+        } catch (error) {
+          const reason = error instanceof Error ? error.message : String(error ?? "");
+          technicalErrors.push(reason);
+          console.error("[Frete] Correios indisponível", error);
+        }
       }
 
       if (!opcoes.length) {
@@ -348,10 +350,13 @@ function CheckoutPage() {
       }
 
       setFreteOpcoes(opcoes);
-      // seleciona a opção mais barata por padrão
-      const barata = [...opcoes].sort((a, b) => a.valor - b.valor)[0];
-      setFrete(barata);
-      toast.success(`Frete calculado: ${opcoes.length} opção(ões) disponível(is)`);
+      const defaultOption = dukampOption ?? [...opcoes].sort((a, b) => a.valor - b.valor)[0];
+      setFrete(defaultOption);
+      toast.success(
+        dukampOption
+          ? "Frete Dukamp disponível para este endereço"
+          : `Frete calculado: ${opcoes.length} opção(ões) disponível(is)`,
+      );
     } catch (e) {
       setFrete(null);
       setFreteOpcoes([]);
@@ -800,12 +805,29 @@ function CheckoutPage() {
                       })}
                     </div>
                   )}
+                  {dukampFreightStatus?.available && frete?.servico === DUKAMP_FREIGHT_SERVICE && (
+                    <div className="mt-3 rounded-md border border-primary/30 bg-background/80 px-3 py-2 text-xs text-muted-foreground">
+                      <span className="font-semibold text-foreground">Frete Dukamp disponível. </span>
+                      PAC e demais opções dos Correios ficam indisponíveis para este endereço.
+                    </div>
+                  )}
                   {dukampFreightStatus?.reason && !dukampFreightStatus.available && (
                     <div className="mt-3 rounded-md border bg-background/70 px-3 py-2 text-xs text-muted-foreground">
                       <span className="font-semibold text-foreground">Frete Dukamp: </span>
                       {dukampFreightStatus.reason}
                     </div>
                   )}
+                  <div className="mt-3 border-t border-primary/15 pt-3">
+                    <Button asChild variant="outline" className="w-full gap-2 bg-background">
+                      <Link to="/equipe-de-vendas">
+                        <MessageCircle className="h-4 w-4" />
+                        Negociar frete com vendedor
+                      </Link>
+                    </Button>
+                    <p className="mt-1.5 text-center text-xs text-muted-foreground">
+                      Prefere combinar uma condição de entrega? Escolha um vendedor da nossa equipe.
+                    </p>
+                  </div>
                 </div>
 
 
