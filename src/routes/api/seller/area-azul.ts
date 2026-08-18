@@ -51,28 +51,11 @@ export const Route = createFileRoute("/api/seller/area-azul")({
         if ("response" in authorization) return authorization.response;
         const { supabaseAdmin, user } = authorization;
 
+        // A Área Azul é compartilhada por todas as contas de vendedor.
+        // O vínculo da conta com um vendedor interno só é usado para validar
+        // que a sessão realmente pertence a uma conta vendedor.
         const seller = await resolveSellerIdentity(supabaseAdmin, user);
         if (!seller) return errorResponse("Conta de vendedor sem cadastro interno associado.", 403);
-
-        const { data: linkedSeller, error: sellerError } = await (supabaseAdmin.from("sellers") as any)
-          .select("erp_seller_code,erp_seller_name")
-          .eq("id", seller.sellerId)
-          .maybeSingle();
-        if (sellerError) return errorResponse("Não foi possível consultar a carteira do vendedor.", 500);
-
-        const erpSellerCode = String(linkedSeller?.erp_seller_code ?? "").trim();
-        const erpSellerName = String(linkedSeller?.erp_seller_name ?? "").trim();
-        if (!erpSellerCode) {
-          return Response.json(
-            {
-              associationMissing: true,
-              clients: [],
-              count: 0,
-              cutoffDate: sixMonthsAgoDate(),
-            },
-            { headers: { "Cache-Control": "no-store" } },
-          );
-        }
 
         const url = new URL(request.url);
         const search = normalizeSearch(url.searchParams.get("search") ?? "");
@@ -86,6 +69,7 @@ export const Route = createFileRoute("/api/seller/area-azul")({
 
         const rows: CustomerRow[] = [];
         const fetchSize = 1000;
+
         try {
           for (let from = 0; ; from += fetchSize) {
             const { data, error } = await supabaseAdmin
@@ -93,7 +77,6 @@ export const Route = createFileRoute("/api/seller/area-azul")({
               .select(
                 "codigo,cliente,cidade,uf,telefone,celular,email,ultima_compra,valor_ultima_compra,compra_ano,valor_maior_compra",
               )
-              .eq("vendedor_codigo", erpSellerCode)
               .or(`ultima_compra.lt.${cutoffDate},ultima_compra.is.null`)
               .range(from, from + fetchSize - 1);
             if (error) throw error;
@@ -127,13 +110,6 @@ export const Route = createFileRoute("/api/seller/area-azul")({
 
         return Response.json(
           {
-            associationMissing: false,
-            seller: {
-              id: seller.sellerId,
-              name: seller.name,
-              erpSellerCode,
-              erpSellerName: erpSellerName || seller.name,
-            },
             cutoffDate,
             clients,
             count,

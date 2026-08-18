@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { AlertCircle, CalendarDays, Clock3, Loader2, MapPin, Phone, Search } from "lucide-react";
+import { AlertCircle, CalendarDays, Clock3, Loader2, MapPin, Phone, Search, Users } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,13 +26,6 @@ type BlueAreaCustomer = {
 };
 
 type BlueAreaResponse = {
-  associationMissing?: boolean;
-  seller?: {
-    id: string;
-    name: string;
-    erpSellerCode: string;
-    erpSellerName: string;
-  };
   cutoffDate?: string;
   clients?: BlueAreaCustomer[];
   count?: number;
@@ -76,7 +69,7 @@ function formatCurrency(value: number | null | undefined) {
 }
 
 function inactiveTime(value: string | null | undefined) {
-  if (!value) return "Nunca comprou / sem registro";
+  if (!value) return "Sem compra registrada";
   const last = new Date(`${value.slice(0, 10)}T12:00:00`);
   const today = new Date();
   let months = (today.getFullYear() - last.getFullYear()) * 12 + today.getMonth() - last.getMonth();
@@ -105,7 +98,7 @@ function BlueAreaPage() {
   useEffect(() => setPage(1), [debouncedSearch]);
 
   const query = useQuery({
-    queryKey: ["seller-blue-area", user?.id, debouncedSearch, page],
+    queryKey: ["seller-blue-area", debouncedSearch, page],
     enabled: Boolean(user?.id),
     queryFn: () => loadBlueArea(debouncedSearch, page),
   });
@@ -128,11 +121,14 @@ function BlueAreaPage() {
             <div>
               <h1 className="text-2xl font-bold text-blue-950 dark:text-blue-100">Área Azul</h1>
               <p className="mt-1 text-sm text-blue-800/80 dark:text-blue-200/80">
-                Clientes da sua carteira que estão há mais de 6 meses sem comprar.
+                Clientes que estão há mais de 6 meses sem comprar e ficam disponíveis para toda a equipe de vendas.
               </p>
+              <div className="mt-2 flex items-center gap-1.5 text-xs font-medium text-blue-700 dark:text-blue-300">
+                <Users className="h-3.5 w-3.5" /> Todos os vendedores podem visualizar e tentar recuperar estes clientes.
+              </div>
             </div>
           </div>
-          {!query.isPending && !query.isError && !query.data?.associationMissing && (
+          {!query.isPending && !query.isError && (
             <div className="rounded-xl bg-white/80 px-4 py-3 text-center shadow-sm dark:bg-background/70">
               <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{count.toLocaleString("pt-BR")}</div>
               <div className="text-xs text-muted-foreground">clientes na Área Azul</div>
@@ -156,26 +152,13 @@ function BlueAreaPage() {
             </Button>
           </AlertDescription>
         </Alert>
-      ) : query.data?.associationMissing ? (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Carteira comercial ainda não vinculada</AlertTitle>
-          <AlertDescription>
-            Um administrador precisa abrir esta conta no painel administrativo e selecionar o campo “Vendedor do ERP”.
-          </AlertDescription>
-        </Alert>
       ) : (
         <>
           <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-sm">
-              <span className="font-medium">
-                {query.data?.seller?.erpSellerCode} - {query.data?.seller?.erpSellerName}
-              </span>
-              {query.data?.cutoffDate && (
-                <span className="ml-2 text-muted-foreground">
-                  • última compra anterior a {formatDate(query.data.cutoffDate)}
-                </span>
-              )}
+            <div className="text-sm text-muted-foreground">
+              {query.data?.cutoffDate
+                ? <>Entram clientes com última compra anterior a <span className="font-medium text-foreground">{formatDate(query.data.cutoffDate)}</span> ou sem compra registrada.</>
+                : "Clientes com mais de 6 meses sem comprar."}
             </div>
             <div className="relative w-full sm:max-w-sm">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
