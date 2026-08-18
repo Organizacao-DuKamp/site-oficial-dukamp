@@ -5,7 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { parseCustomerReport } from "@/lib/customers-report";
-import { CalendarDays, FileText, MapPin, Phone, Route as RouteIcon, ShoppingCart } from "lucide-react";
+import {
+  CalendarDays,
+  FileText,
+  MapPin,
+  Phone,
+  Route as RouteIcon,
+  ShoppingCart,
+  UserRound,
+} from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/vendas/clientes")({
@@ -90,6 +98,8 @@ function formatDelay(value: unknown) {
 
 function CustomerDetails({ customer }: { customer: CustomerRecord }) {
   const hasRoute = Boolean(String(customer.roteiro ?? "").trim());
+  const sellerCode = String(customer.vendedor_codigo ?? "").trim();
+  const sellerName = String(customer.vendedor_nome ?? "").trim();
 
   return (
     <div className="space-y-4">
@@ -125,6 +135,13 @@ function CustomerDetails({ customer }: { customer: CustomerRecord }) {
             <CustomerDetailField label="COB" value={emptyValue(customer.cob)} />
             <CustomerDetailField label="Classificação L" value={emptyValue(customer.classificacao_l)} />
             <CustomerDetailField label="Conceito" value={emptyValue(customer.conceito)} />
+          </dl>
+        </CustomerDetailSection>
+
+        <CustomerDetailSection title="Vendedor responsável" icon={<UserRound className="h-4 w-4" />}>
+          <dl className="grid gap-4 sm:grid-cols-2">
+            <CustomerDetailField label="Vendedor" value={sellerName || "—"} />
+            <CustomerDetailField label="Código do vendedor" value={sellerCode || "—"} />
           </dl>
         </CustomerDetailSection>
 
@@ -170,9 +187,15 @@ function CustomerDetails({ customer }: { customer: CustomerRecord }) {
         )}
       </CustomerDetailSection>
 
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <CalendarDays className="h-4 w-4" />
-        Dados do relatório atualizados em {formatDate(customer.dados_relatorio_atualizados_em)}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+        <span className="flex items-center gap-2">
+          <CalendarDays className="h-4 w-4" />
+          Dados do relatório completo atualizados em {formatDate(customer.dados_relatorio_atualizados_em)}
+        </span>
+        <span className="flex items-center gap-2">
+          <UserRound className="h-4 w-4" />
+          Vendedor atualizado em {formatDate(customer.dados_vendedor_atualizados_em)}
+        </span>
       </div>
     </div>
   );
@@ -275,8 +298,8 @@ function CustomersAdmin() {
         table="customers"
         orderBy={{ column: "cliente", ascending: true }}
         searchField="cliente"
-        searchFields={["cliente", "codigo", "cnpj_cpf", "cidade"]}
-        searchPlaceholder="Pesquisar por nome, código, CNPJ/CPF ou cidade..."
+        searchFields={["cliente", "codigo", "cnpj_cpf", "cidade", "vendedor_nome"]}
+        searchPlaceholder="Pesquisar por nome, código, CNPJ/CPF, cidade ou vendedor..."
         columns={[
           { key: "cliente", label: "Cliente" },
           { key: "codigo", label: "Código" },
@@ -284,6 +307,12 @@ function CustomersAdmin() {
             key: "cidade",
             label: "Cidade/UF",
             format: (value, row) => [value, row.uf].filter(Boolean).join("/") || "—",
+          },
+          {
+            key: "vendedor_nome",
+            label: "Vendedor",
+            format: (value, row) =>
+              [row.vendedor_codigo, value].filter(Boolean).join(" - ") || "—",
           },
           {
             key: "telefone",
@@ -345,6 +374,8 @@ function CustomersAdmin() {
           { name: "conceito", label: "Conceito" },
           { name: "marcador_relatorio", label: "Marcador do relatório" },
           { name: "cob", label: "COB" },
+          { name: "vendedor_codigo", label: "Código do vendedor" },
+          { name: "vendedor_nome", label: "Vendedor responsável" },
           { name: "roteiro", label: "Roteiro de entrega", type: "textarea" },
         ]}
       />
