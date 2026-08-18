@@ -11,7 +11,6 @@ import { ArrowLeft, UserCircle, ShieldCheck, ShieldOff, KeyRound, Lock } from "l
 import { toast } from "sonner";
 import { PROTECTED_ADMIN_EMAIL } from "@/lib/constants";
 import { useEffect, useState } from "react";
-import { SellerErpLinkCard } from "@/components/admin/SellerErpLinkCard";
 
 export const Route = createFileRoute("/admin/contas/$id")({
   component: ContaDetalhe,
@@ -175,8 +174,6 @@ function ContaDetalhe() {
           </Button>
         </CardContent>
       </Card>
-
-      {currentType === "vendedor" && <SellerErpLinkCard userId={id} />}
 
       <Card>
         <CardHeader>
