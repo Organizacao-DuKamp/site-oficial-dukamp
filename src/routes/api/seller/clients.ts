@@ -16,12 +16,6 @@ type PortfolioCustomer = {
   vendedor_nome: string | null;
 };
 
-const DEMO_TOP_CUSTOMERS = [
-  { name: "Cliente Destaque A", total: 58240.9, demo: true },
-  { name: "Cliente Destaque B", total: 46380.5, demo: true },
-  { name: "Cliente Destaque C", total: 39120.0, demo: true },
-];
-
 function sellerCodeFromUser(user: { app_metadata?: Record<string, unknown> | null }): string {
   const value = user.app_metadata?.seller_code;
   return typeof value === "string" ? value.trim() : "";
@@ -63,6 +57,24 @@ async function listPortfolioCustomers(supabaseAdmin: any, sellerCode: string): P
   }
 
   return rows;
+}
+
+function topCustomersFromPortfolio(portfolio: PortfolioCustomer[]) {
+  return portfolio
+    .map((customer) => ({
+      id: customer.id,
+      code: customer.codigo,
+      name:
+        customer.cliente?.trim() ||
+        (customer.codigo ? `Cliente ${customer.codigo}` : "Cliente sem nome"),
+      total: Number(customer.compra_ano ?? 0),
+    }))
+    .filter((customer) => Number.isFinite(customer.total) && customer.total > 0)
+    .sort(
+      (first, second) =>
+        second.total - first.total || first.name.localeCompare(second.name, "pt-BR"),
+    )
+    .slice(0, 3);
 }
 
 function blueDeadline(lastPurchase: string): Date | null {
@@ -137,7 +149,7 @@ export const Route = createFileRoute("/api/seller/clients")({
                   portfolioCount: 0,
                   nearBlueClients: [],
                   nearBlueCount: 0,
-                  topCustomers: DEMO_TOP_CUSTOMERS,
+                  topCustomers: [],
                   sales: {
                     year,
                     month,
@@ -249,6 +261,8 @@ export const Route = createFileRoute("/api/seller/clients")({
             .filter(Boolean)
             .sort((first: any, second: any) => first.daysRemaining - second.daysRemaining);
 
+          const topCustomers = topCustomersFromPortfolio(portfolio);
+
           let salesTotal = 0;
           let salesCount = 0;
           try {
@@ -293,7 +307,7 @@ export const Route = createFileRoute("/api/seller/clients")({
               portfolioCount: portfolio.length,
               nearBlueClients: nearBlueClients.slice(0, 10),
               nearBlueCount: nearBlueClients.length,
-              topCustomers: DEMO_TOP_CUSTOMERS,
+              topCustomers,
               sales: {
                 year,
                 month,

@@ -20,13 +20,20 @@ type NearBlueClient = {
   daysRemaining: number;
 };
 
+type TopCustomer = {
+  id: string;
+  code: string | null;
+  name: string;
+  total: number;
+};
+
 type SellerDashboardResponse = {
   sellerCodeMissing?: boolean;
   seller?: { id: string; name: string; code: string | null };
   portfolioCount?: number;
   nearBlueClients?: NearBlueClient[];
   nearBlueCount?: number;
-  topCustomers?: Array<{ name: string; total: number; demo?: boolean }>;
+  topCustomers?: TopCustomer[];
   sales?: { year: number; month: number; total: number; count: number };
   error?: string;
 };
@@ -219,26 +226,32 @@ function SellerHome() {
 
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between gap-3">
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Trophy className="h-5 w-5 text-amber-500" /> Top 3 do ano
-                  </CardTitle>
-                  <Badge variant="outline">Demonstrativo</Badge>
-                </div>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Trophy className="h-5 w-5 text-amber-500" /> Top 3 do ano
+                </CardTitle>
                 <CardDescription>
-                  Dados fictícios temporários; serão conectados ao histórico real depois.
+                  Clientes da sua carteira com maior valor acumulado em compras no ano.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                {(query.data?.topCustomers ?? []).map((customer, index) => (
-                  <div key={`${customer.name}-${index}`} className="flex items-center justify-between gap-3 rounded-lg border p-3">
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold text-muted-foreground">#{index + 1}</p>
-                      <p className="truncate text-sm font-medium">{customer.name}</p>
+                {(query.data?.topCustomers ?? []).length === 0 ? (
+                  <p className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground">
+                    Ainda não há compras no ano registradas para os clientes desta carteira.
+                  </p>
+                ) : (
+                  (query.data?.topCustomers ?? []).map((customer, index) => (
+                    <div key={customer.id} className="flex items-center justify-between gap-3 rounded-lg border p-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs font-semibold text-muted-foreground">#{index + 1}</p>
+                          {customer.code && <Badge variant="outline">{customer.code}</Badge>}
+                        </div>
+                        <p className="mt-1 truncate text-sm font-medium">{customer.name}</p>
+                      </div>
+                      <p className="shrink-0 text-sm font-bold">{money(customer.total)}</p>
                     </div>
-                    <p className="shrink-0 text-sm font-bold">{money(customer.total)}</p>
-                  </div>
-                ))}
+                  ))
+                )}
               </CardContent>
             </Card>
           </div>
