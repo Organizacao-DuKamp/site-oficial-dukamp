@@ -14,7 +14,7 @@ function SellerSidebar({ pathname, close, signOut }: { pathname: string; close?:
   const links = [
     { to: "/vendedor", label: "Início", icon: Home, exact: true },
     { to: "/vendedor/clientes", label: "Clientes", icon: Users },
-    { to: "/vendedor/area-azul", label: "Área Azul", icon: Clock3 },
+    { to: "/vendedor/area-azul", label: "Lista Azul", icon: Clock3 },
     { to: "/vendedor/chat", label: "Conversas", icon: MessageSquare },
     { to: "/vendedor/orcamentos", label: "Orçamentos", icon: FileText },
     { to: "/vendedor/minha-conta", label: "Minha conta", icon: UserCircle },

@@ -51,7 +51,7 @@ export const Route = createFileRoute("/api/seller/area-azul")({
         if ("response" in authorization) return authorization.response;
         const { supabaseAdmin, user } = authorization;
 
-        // A Área Azul é compartilhada por todas as contas de vendedor.
+        // A Lista Azul é compartilhada por todas as contas de vendedor.
         // O vínculo da conta com um vendedor interno só é usado para validar
         // que a sessão realmente pertence a uma conta vendedor.
         const seller = await resolveSellerIdentity(supabaseAdmin, user);
@@ -87,7 +87,7 @@ export const Route = createFileRoute("/api/seller/area-azul")({
           }
         } catch (error) {
           console.error("[seller-blue-area] Falha ao listar clientes:", error);
-          return errorResponse("Não foi possível consultar a Área Azul.", 500);
+          return errorResponse("Não foi possível consultar a Lista Azul.", 500);
         }
 
         const filtered = search

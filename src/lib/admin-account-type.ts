@@ -4,6 +4,7 @@ import type { AccountType } from "@/lib/auth";
 type AccountTypeApiResponse = {
   ok?: boolean;
   accountType?: AccountType;
+  sellerCode?: string | null;
   sellerIds?: string[];
   error?: string;
 };
@@ -25,10 +26,20 @@ async function request(path: string, init?: RequestInit): Promise<AccountTypeApi
   return payload;
 }
 
-export async function getManagedAccountType(userId: string): Promise<AccountType> {
+export async function getManagedAccountInfo(userId: string): Promise<{
+  accountType: AccountType;
+  sellerCode: string | null;
+}> {
   const payload = await request(`/api/admin/account-type?userId=${encodeURIComponent(userId)}`);
   if (!payload.accountType) throw new Error("Não foi possível carregar o tipo da conta.");
-  return payload.accountType;
+  return {
+    accountType: payload.accountType,
+    sellerCode: payload.sellerCode ?? null,
+  };
+}
+
+export async function getManagedAccountType(userId: string): Promise<AccountType> {
+  return (await getManagedAccountInfo(userId)).accountType;
 }
 
 export async function getManagedSellerIds(): Promise<Set<string>> {
@@ -43,4 +54,13 @@ export async function setManagedAccountType(userId: string, accountType: Account
     body: JSON.stringify({ userId, accountType }),
   });
   if (!payload.ok) throw new Error(payload.error || "Não foi possível atualizar o tipo da conta.");
+}
+
+export async function setManagedSellerCode(userId: string, sellerCode: string): Promise<void> {
+  const payload = await request("/api/admin/account-type", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId, sellerCode }),
+  });
+  if (!payload.ok) throw new Error(payload.error || "Não foi possível atualizar o código do vendedor.");
 }

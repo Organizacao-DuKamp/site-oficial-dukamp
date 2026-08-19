@@ -12,6 +12,12 @@ const PAGE_SIZE = 10;
 
 type SellerClientsResponse = {
   associationMissing?: boolean;
+  sellerCodeMissing?: boolean;
+  seller?: {
+    id: string;
+    name: string;
+    code?: string | null;
+  };
   clients?: SellerClient[];
   count?: number;
   error?: string;
@@ -28,6 +34,7 @@ async function loadSellerClients(search: string, page: number): Promise<SellerCl
   if (!token) throw new Error("Sessão expirada. Entre novamente.");
 
   const params = new URLSearchParams({
+    source: "portfolio",
     search,
     page: String(page),
     pageSize: String(PAGE_SIZE),
@@ -55,7 +62,7 @@ function SellerClientsPage() {
   useEffect(() => setPage(1), [debouncedSearch]);
 
   const query = useQuery({
-    queryKey: ["seller-clients", user?.id, debouncedSearch, page],
+    queryKey: ["seller-portfolio-clients", user?.id, debouncedSearch, page],
     enabled: Boolean(user?.id),
     queryFn: () => loadSellerClients(debouncedSearch, page),
   });
@@ -72,7 +79,9 @@ function SellerClientsPage() {
       <div>
         <h1 className="text-2xl font-bold">Clientes</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Consulte somente os clientes associados à sua carteira.
+          {query.data?.seller?.code
+            ? `Carteira sincronizada pelo código de vendedor ${query.data.seller.code}.`
+            : "Sua carteira de clientes é sincronizada pelo código de vendedor cadastrado pelo administrador."}
         </p>
       </div>
 
@@ -91,23 +100,32 @@ function SellerClientsPage() {
             </Button>
           </AlertDescription>
         </Alert>
-      ) : query.data?.associationMissing ? (
+      ) : query.data?.sellerCodeMissing ? (
         <Alert>
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Conta sem associação de vendedor</AlertTitle>
+          <AlertTitle>Código do vendedor não configurado</AlertTitle>
           <AlertDescription>
-            Peça a um administrador para definir novamente esta conta como vendedor.
+            Peça ao Administrador Mestre para abrir esta conta em Administração &gt; Contas e
+            cadastrar o código de vendedor correspondente ao ERP.
           </AlertDescription>
         </Alert>
       ) : (
-        <SellerClientList
-          clients={query.data?.clients ?? []}
-          search={search}
-          onSearchChange={setSearch}
-          page={page}
-          pageCount={pageCount}
-          onPageChange={setPage}
-        />
+        <>
+          <div className="rounded-lg border bg-card px-4 py-3 text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">{count.toLocaleString("pt-BR")}</span>{" "}
+            cliente{count === 1 ? "" : "s"} vinculado{count === 1 ? "" : "s"} ao código{" "}
+            <span className="font-medium text-foreground">{query.data?.seller?.code || "—"}</span>.
+          </div>
+          <SellerClientList
+            clients={query.data?.clients ?? []}
+            search={search}
+            onSearchChange={setSearch}
+            page={page}
+            pageCount={pageCount}
+            onPageChange={setPage}
+            showActions={false}
+          />
+        </>
       )}
     </div>
   );

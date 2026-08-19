@@ -6,6 +6,7 @@ type AccountType = "cliente" | "revendedor" | "produtor" | "empresa" | "vendedor
 type UpdatePayload = {
   userId?: string;
   accountType?: AccountType;
+  sellerCode?: string | null;
 };
 
 type DatabaseError = {
@@ -72,6 +73,12 @@ function effectiveAccountType(
   return (typeof profileType === "string" ? profileType : "cliente") as AccountType;
 }
 
+function readSellerCode(appMetadata: Record<string, unknown> | null | undefined): string | null {
+  const value = appMetadata?.seller_code;
+  if (typeof value !== "string") return null;
+  return value.trim() || null;
+}
+
 export const Route = createFileRoute("/api/admin/account-type")({
   server: {
     handlers: {
@@ -112,6 +119,7 @@ export const Route = createFileRoute("/api/admin/account-type")({
                 (rolesResult.data ?? []).length > 0,
                 Boolean(seller),
               ),
+              sellerCode: seller ? readSellerCode(targetResult.data.user.app_metadata) : null,
             },
             { headers: { "Cache-Control": "no-store" } },
           );
@@ -133,7 +141,8 @@ export const Route = createFileRoute("/api/admin/account-type")({
         const authorization = await authorizeMasterAdmin(request);
         if ("response" in authorization) return authorization.response;
         const { supabaseAdmin } = authorization;
-        const { invalidateAuthUsersCache } = await import("@/lib/seller-system.server");
+        const { invalidateAuthUsersCache, resolveSellerIdentity } =
+          await import("@/lib/seller-system.server");
 
         let payload: UpdatePayload;
         try {
@@ -143,8 +152,49 @@ export const Route = createFileRoute("/api/admin/account-type")({
         }
 
         const userId = payload.userId?.trim();
+        if (!userId) return errorResponse("Conta não informada.", 400);
+
+        const sellerCodeWasProvided = Object.prototype.hasOwnProperty.call(payload, "sellerCode");
+        if (!payload.accountType && sellerCodeWasProvided) {
+          const targetResult = await supabaseAdmin.auth.admin.getUserById(userId);
+          if (targetResult.error || !targetResult.data.user) {
+            return errorResponse("Conta não encontrada.", 404);
+          }
+
+          const targetEmail = (targetResult.data.user.email ?? "").toLowerCase();
+          if (targetEmail === PROTECTED_ADMIN_EMAIL.toLowerCase()) {
+            return errorResponse("Esta conta é protegida.", 403);
+          }
+
+          const seller = await resolveSellerIdentity(supabaseAdmin, targetResult.data.user);
+          if (!seller) return errorResponse("Esta conta não está configurada como vendedor.", 400);
+
+          const sellerCode = typeof payload.sellerCode === "string" ? payload.sellerCode.trim() : "";
+          if (sellerCode.length > 50) {
+            return errorResponse("O código do vendedor deve ter no máximo 50 caracteres.", 400);
+          }
+
+          const currentAppMetadata = {
+            ...(targetResult.data.user.app_metadata ?? {}),
+          } as Record<string, unknown>;
+          const { error: metadataError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+            app_metadata: {
+              ...currentAppMetadata,
+              seller_code: sellerCode || null,
+            },
+          });
+          if (metadataError) return errorResponse(metadataError.message, 500);
+
+          invalidateAuthUsersCache();
+          return Response.json({
+            ok: true,
+            accountType: "vendedor",
+            sellerCode: sellerCode || null,
+          });
+        }
+
         const accountType = payload.accountType;
-        if (!userId || !accountType || !WRITABLE_TYPES.includes(accountType)) {
+        if (!accountType || !WRITABLE_TYPES.includes(accountType)) {
           return errorResponse("Tipo de conta inválido.", 400);
         }
 
@@ -281,7 +331,11 @@ export const Route = createFileRoute("/api/admin/account-type")({
           if (roleError) return errorResponse(roleError.message, 500);
 
           invalidateAuthUsersCache();
-          return Response.json({ ok: true, accountType: "vendedor" });
+          return Response.json({
+            ok: true,
+            accountType: "vendedor",
+            sellerCode: readSellerCode(currentAppMetadata),
+          });
         }
 
         const { error: deactivateError } = await supabaseAdmin
@@ -295,6 +349,7 @@ export const Route = createFileRoute("/api/admin/account-type")({
             ...currentAppMetadata,
             account_type_override: null,
             seller_record_id: null,
+            seller_code: null,
           },
           user_metadata: {
             ...currentUserMetadata,

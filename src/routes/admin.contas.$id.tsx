@@ -2,12 +2,17 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { accountTypeLabel, useAuth, type AccountType } from "@/lib/auth";
-import { getManagedAccountType, setManagedAccountType } from "@/lib/admin-account-type";
+import {
+  getManagedAccountInfo,
+  setManagedAccountType,
+  setManagedSellerCode,
+} from "@/lib/admin-account-type";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, UserCircle, ShieldCheck, ShieldOff, KeyRound, Lock } from "lucide-react";
+import { ArrowLeft, UserCircle, ShieldCheck, ShieldOff, KeyRound, Lock, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { PROTECTED_ADMIN_EMAIL } from "@/lib/constants";
 import { useEffect, useState } from "react";
@@ -26,16 +31,17 @@ function ContaDetalhe() {
     enabled: isMasterAdmin,
     queryKey: ["account", id],
     queryFn: async () => {
-      const [profileR, rolesR, effectiveType] = await Promise.all([
+      const [profileR, rolesR, managedAccount] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", id).maybeSingle(),
         supabase.from("user_roles").select("*").eq("user_id", id),
-        getManagedAccountType(id),
+        getManagedAccountInfo(id),
       ]);
       if (profileR.error) throw profileR.error;
       if (rolesR.error) throw rolesR.error;
       return {
         profile: profileR.data,
-        effectiveType,
+        effectiveType: managedAccount.accountType,
+        sellerCode: managedAccount.sellerCode,
         isAdmin: (rolesR.data ?? []).some((r) => r.role === "admin"),
         adminRow: (rolesR.data ?? []).find((r) => r.role === "admin"),
       };
@@ -76,7 +82,12 @@ function ContaDetalhe() {
   });
 
   const [pendingType, setPendingType] = useState<AccountType | "">("");
+  const [sellerCode, setSellerCode] = useState("");
   const currentType: AccountType = data?.effectiveType ?? "cliente";
+
+  useEffect(() => {
+    setSellerCode(data?.sellerCode ?? "");
+  }, [data?.sellerCode]);
 
   const changeType = useMutation({
     mutationFn: async (newType: AccountType) => {
@@ -87,6 +98,17 @@ function ContaDetalhe() {
       setPendingType("");
       qc.invalidateQueries({ queryKey: ["account", id] });
       qc.invalidateQueries({ queryKey: ["admin-accounts"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const saveSellerCode = useMutation({
+    mutationFn: async () => {
+      await setManagedSellerCode(id, sellerCode);
+    },
+    onSuccess: () => {
+      toast.success(sellerCode.trim() ? "Código do vendedor atualizado" : "Código do vendedor removido");
+      qc.invalidateQueries({ queryKey: ["account", id] });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -114,6 +136,8 @@ function ContaDetalhe() {
   if (p.email === PROTECTED_ADMIN_EMAIL) return null;
 
   const canDemote = me?.email === PROTECTED_ADMIN_EMAIL && data.isAdmin;
+  const normalizedSellerCode = sellerCode.trim();
+  const savedSellerCode = data.sellerCode ?? "";
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -174,6 +198,40 @@ function ContaDetalhe() {
           </Button>
         </CardContent>
       </Card>
+
+      {currentType === "vendedor" && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Link2 className="h-4 w-4" /> Código do vendedor
+            </CardTitle>
+            <CardDescription>
+              Sincroniza esta conta com os clientes do ERP. Em Painel do Vendedor &gt; Clientes serão exibidos somente os clientes cujo código do vendedor seja exatamente igual ao código informado aqui.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Input
+                value={sellerCode}
+                onChange={(event) => setSellerCode(event.target.value)}
+                placeholder="Ex.: 037"
+                maxLength={50}
+                className="sm:max-w-xs"
+                aria-label="Código do vendedor"
+              />
+              <Button
+                onClick={() => saveSellerCode.mutate()}
+                disabled={saveSellerCode.isPending || normalizedSellerCode === savedSellerCode}
+              >
+                {saveSellerCode.isPending ? "Salvando..." : "Salvar código"}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              O código é tratado como texto para preservar zeros à esquerda. Exemplo: <span className="font-medium text-foreground">037</span> continua sendo 037.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

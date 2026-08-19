@@ -35,7 +35,7 @@ type BlueAreaResponse = {
 };
 
 export const Route = createFileRoute("/vendedor/area-azul")({
-  head: () => ({ meta: [{ title: "Área Azul — Painel do Vendedor" }] }),
+  head: () => ({ meta: [{ title: "Lista Azul — Painel do Vendedor" }] }),
   component: BlueAreaPage,
 });
 
@@ -54,7 +54,7 @@ async function loadBlueArea(search: string, page: number): Promise<BlueAreaRespo
     cache: "no-store",
   });
   const payload = (await response.json().catch(() => ({}))) as BlueAreaResponse;
-  if (!response.ok) throw new Error(payload.error || "Não foi possível consultar a Área Azul.");
+  if (!response.ok) throw new Error(payload.error || "Não foi possível consultar a Lista Azul.");
   return payload;
 }
 
@@ -119,7 +119,7 @@ function BlueAreaPage() {
               <Clock3 className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-blue-950 dark:text-blue-100">Área Azul</h1>
+              <h1 className="text-2xl font-bold text-blue-950 dark:text-blue-100">Lista Azul</h1>
               <p className="mt-1 text-sm text-blue-800/80 dark:text-blue-200/80">
                 Clientes que estão há mais de 6 meses sem comprar e ficam disponíveis para toda a equipe de vendas.
               </p>
@@ -131,7 +131,7 @@ function BlueAreaPage() {
           {!query.isPending && !query.isError && (
             <div className="rounded-xl bg-white/80 px-4 py-3 text-center shadow-sm dark:bg-background/70">
               <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{count.toLocaleString("pt-BR")}</div>
-              <div className="text-xs text-muted-foreground">clientes na Área Azul</div>
+              <div className="text-xs text-muted-foreground">clientes na Lista Azul</div>
             </div>
           )}
         </div>
@@ -139,12 +139,12 @@ function BlueAreaPage() {
 
       {query.isPending ? (
         <div className="flex min-h-48 items-center justify-center gap-2 text-muted-foreground">
-          <Loader2 className="h-5 w-5 animate-spin" /> Carregando Área Azul...
+          <Loader2 className="h-5 w-5 animate-spin" /> Carregando Lista Azul...
         </div>
       ) : query.isError ? (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Não foi possível consultar a Área Azul</AlertTitle>
+          <AlertTitle>Não foi possível consultar a Lista Azul</AlertTitle>
           <AlertDescription className="flex flex-col items-start gap-3">
             <span>{query.error instanceof Error ? query.error.message : "Tente novamente."}</span>
             <Button variant="outline" size="sm" onClick={() => void query.refetch()}>
@@ -175,7 +175,7 @@ function BlueAreaPage() {
             <Card>
               <CardContent className="py-12 text-center text-muted-foreground">
                 {debouncedSearch
-                  ? "Nenhum cliente da Área Azul corresponde à pesquisa."
+                  ? "Nenhum cliente da Lista Azul corresponde à pesquisa."
                   : "Nenhum cliente está há mais de 6 meses sem comprar."}
               </CardContent>
             </Card>
