@@ -34,7 +34,6 @@ type RegisterPayload = {
 const ACCOUNT_KINDS: AccountKind[] = ["cliente", "produtor", "empresa"];
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const RURAL_ADDRESS_RE = /\b(fazenda|s[ií]tio|est[aâ]ncia|ch[aá]cara|haras|rancho)\b/i;
 
 function text(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
@@ -44,13 +43,41 @@ function digits(value: unknown, max = Number.POSITIVE_INFINITY): string {
   return text(value).replace(/\D/g, "").slice(0, max);
 }
 
-function errorResponse(error: string, status = 400) {
-  return Response.json({ error }, { status, headers: { "Cache-Control": "no-store" } });
+function firstText(...values: unknown[]): string {
+  for (const value of values) {
+    const normalized = text(value);
+    if (normalized) return normalized;
+  }
+  return "";
 }
 
-function ruralPropertyName(address: string | null | undefined): string {
-  const value = text(address);
-  return RURAL_ADDRESS_RE.test(value) ? value : "";
+function firstValidPhone(...values: unknown[]): string {
+  for (const value of values) {
+    const normalized = text(value);
+    const phoneDigits = digits(normalized);
+    if (phoneDigits.length === 10 || phoneDigits.length === 11) return normalized;
+  }
+  return "";
+}
+
+function firstValidCep(...values: unknown[]): string {
+  for (const value of values) {
+    const normalized = text(value);
+    if (digits(normalized).length === 8) return normalized;
+  }
+  return "";
+}
+
+function firstValidUf(...values: unknown[]): string {
+  for (const value of values) {
+    const normalized = text(value).toUpperCase();
+    if (/^[A-Z]{2}$/.test(normalized)) return normalized;
+  }
+  return "";
+}
+
+function errorResponse(error: string, status = 400) {
+  return Response.json({ error }, { status, headers: { "Cache-Control": "no-store" } });
 }
 
 export const Route = createFileRoute("/api/public/register")({
@@ -66,7 +93,7 @@ export const Route = createFileRoute("/api/public/register")({
         const { data, error } = await supabaseAdmin
           .from("customers")
           .select(
-            "cliente, cnpj_cpf, inscricao_estadual, telefone, telefone_2, celular, email, endereco, numero, bairro, cidade, uf, cep, endereco_pagamento, numero_pagamento, bairro_pagamento, cidade_pagamento, cep_pagamento, ultima_compra, updated_at",
+            "cliente, cnpj_cpf, inscricao_estadual, telefone, telefone_2, celular, email, endereco, numero, bairro, cidade, uf, cep, endereco_pagamento, numero_pagamento, bairro_pagamento, cidade_pagamento, uf_pagamento, cep_pagamento, ultima_compra, updated_at",
           )
           .eq("cnpj_cpf", document)
           .order("ultima_compra", { ascending: false, nullsFirst: false })
@@ -83,9 +110,11 @@ export const Route = createFileRoute("/api/public/register")({
           return Response.json({ found: false }, { headers: { "Cache-Control": "no-store" } });
         }
 
-        const phone = text(data.celular) || text(data.telefone) || text(data.telefone_2);
-        const email = text(data.email).toLowerCase();
-        const propertyName = ruralPropertyName(data.endereco);
+        const phone = firstValidPhone(data.telefone, data.telefone_2, data.celular);
+        const email = EMAIL_RE.test(text(data.email).toLowerCase()) ? text(data.email).toLowerCase() : "";
+        const propertyAddress = firstText(data.endereco, data.endereco_pagamento);
+        const propertyCity = firstText(data.cidade, data.cidade_pagamento);
+        const propertyUf = firstValidUf(data.uf, data.uf_pagamento);
 
         return Response.json(
           {
@@ -94,17 +123,17 @@ export const Route = createFileRoute("/api/public/register")({
               fullName: text(data.cliente),
               phone,
               email,
-              fazenda: propertyName,
+              fazenda: propertyAddress,
               cnpjPropriedade: document.length === 14 ? document : "",
-              nomePropriedade: propertyName,
+              nomePropriedade: propertyAddress,
               inscricaoEstadual: text(data.inscricao_estadual),
-              municipioPropriedade: text(data.cidade),
-              uf: text(data.uf),
-              cobRua: text(data.endereco_pagamento) || text(data.endereco),
-              cobBairro: text(data.bairro_pagamento) || text(data.bairro),
-              cobNumero: text(data.numero_pagamento) || text(data.numero),
-              cobMunicipio: text(data.cidade_pagamento) || text(data.cidade),
-              cobCep: text(data.cep_pagamento) || text(data.cep),
+              municipioPropriedade: propertyCity,
+              uf: propertyUf,
+              cobRua: firstText(data.endereco_pagamento, data.endereco),
+              cobBairro: firstText(data.bairro_pagamento, data.bairro),
+              cobNumero: firstText(data.numero_pagamento, data.numero),
+              cobMunicipio: firstText(data.cidade_pagamento, data.cidade),
+              cobCep: firstValidCep(data.cep_pagamento, data.cep),
               cobTelefone: phone,
               cobEmail: email,
             },
