@@ -57,10 +57,7 @@ export const Route = createFileRoute("/api/public/register")({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const url = new URL(request.url);
-        const document = digits(url.searchParams.get("document"), 14);
-        const lookupEmail = text(url.searchParams.get("email")).toLowerCase();
-        const lookupPhone = digits(url.searchParams.get("phone"), 11);
+        const document = digits(new URL(request.url).searchParams.get("document"), 14);
         if (document.length !== 11 && document.length !== 14) {
           return errorResponse("Informe um CPF ou CNPJ completo.");
         }
@@ -88,18 +85,6 @@ export const Route = createFileRoute("/api/public/register")({
 
         const phone = text(data.celular) || text(data.telefone) || text(data.telefone_2);
         const email = text(data.email).toLowerCase();
-        const phoneMatches = lookupPhone.length >= 10 && [data.celular, data.telefone, data.telefone_2]
-          .map((value) => digits(value, 11))
-          .some((value) => value === lookupPhone);
-        const emailMatches = Boolean(lookupEmail && email && lookupEmail === email);
-
-        if (!phoneMatches && !emailMatches) {
-          return Response.json(
-            { found: false, verificationRequired: true },
-            { headers: { "Cache-Control": "private, no-store, max-age=0" } },
-          );
-        }
-
         const propertyName = ruralPropertyName(data.endereco);
 
         return Response.json(

@@ -130,7 +130,7 @@ function LoginForm({ onLogin }: { onLogin: (e: string, p: string) => Promise<{ e
 }
 
 type AccountKind = "cliente" | "produtor" | "empresa";
-type LookupStatus = "idle" | "loading" | "found" | "not-found" | "verification" | "error";
+type LookupStatus = "idle" | "loading" | "found" | "not-found" | "error";
 
 type RegisterResponse = {
   ok?: boolean;
@@ -159,7 +159,6 @@ type CustomerPrefill = {
 
 type CustomerLookupResponse = {
   found?: boolean;
-  verificationRequired?: boolean;
   customer?: CustomerPrefill;
   error?: string;
 };
@@ -205,7 +204,7 @@ function RegisterForm() {
 
   const helper = useMemo(() => {
     if (accountKind === "cliente") return "Conta padrão. Acesso imediato.";
-    if (accountKind === "produtor") return "Informe seu CPF ou CNPJ. Se você já for cliente Dukamp, seus dados serão preenchidos automaticamente para você revisar.";
+    if (accountKind === "produtor") return "Informe primeiro seu CPF ou CNPJ. Se você já for cliente Dukamp, os dados disponíveis serão preenchidos automaticamente para você revisar.";
     return "Solicitação de conta Empresa enviada para análise da equipe Dukamp. Após aprovação seu acesso Empresa será liberado.";
   }, [accountKind]);
 
@@ -224,7 +223,7 @@ function RegisterForm() {
     const timer = window.setTimeout(async () => {
       setLookupStatus("loading");
       try {
-        const params = new URLSearchParams({ document: producerDocumentDigits, email: email.trim(), phone: onlyDigits(phone, 11) });
+        const params = new URLSearchParams({ document: producerDocumentDigits });
         const response = await fetch(`/api/public/register?${params.toString()}`, {
           method: "GET",
           headers: { Accept: "application/json" },
@@ -234,14 +233,14 @@ function RegisterForm() {
         const result = (await response.json()) as CustomerLookupResponse;
         if (!response.ok) throw new Error(result.error || "Falha ao consultar cadastro.");
         if (!result.found || !result.customer) {
-          setLookupStatus(result.verificationRequired ? "verification" : "not-found");
+          setLookupStatus("not-found");
           return;
         }
 
         const customer = result.customer;
         setFullName(customer.fullName || "");
-        if (!phone.trim() && customer.phone) setPhone(formatPhone(customer.phone));
-        if (!email.trim() && customer.email) setEmail(customer.email);
+        setPhone(customer.phone ? formatPhone(customer.phone) : "");
+        setEmail(customer.email || "");
         setFazenda(customer.fazenda || "");
         setCnpjPropriedade(customer.cnpjPropriedade ? formatCpfCnpj(customer.cnpjPropriedade) : "");
         setNomePropriedade(customer.nomePropriedade || "");
@@ -267,7 +266,7 @@ function RegisterForm() {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [accountKind, producerDocumentDigits, email, phone]);
+  }, [accountKind, producerDocumentDigits]);
 
   function handleAccountKindChange(value: string) {
     setAccountKind(value as AccountKind);
@@ -405,6 +404,28 @@ function RegisterForm() {
         <p className="text-[11px] text-muted-foreground mt-1">{helper}</p>
       </div>
 
+      {accountKind === "produtor" && (
+        <div className="rounded-md border bg-muted/40 p-3">
+          <Label htmlFor="r-cpf">CPF/CNPJ</Label>
+          <Input
+            id="r-cpf"
+            inputMode="numeric"
+            value={cpf}
+            onChange={(e) => setCpf(formatCpfCnpj(e.target.value))}
+            placeholder="000.000.000-00 ou 00.000.000/0000-00"
+            maxLength={18}
+            autoComplete="off"
+          />
+          <p className={`text-[11px] mt-1 ${lookupStatus === "error" ? "text-destructive" : "text-muted-foreground"}`} aria-live="polite">
+            {lookupStatus === "idle" && "Digite seu CPF ou CNPJ para buscar seus dados na base de clientes Dukamp."}
+            {lookupStatus === "loading" && "Buscando seu cadastro na Dukamp..."}
+            {lookupStatus === "found" && "Cadastro encontrado. Preenchemos os dados disponíveis — revise e corrija o que for necessário."}
+            {lookupStatus === "not-found" && "Cadastro não encontrado. Você pode continuar preenchendo normalmente."}
+            {lookupStatus === "error" && "Não foi possível consultar agora. Você pode preencher os dados manualmente."}
+          </p>
+        </div>
+      )}
+
       <div className="grid sm:grid-cols-2 gap-3">
         <div>
           <Label htmlFor="r-name">Nome completo</Label>
@@ -450,28 +471,20 @@ function RegisterForm() {
               {accountKind === "empresa" ? "Dados da empresa/propriedade" : "Dados da propriedade"}
             </h3>
             <div className="grid sm:grid-cols-2 gap-3">
-              <div className={accountKind === "produtor" ? "sm:col-span-2" : ""}>
-                <Label htmlFor="r-cpf">{accountKind === "produtor" ? "CPF/CNPJ" : "CPF do responsável"}</Label>
-                <Input
-                  id="r-cpf"
-                  inputMode="numeric"
-                  value={cpf}
-                  onChange={(e) => setCpf(formatCpfCnpj(e.target.value))}
-                  placeholder={accountKind === "produtor" ? "000.000.000-00 ou 00.000.000/0000-00" : "000.000.000-00"}
-                  maxLength={18}
-                  autoComplete="off"
-                />
-                {accountKind === "produtor" && (
-                  <p className={`text-[11px] mt-1 ${lookupStatus === "error" ? "text-destructive" : "text-muted-foreground"}`} aria-live="polite">
-                    {lookupStatus === "idle" && "Ao completar o documento, buscamos seu cadastro Dukamp automaticamente."}
-                    {lookupStatus === "loading" && "Buscando seu cadastro na Dukamp..."}
-                    {lookupStatus === "found" && "Cadastro encontrado. Preenchemos os dados disponíveis — revise antes de enviar."}
-                    {lookupStatus === "not-found" && "Cadastro não encontrado. Você pode continuar preenchendo normalmente."}
-                    {lookupStatus === "verification" && "Encontramos o documento, mas o e-mail ou telefone informado não confere com o cadastro. Revise os dados ou preencha manualmente."}
-                    {lookupStatus === "error" && "Não foi possível consultar agora. Você pode preencher os dados manualmente."}
-                  </p>
-                )}
-              </div>
+              {accountKind === "empresa" && (
+                <div>
+                  <Label htmlFor="r-cpf-responsavel">CPF do responsável</Label>
+                  <Input
+                    id="r-cpf-responsavel"
+                    inputMode="numeric"
+                    value={cpf}
+                    onChange={(e) => setCpf(formatCpfCnpj(e.target.value))}
+                    placeholder="000.000.000-00"
+                    maxLength={14}
+                    autoComplete="off"
+                  />
+                </div>
+              )}
               <div>
                 <Label htmlFor="r-fazenda">Fazenda</Label>
                 <Input id="r-fazenda" value={fazenda} onChange={(e) => setFazenda(e.target.value)} placeholder="Ex.: Fazenda Santa Maria" />
