@@ -1,11 +1,13 @@
 import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
+import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard, Package, Tag, FolderTree, Image as ImageIcon,
   Megaphone, Users, Settings, LogOut, ExternalLink, MessageSquare, Menu, ClipboardList, FileText, RefreshCw, Navigation,
-  ShoppingBag, ChevronDown, BarChart3, History, ListOrdered, Boxes, UserSquare2,
+  ShoppingBag, ChevronDown, BarChart3, History, ListOrdered, Boxes, UserSquare2, Bell,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -55,7 +57,35 @@ function isGroup(n: NavEntry): n is NavGroup {
   return (n as NavGroup).children !== undefined;
 }
 
-function SidebarContent({ pathname, onNavigate, signOut, isMaster }: { pathname: string; onNavigate?: () => void; signOut: () => void; isMaster: boolean }) {
+async function countPendingRequests() {
+  const [passwordRecoveries, accountRequests, saleRequests] = await Promise.all([
+    (supabase as any)
+      .from("password_recovery_requests")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pending"),
+    (supabase as any)
+      .from("account_requests")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pending"),
+    (supabase as any)
+      .from("seller_sale_requests")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "new"),
+  ]);
+
+  const error = passwordRecoveries.error || accountRequests.error || saleRequests.error;
+  if (error) throw error;
+
+  return (passwordRecoveries.count ?? 0) + (accountRequests.count ?? 0) + (saleRequests.count ?? 0);
+}
+
+function SidebarContent({ pathname, onNavigate, signOut, isMaster, pendingRequests }: {
+  pathname: string;
+  onNavigate?: () => void;
+  signOut: () => void;
+  isMaster: boolean;
+  pendingRequests: number;
+}) {
   const items = NAV.filter((n) => isGroup(n) || n.to !== "/admin/contas" || isMaster);
   return (
     <>
@@ -98,6 +128,7 @@ function SidebarContent({ pathname, onNavigate, signOut, isMaster }: { pathname:
             );
           }
           const active = n.exact ? pathname === n.to : pathname.startsWith(n.to);
+          const showPendingBadge = n.to === "/admin/solicitacoes" && pendingRequests > 0;
           return (
             <Link
               key={n.to}
@@ -105,7 +136,18 @@ function SidebarContent({ pathname, onNavigate, signOut, isMaster }: { pathname:
               onClick={onNavigate}
               className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm ${active ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}
             >
-              <n.icon className="h-4 w-4" /> {n.label}
+              <n.icon className="h-4 w-4" />
+              <span className="flex-1">{n.label}</span>
+              {showPendingBadge && (
+                <span
+                  className="inline-flex min-w-7 items-center justify-center gap-1 rounded-full bg-destructive px-1.5 py-0.5 text-[10px] font-bold leading-none text-destructive-foreground"
+                  aria-label={`${pendingRequests} solicitações pendentes`}
+                  title={`${pendingRequests} solicitações pendentes`}
+                >
+                  <Bell className="h-3 w-3" aria-hidden="true" />
+                  {pendingRequests > 99 ? "99+" : pendingRequests}
+                </span>
+              )}
             </Link>
           );
         })}
@@ -127,6 +169,13 @@ function AdminLayout() {
   const nav = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pendingRequests = useQuery({
+    queryKey: ["admin", "pending-requests-count"],
+    queryFn: countPendingRequests,
+    enabled: isAdmin,
+    staleTime: 5_000,
+    refetchInterval: 15_000,
+  });
 
   useEffect(() => {
     if (!loading && !user) nav({ to: "/auth" });
@@ -146,10 +195,12 @@ function AdminLayout() {
     );
   }
 
+  const pendingRequestCount = pendingRequests.data ?? 0;
+
   return (
     <div className="min-h-screen flex bg-muted/30">
       <aside className="hidden lg:flex w-60 bg-sidebar border-r flex-col shrink-0">
-        <SidebarContent pathname={pathname} signOut={signOut} isMaster={isMasterAdmin} />
+        <SidebarContent pathname={pathname} signOut={signOut} isMaster={isMasterAdmin} pendingRequests={pendingRequestCount} />
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -161,7 +212,13 @@ function AdminLayout() {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="p-0 w-64 flex flex-col">
-              <SidebarContent pathname={pathname} onNavigate={() => setMobileOpen(false)} signOut={signOut} isMaster={isMasterAdmin} />
+              <SidebarContent
+                pathname={pathname}
+                onNavigate={() => setMobileOpen(false)}
+                signOut={signOut}
+                isMaster={isMasterAdmin}
+                pendingRequests={pendingRequestCount}
+              />
             </SheetContent>
           </Sheet>
           <div className="flex items-center gap-2">
