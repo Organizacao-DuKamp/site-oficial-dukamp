@@ -34,18 +34,100 @@ type RegisterPayload = {
 const ACCOUNT_KINDS: AccountKind[] = ["cliente", "produtor", "empresa"];
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const RURAL_ADDRESS_RE = /\b(fazenda|s[ií]tio|est[aâ]ncia|ch[aá]cara|haras|rancho)\b/i;
 
 function text(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function digits(value: unknown, max = Number.POSITIVE_INFINITY): string {
+  return text(value).replace(/\D/g, "").slice(0, max);
+}
+
 function errorResponse(error: string, status = 400) {
-  return Response.json({ error }, { status });
+  return Response.json({ error }, { status, headers: { "Cache-Control": "no-store" } });
+}
+
+function ruralPropertyName(address: string | null | undefined): string {
+  const value = text(address);
+  return RURAL_ADDRESS_RE.test(value) ? value : "";
 }
 
 export const Route = createFileRoute("/api/public/register")({
   server: {
     handlers: {
+      GET: async ({ request }) => {
+        const url = new URL(request.url);
+        const document = digits(url.searchParams.get("document"), 14);
+        const lookupEmail = text(url.searchParams.get("email")).toLowerCase();
+        const lookupPhone = digits(url.searchParams.get("phone"), 11);
+        if (document.length !== 11 && document.length !== 14) {
+          return errorResponse("Informe um CPF ou CNPJ completo.");
+        }
+
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { data, error } = await supabaseAdmin
+          .from("customers")
+          .select(
+            "cliente, cnpj_cpf, inscricao_estadual, telefone, telefone_2, celular, email, endereco, numero, bairro, cidade, uf, cep, endereco_pagamento, numero_pagamento, bairro_pagamento, cidade_pagamento, cep_pagamento, ultima_compra, updated_at",
+          )
+          .eq("cnpj_cpf", document)
+          .order("ultima_compra", { ascending: false, nullsFirst: false })
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (error) {
+          console.error("[register-prefill] Falha ao consultar cliente:", error.message);
+          return errorResponse("Não foi possível consultar o cadastro. Tente novamente.", 500);
+        }
+
+        if (!data) {
+          return Response.json({ found: false }, { headers: { "Cache-Control": "no-store" } });
+        }
+
+        const phone = text(data.celular) || text(data.telefone) || text(data.telefone_2);
+        const email = text(data.email).toLowerCase();
+        const phoneMatches = lookupPhone.length >= 10 && [data.celular, data.telefone, data.telefone_2]
+          .map((value) => digits(value, 11))
+          .some((value) => value === lookupPhone);
+        const emailMatches = Boolean(lookupEmail && email && lookupEmail === email);
+
+        if (!phoneMatches && !emailMatches) {
+          return Response.json(
+            { found: false, verificationRequired: true },
+            { headers: { "Cache-Control": "private, no-store, max-age=0" } },
+          );
+        }
+
+        const propertyName = ruralPropertyName(data.endereco);
+
+        return Response.json(
+          {
+            found: true,
+            customer: {
+              fullName: text(data.cliente),
+              phone,
+              email,
+              fazenda: propertyName,
+              cnpjPropriedade: document.length === 14 ? document : "",
+              nomePropriedade: propertyName,
+              inscricaoEstadual: text(data.inscricao_estadual),
+              municipioPropriedade: text(data.cidade),
+              uf: text(data.uf),
+              cobRua: text(data.endereco_pagamento) || text(data.endereco),
+              cobBairro: text(data.bairro_pagamento) || text(data.bairro),
+              cobNumero: text(data.numero_pagamento) || text(data.numero),
+              cobMunicipio: text(data.cidade_pagamento) || text(data.cidade),
+              cobCep: text(data.cep_pagamento) || text(data.cep),
+              cobTelefone: phone,
+              cobEmail: email,
+            },
+          },
+          { headers: { "Cache-Control": "private, no-store, max-age=0" } },
+        );
+      },
+
       POST: async ({ request }) => {
         let payload: RegisterPayload;
 
@@ -105,9 +187,21 @@ export const Route = createFileRoute("/api/public/register")({
         };
 
         if (requestedType) {
-          if (!extra.cpf) return errorResponse("Informe o CPF.");
+          const cpfRawDigits = digits(extra.cpf);
+          const cnpjRawDigits = digits(extra.cnpjPropriedade);
+          const cpfDigits = cpfRawDigits.length === 11 ? cpfRawDigits : "";
+          const cnpjDigits = cnpjRawDigits.length === 14 ? cnpjRawDigits : "";
+
+          if (requestedType === "produtor") {
+            const hasCpf = cpfDigits.length === 11;
+            const hasCnpj = cnpjDigits.length === 14;
+            if (!hasCpf && !hasCnpj) return errorResponse("Informe um CPF ou CNPJ válido.");
+          } else {
+            if (!cpfDigits) return errorResponse("Informe o CPF do responsável.");
+            if (!cnpjDigits) return errorResponse("Informe o CNPJ da empresa/propriedade.");
+          }
+
           if (!extra.fazenda) return errorResponse("Informe a Fazenda.");
-          if (!extra.cnpjPropriedade) return errorResponse("Informe o CNPJ da propriedade.");
           if (!extra.nomePropriedade) return errorResponse("Informe o nome da propriedade.");
           if (!extra.inscricaoEstadual) return errorResponse("Informe a inscrição estadual.");
           if (!extra.municipioPropriedade) return errorResponse("Informe o município da propriedade.");
@@ -117,7 +211,7 @@ export const Route = createFileRoute("/api/public/register")({
             !extra.cobBairro ||
             !extra.cobNumero ||
             !extra.cobMunicipio ||
-            !extra.cobCep ||
+            digits(extra.cobCep, 8).length !== 8 ||
             !extra.cobTelefone ||
             !EMAIL_RE.test(extra.cobEmail)
           ) {
@@ -170,18 +264,22 @@ export const Route = createFileRoute("/api/public/register")({
         if (!userId) return errorResponse("Não foi possível criar a conta. Tente novamente.", 500);
 
         if (requestedType) {
+          const cpfRawDigits = digits(extra.cpf);
+          const cnpjRawDigits = digits(extra.cnpjPropriedade);
+          const cpfDigits = cpfRawDigits.length === 11 ? cpfRawDigits : "";
+          const cnpjDigits = cnpjRawDigits.length === 14 ? cnpjRawDigits : "";
           const { error: requestError } = await supabaseAdmin.from("account_requests").insert({
             user_id: userId,
             full_name: fullName,
             email,
             requested_type: requestedType,
             uf: extra.uf,
-            cnpj: requestedType === "empresa" ? extra.cnpjPropriedade : null,
-            cpf: extra.cpf,
+            cnpj: cnpjDigits.length === 14 ? cnpjDigits : null,
+            cpf: cpfDigits.length === 11 ? cpfDigits : null,
             phone,
             contact_email: extra.cobEmail,
             fazenda: extra.fazenda,
-            cnpj_propriedade: extra.cnpjPropriedade,
+            cnpj_propriedade: cnpjDigits.length === 14 ? cnpjDigits : null,
             nome_propriedade: extra.nomePropriedade,
             inscricao_estadual: extra.inscricaoEstadual,
             municipio_propriedade: extra.municipioPropriedade,
@@ -190,7 +288,7 @@ export const Route = createFileRoute("/api/public/register")({
             cobranca_bairro: extra.cobBairro,
             cobranca_numero: extra.cobNumero,
             cobranca_municipio: extra.cobMunicipio,
-            cobranca_cep: extra.cobCep,
+            cobranca_cep: digits(extra.cobCep, 8),
             cobranca_telefone: extra.cobTelefone,
             cobranca_email: extra.cobEmail,
             is_apartamento: payload.isApto === true,
