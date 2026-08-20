@@ -142,6 +142,11 @@ export const Route = createFileRoute("/api/seller/clients")({
           }
 
           const now = new Date(); now.setHours(12, 0, 0, 0);
+          const portfolioCount = portfolio.filter(client => {
+            if (!client.ultima_compra) return false;
+            const deadline = blueDeadline(client.ultima_compra);
+            return Boolean(deadline && deadline >= now);
+          }).length;
           const horizon = new Date(now); horizon.setDate(horizon.getDate() + 30);
           const nearBlueClients = portfolio.map(client => {
             if (!client.ultima_compra) return null;
@@ -168,7 +173,7 @@ export const Route = createFileRoute("/api/seller/clients")({
               }
             }
           } catch (error) { console.error("[seller-dashboard] Falha ao calcular vendas do período:", error); }
-          return Response.json({ sellerCodeMissing: false, seller: { id: seller.sellerId, name: seller.name, code: sellerCode }, portfolioCount: portfolio.length, nearBlueClients: nearBlueClients.slice(0, 10), nearBlueCount: nearBlueClients.length, topCustomers, sales: { year, month, total: Number(salesTotal.toFixed(2)), count: salesCount } }, { headers: { "Cache-Control": "no-store" } });
+          return Response.json({ sellerCodeMissing: false, seller: { id: seller.sellerId, name: seller.name, code: sellerCode }, portfolioCount, nearBlueClients: nearBlueClients.slice(0, 10), nearBlueCount: nearBlueClients.length, topCustomers, sales: { year, month, total: Number(salesTotal.toFixed(2)), count: salesCount } }, { headers: { "Cache-Control": "no-store" } });
         }
 
         const search = normalizeSearch(url.searchParams.get("search") ?? "");
