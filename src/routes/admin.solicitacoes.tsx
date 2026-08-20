@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PasswordRecoveryRequests } from "@/components/admin/PasswordRecoveryRequests";
 import { Check, Clock, Eye, ShieldAlert, ShoppingCart, X } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -61,7 +62,9 @@ function SolicitacoesPage() {
   const newSales = (saleRequests.data ?? []).filter((r: any) => r.status === "new").length;
 
   return <div className="space-y-8">
-    <div><h1 className="text-2xl font-bold">Solicitações</h1><p className="text-sm text-muted-foreground">Solicitações comerciais dos vendedores e pedidos de alteração de conta.</p></div>
+    <div><h1 className="text-2xl font-bold">Solicitações</h1><p className="text-sm text-muted-foreground">Solicitações de recuperação de senha, vendas e pedidos de alteração de conta.</p></div>
+
+    <PasswordRecoveryRequests />
 
     <Card>
       <CardHeader><div className="flex flex-wrap items-center justify-between gap-3"><div><CardTitle className="flex items-center gap-2"><ShoppingCart className="h-5 w-5" /> Solicitações de venda</CardTitle><CardDescription>O administrativo confere a venda e atualiza manualmente o cliente em Vendas &gt; Clientes.</CardDescription></div>{newSales > 0 && <Badge>{newSales} nova{newSales === 1 ? "" : "s"}</Badge>}</div></CardHeader>

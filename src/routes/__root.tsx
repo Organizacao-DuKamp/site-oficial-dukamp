@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useLocation,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -101,12 +102,21 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const location = useLocation();
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <CartProvider>
           <SupportProvider>
             <Outlet />
+            {location.pathname === "/auth" && (
+              <a
+                href="/recuperar-senha"
+                className="fixed bottom-5 left-1/2 z-40 -translate-x-1/2 rounded-full border bg-background/95 px-4 py-2 text-sm font-medium shadow-lg backdrop-blur hover:bg-accent"
+              >
+                Esqueci minha senha
+              </a>
+            )}
             <SupportWidget />
             <DeliveryNoticeWatcher />
             <SellerQuoteNotifications />
