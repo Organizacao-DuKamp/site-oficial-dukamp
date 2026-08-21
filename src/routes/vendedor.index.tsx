@@ -34,7 +34,7 @@ type SellerDashboardResponse = {
   nearBlueClients?: NearBlueClient[];
   nearBlueCount?: number;
   topCustomers?: TopCustomer[];
-  sales?: { year: number; month: number; total: number; count: number };
+  sales?: { year: number; month: number; total: number; hasReport: boolean };
   error?: string;
 };
 
@@ -178,7 +178,9 @@ function SellerHome() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="text-xs text-muted-foreground">
-                {(query.data?.sales?.count ?? 0).toLocaleString("pt-BR")} venda(s) online aprovada(s).
+                {query.data?.sales?.hasReport
+                  ? "TOTAL_VENDA do relatório mensal do ERP."
+                  : "Nenhum relatório encontrado para o período."}
               </CardContent>
             </Card>
           </div>
@@ -260,7 +262,7 @@ function SellerHome() {
             <CardHeader>
               <CardTitle className="text-lg">Vendas por mês</CardTitle>
               <CardDescription>
-                Selecione mês e ano para consultar as vendas online aprovadas identificadas como clientes da sua carteira.
+                Selecione mês e ano para consultar o seu TOTAL_VENDA no relatório mensal do ERP.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -289,7 +291,9 @@ function SellerHome() {
                   </p>
                   <p className="mt-1 text-3xl font-bold">{money(query.data?.sales?.total)}</p>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    {(query.data?.sales?.count ?? 0).toLocaleString("pt-BR")} venda(s) aprovada(s) encontradas no site.
+                    {query.data?.sales?.hasReport
+                      ? "Valor de TOTAL_VENDA registrado no RELATÓRIO MARGEM VENDA."
+                      : "Nenhum relatório encontrado para este mês."}
                   </p>
                 </div>
               </div>

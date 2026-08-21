@@ -244,6 +244,7 @@ export type Database = {
           contato: string | null
           created_at: string
           dados_relatorio_atualizados_em: string | null
+          dados_vendedor_atualizados_em: string | null
           data_cadastro: string | null
           data_maior_compra: string | null
           email: string | null
@@ -256,6 +257,7 @@ export type Database = {
           media_atraso_dias: number | null
           numero: string | null
           numero_pagamento: string | null
+          observacao_vendedor: string | null
           repr: string | null
           roteiro: string | null
           telefone: string | null
@@ -266,6 +268,8 @@ export type Database = {
           updated_at: string
           valor_maior_compra: number | null
           valor_ultima_compra: number | null
+          vendedor_codigo: string | null
+          vendedor_nome: string | null
         }
         Insert: {
           bairro?: string | null
@@ -286,6 +290,7 @@ export type Database = {
           contato?: string | null
           created_at?: string
           dados_relatorio_atualizados_em?: string | null
+          dados_vendedor_atualizados_em?: string | null
           data_cadastro?: string | null
           data_maior_compra?: string | null
           email?: string | null
@@ -298,6 +303,7 @@ export type Database = {
           media_atraso_dias?: number | null
           numero?: string | null
           numero_pagamento?: string | null
+          observacao_vendedor?: string | null
           repr?: string | null
           roteiro?: string | null
           telefone?: string | null
@@ -308,6 +314,8 @@ export type Database = {
           updated_at?: string
           valor_maior_compra?: number | null
           valor_ultima_compra?: number | null
+          vendedor_codigo?: string | null
+          vendedor_nome?: string | null
         }
         Update: {
           bairro?: string | null
@@ -328,6 +336,7 @@ export type Database = {
           contato?: string | null
           created_at?: string
           dados_relatorio_atualizados_em?: string | null
+          dados_vendedor_atualizados_em?: string | null
           data_cadastro?: string | null
           data_maior_compra?: string | null
           email?: string | null
@@ -340,6 +349,7 @@ export type Database = {
           media_atraso_dias?: number | null
           numero?: string | null
           numero_pagamento?: string | null
+          observacao_vendedor?: string | null
           repr?: string | null
           roteiro?: string | null
           telefone?: string | null
@@ -350,6 +360,8 @@ export type Database = {
           updated_at?: string
           valor_maior_compra?: number | null
           valor_ultima_compra?: number | null
+          vendedor_codigo?: string | null
+          vendedor_nome?: string | null
         }
         Relationships: []
       }
@@ -638,6 +650,66 @@ export type Database = {
         }
         Relationships: []
       }
+      password_recovery_requests: {
+        Row: {
+          account_cpf: string | null
+          account_name: string | null
+          account_phone: string | null
+          approved_expires_at: string | null
+          browser_token_hash: string
+          created_at: string
+          email: string
+          id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          submitted_birth_date: string
+          submitted_cpf: string
+          submitted_phone: string
+          updated_at: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          account_cpf?: string | null
+          account_name?: string | null
+          account_phone?: string | null
+          approved_expires_at?: string | null
+          browser_token_hash: string
+          created_at?: string
+          email: string
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_birth_date: string
+          submitted_cpf: string
+          submitted_phone: string
+          updated_at?: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          account_cpf?: string | null
+          account_name?: string | null
+          account_phone?: string | null
+          approved_expires_at?: string | null
+          browser_token_hash?: string
+          created_at?: string
+          email?: string
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_birth_date?: string
+          submitted_cpf?: string
+          submitted_phone?: string
+          updated_at?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           active: boolean
@@ -856,6 +928,162 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      seller_monthly_margin_reports: {
+        Row: {
+          aditivos: number
+          balcao: number
+          comissao_representante: number
+          created_at: string
+          devolucao: number
+          id: string
+          margem_aditivos: number
+          margem_aditivos_percentual: number
+          margem_balcao: number
+          margem_balcao_percentual: number
+          margem_bruta: number
+          margem_percentual: number
+          margem_sacarias: number
+          margem_sacarias_percentual: number
+          period_end: string
+          period_start: string
+          report_month: number
+          report_seller_code: string
+          report_seller_name: string
+          report_year: number
+          sacarias: number
+          seller_user_id: string
+          source_file: string
+          tonelagem: number
+          total_custo: number
+          total_venda: number
+          updated_at: string
+        }
+        Insert: {
+          aditivos: number
+          balcao: number
+          comissao_representante: number
+          created_at?: string
+          devolucao: number
+          id?: string
+          margem_aditivos: number
+          margem_aditivos_percentual: number
+          margem_balcao: number
+          margem_balcao_percentual: number
+          margem_bruta: number
+          margem_percentual: number
+          margem_sacarias: number
+          margem_sacarias_percentual: number
+          period_end: string
+          period_start: string
+          report_month: number
+          report_seller_code: string
+          report_seller_name: string
+          report_year: number
+          sacarias: number
+          seller_user_id: string
+          source_file: string
+          tonelagem: number
+          total_custo: number
+          total_venda: number
+          updated_at?: string
+        }
+        Update: {
+          aditivos?: number
+          balcao?: number
+          comissao_representante?: number
+          created_at?: string
+          devolucao?: number
+          id?: string
+          margem_aditivos?: number
+          margem_aditivos_percentual?: number
+          margem_balcao?: number
+          margem_balcao_percentual?: number
+          margem_bruta?: number
+          margem_percentual?: number
+          margem_sacarias?: number
+          margem_sacarias_percentual?: number
+          period_end?: string
+          period_start?: string
+          report_month?: number
+          report_seller_code?: string
+          report_seller_name?: string
+          report_year?: number
+          sacarias?: number
+          seller_user_id?: string
+          source_file?: string
+          tonelagem?: number
+          total_custo?: number
+          total_venda?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      seller_sale_requests: {
+        Row: {
+          created_at: string
+          customer_code: string
+          customer_id: string
+          customer_name: string
+          id: string
+          sale_notes: string
+          sale_value: number
+          seen_at: string | null
+          seen_by: string | null
+          seller_code: string
+          seller_name: string
+          seller_record_id: string | null
+          seller_user_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          customer_code: string
+          customer_id: string
+          customer_name: string
+          id?: string
+          sale_notes: string
+          sale_value: number
+          seen_at?: string | null
+          seen_by?: string | null
+          seller_code: string
+          seller_name: string
+          seller_record_id?: string | null
+          seller_user_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          customer_code?: string
+          customer_id?: string
+          customer_name?: string
+          id?: string
+          sale_notes?: string
+          sale_value?: number
+          seen_at?: string | null
+          seen_by?: string | null
+          seller_code?: string
+          seller_name?: string
+          seller_record_id?: string | null
+          seller_user_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_sale_requests_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seller_sale_requests_seller_record_id_fkey"
+            columns: ["seller_record_id"]
+            isOneToOne: false
+            referencedRelation: "sellers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sellers: {
         Row: {

@@ -53,13 +53,6 @@ function blueDeadline(lastPurchase: string): Date | null {
   date.setMonth(date.getMonth() + 6);
   return date;
 }
-function normalizeEmail(value: string | null | undefined): string { return (value ?? "").trim().toLocaleLowerCase("pt-BR"); }
-function normalizeDocument(value: string | null | undefined): string { return (value ?? "").replace(/\D/g, ""); }
-function selectedMonthRange(year: number, month: number) {
-  const startDate = new Date(Date.UTC(year, month - 1, 1));
-  const endDate = new Date(Date.UTC(year, month, 1));
-  return { start: `${startDate.toISOString().slice(0, 10)}T00:00:00-03:00`, end: `${endDate.toISOString().slice(0, 10)}T00:00:00-03:00` };
-}
 function cleanText(value: unknown, max: number) { return typeof value === "string" ? value.trim().slice(0, max) : ""; }
 function parseSaleValue(value: unknown): number {
   const raw = String(value ?? "").trim().replace(/\s/g, "");
@@ -119,7 +112,7 @@ export const Route = createFileRoute("/api/seller/clients")({
           const month = Number.isInteger(requestedMonth) && requestedMonth >= 1 && requestedMonth <= 12 ? requestedMonth : nowForSelection.getMonth() + 1;
 
           if (!sellerCode) {
-            if (source === "dashboard") return Response.json({ sellerCodeMissing: true, seller: { id: seller.sellerId, name: seller.name, code: null }, portfolioCount: 0, nearBlueClients: [], nearBlueCount: 0, topCustomers: [], sales: { year, month, total: 0, count: 0 } }, { headers: { "Cache-Control": "no-store" } });
+            if (source === "dashboard") return Response.json({ sellerCodeMissing: true, seller: { id: seller.sellerId, name: seller.name, code: null }, portfolioCount: 0, nearBlueClients: [], nearBlueCount: 0, topCustomers: [], sales: { year, month, total: 0, hasReport: false } }, { headers: { "Cache-Control": "no-store" } });
             return Response.json({ associationMissing: true, sellerCodeMissing: true, seller: { id: seller.sellerId, name: seller.name, code: null }, clients: [], count: 0, page: 1, pageSize: 10 }, { headers: { "Cache-Control": "no-store" } });
           }
 
@@ -155,25 +148,19 @@ export const Route = createFileRoute("/api/seller/clients")({
             return { id: client.id, codigo: client.codigo, cliente: client.cliente, cidade: client.cidade, uf: client.uf, ultima_compra: client.ultima_compra, entersBlueAt: deadline.toISOString().slice(0, 10), daysRemaining: Math.max(1, Math.ceil((deadline.getTime() - now.getTime()) / 86_400_000)) };
           }).filter(Boolean).sort((a: any, b: any) => a.daysRemaining - b.daysRemaining);
           const topCustomers = topCustomersFromPortfolio(portfolio);
-          let salesTotal = 0, salesCount = 0;
+          let monthlyReport: { total_venda: number | string } | null = null;
           try {
-            const emails = new Set(portfolio.map(client => normalizeEmail(client.email)).filter(Boolean));
-            const documents = new Set(portfolio.map(client => normalizeDocument(client.cnpj_cpf)).filter(Boolean));
-            if (emails.size || documents.size) {
-              const { start, end } = selectedMonthRange(year, month);
-              const orderPageSize = 1000;
-              for (let from = 0; ; from += orderPageSize) {
-                const { data: orders, error } = await supabaseAdmin.from("orders").select("total,email,cpf_cnpj,payment_status,created_at").eq("payment_status", "approved").gte("created_at", start).lt("created_at", end).range(from, from + orderPageSize - 1);
-                if (error) throw error;
-                for (const order of orders ?? []) {
-                  if (!emails.has(normalizeEmail(order.email)) && !documents.has(normalizeDocument(order.cpf_cnpj))) continue;
-                  salesTotal += Number(order.total ?? 0); salesCount += 1;
-                }
-                if ((orders ?? []).length < orderPageSize) break;
-              }
-            }
-          } catch (error) { console.error("[seller-dashboard] Falha ao calcular vendas do período:", error); }
-          return Response.json({ sellerCodeMissing: false, seller: { id: seller.sellerId, name: seller.name, code: sellerCode }, portfolioCount, nearBlueClients: nearBlueClients.slice(0, 10), nearBlueCount: nearBlueClients.length, topCustomers, sales: { year, month, total: Number(salesTotal.toFixed(2)), count: salesCount } }, { headers: { "Cache-Control": "no-store" } });
+            const { data: report, error } = await supabaseAdmin
+              .from("seller_monthly_margin_reports")
+              .select("total_venda")
+              .eq("seller_user_id", user.id)
+              .eq("report_year", year)
+              .eq("report_month", month)
+              .maybeSingle();
+            if (error) throw error;
+            monthlyReport = report;
+          } catch (error) { console.error("[seller-dashboard] Falha ao consultar o relatório mensal:", error); }
+          return Response.json({ sellerCodeMissing: false, seller: { id: seller.sellerId, name: seller.name, code: sellerCode }, portfolioCount, nearBlueClients: nearBlueClients.slice(0, 10), nearBlueCount: nearBlueClients.length, topCustomers, sales: { year, month, total: Number(monthlyReport?.total_venda ?? 0), hasReport: Boolean(monthlyReport) } }, { headers: { "Cache-Control": "no-store" } });
         }
 
         const search = normalizeSearch(url.searchParams.get("search") ?? "");
