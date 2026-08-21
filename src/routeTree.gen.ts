@@ -67,6 +67,7 @@ import { Route as ApiPublicMercadopagoWebhookRouteImport } from './routes/api/pu
 import { Route as ApiPublicInitAdminRouteImport } from './routes/api/public/init-admin'
 import { Route as ApiAdminSupportTicketsRouteImport } from './routes/api/admin/support-tickets'
 import { Route as ApiAdminAccountTypeRouteImport } from './routes/api/admin/account-type'
+import { Route as ApiAdminSellerMarginReportRouteImport } from './routes/api/admin/seller-margin-report'
 import { Route as ApiAccountSellerLinkRouteImport } from './routes/api/account/seller-link'
 import { Route as ApiAccountSellerChatRouteImport } from './routes/api/account/seller-chat'
 import { Route as ApiAccountQuotesRouteImport } from './routes/api/account/quotes'
@@ -372,6 +373,12 @@ const ApiAdminAccountTypeRoute = ApiAdminAccountTypeRouteImport.update({
   path: '/api/admin/account-type',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminSellerMarginReportRoute =
+  ApiAdminSellerMarginReportRouteImport.update({
+    id: '/api/admin/seller-margin-report',
+    path: '/api/admin/seller-margin-report',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAccountSellerLinkRoute = ApiAccountSellerLinkRouteImport.update({
   id: '/api/account/seller-link',
   path: '/api/account/seller-link',
@@ -473,6 +480,7 @@ export interface FileRoutesByFullPath {
   '/api/account/seller-chat': typeof ApiAccountSellerChatRoute
   '/api/account/seller-link': typeof ApiAccountSellerLinkRoute
   '/api/admin/account-type': typeof ApiAdminAccountTypeRoute
+  '/api/admin/seller-margin-report': typeof ApiAdminSellerMarginReportRoute
   '/api/admin/support-tickets': typeof ApiAdminSupportTicketsRoute
   '/api/public/init-admin': typeof ApiPublicInitAdminRoute
   '/api/public/mercadopago-webhook': typeof ApiPublicMercadopagoWebhookRoute
@@ -538,6 +546,7 @@ export interface FileRoutesByTo {
   '/api/account/seller-chat': typeof ApiAccountSellerChatRoute
   '/api/account/seller-link': typeof ApiAccountSellerLinkRoute
   '/api/admin/account-type': typeof ApiAdminAccountTypeRoute
+  '/api/admin/seller-margin-report': typeof ApiAdminSellerMarginReportRoute
   '/api/admin/support-tickets': typeof ApiAdminSupportTicketsRoute
   '/api/public/init-admin': typeof ApiPublicInitAdminRoute
   '/api/public/mercadopago-webhook': typeof ApiPublicMercadopagoWebhookRoute
@@ -608,6 +617,7 @@ export interface FileRoutesById {
   '/api/account/seller-chat': typeof ApiAccountSellerChatRoute
   '/api/account/seller-link': typeof ApiAccountSellerLinkRoute
   '/api/admin/account-type': typeof ApiAdminAccountTypeRoute
+  '/api/admin/seller-margin-report': typeof ApiAdminSellerMarginReportRoute
   '/api/admin/support-tickets': typeof ApiAdminSupportTicketsRoute
   '/api/public/init-admin': typeof ApiPublicInitAdminRoute
   '/api/public/mercadopago-webhook': typeof ApiPublicMercadopagoWebhookRoute
@@ -679,6 +689,7 @@ export interface FileRouteTypes {
     | '/api/account/seller-chat'
     | '/api/account/seller-link'
     | '/api/admin/account-type'
+    | '/api/admin/seller-margin-report'
     | '/api/admin/support-tickets'
     | '/api/public/init-admin'
     | '/api/public/mercadopago-webhook'
@@ -744,6 +755,7 @@ export interface FileRouteTypes {
     | '/api/account/seller-chat'
     | '/api/account/seller-link'
     | '/api/admin/account-type'
+    | '/api/admin/seller-margin-report'
     | '/api/admin/support-tickets'
     | '/api/public/init-admin'
     | '/api/public/mercadopago-webhook'
@@ -813,6 +825,7 @@ export interface FileRouteTypes {
     | '/api/account/seller-chat'
     | '/api/account/seller-link'
     | '/api/admin/account-type'
+    | '/api/admin/seller-margin-report'
     | '/api/admin/support-tickets'
     | '/api/public/init-admin'
     | '/api/public/mercadopago-webhook'
@@ -856,6 +869,7 @@ export interface RootRouteChildren {
   ApiAccountSellerChatRoute: typeof ApiAccountSellerChatRoute
   ApiAccountSellerLinkRoute: typeof ApiAccountSellerLinkRoute
   ApiAdminAccountTypeRoute: typeof ApiAdminAccountTypeRoute
+  ApiAdminSellerMarginReportRoute: typeof ApiAdminSellerMarginReportRoute
   ApiAdminSupportTicketsRoute: typeof ApiAdminSupportTicketsRoute
   ApiPublicInitAdminRoute: typeof ApiPublicInitAdminRoute
   ApiPublicMercadopagoWebhookRoute: typeof ApiPublicMercadopagoWebhookRoute
@@ -1275,6 +1289,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminAccountTypeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/seller-margin-report': {
+      id: '/api/admin/seller-margin-report'
+      path: '/api/admin/seller-margin-report'
+      fullPath: '/api/admin/seller-margin-report'
+      preLoaderRoute: typeof ApiAdminSellerMarginReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/account/seller-link': {
       id: '/api/account/seller-link'
       path: '/api/account/seller-link'
@@ -1469,6 +1490,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAccountSellerChatRoute: ApiAccountSellerChatRoute,
   ApiAccountSellerLinkRoute: ApiAccountSellerLinkRoute,
   ApiAdminAccountTypeRoute: ApiAdminAccountTypeRoute,
+  ApiAdminSellerMarginReportRoute: ApiAdminSellerMarginReportRoute,
   ApiAdminSupportTicketsRoute: ApiAdminSupportTicketsRoute,
   ApiPublicInitAdminRoute: ApiPublicInitAdminRoute,
   ApiPublicMercadopagoWebhookRoute: ApiPublicMercadopagoWebhookRoute,

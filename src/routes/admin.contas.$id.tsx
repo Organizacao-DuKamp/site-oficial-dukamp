@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, UserCircle, ShieldCheck, ShieldOff, KeyRound, Lock, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { PROTECTED_ADMIN_EMAIL } from "@/lib/constants";
+import { SellerMarginReportDialog } from "@/components/admin/SellerMarginReportDialog";
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/admin/contas/$id")({
@@ -200,37 +201,49 @@ function ContaDetalhe() {
       </Card>
 
       {currentType === "vendedor" && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Link2 className="h-4 w-4" /> Código do vendedor
-            </CardTitle>
-            <CardDescription>
-              Sincroniza esta conta com os clientes do ERP. Em Painel do Vendedor &gt; Clientes serão exibidos somente os clientes cujo código do vendedor seja exatamente igual ao código informado aqui.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <Input
-                value={sellerCode}
-                onChange={(event) => setSellerCode(event.target.value)}
-                placeholder="Ex.: 037"
-                maxLength={50}
-                className="sm:max-w-xs"
-                aria-label="Código do vendedor"
-              />
-              <Button
-                onClick={() => saveSellerCode.mutate()}
-                disabled={saveSellerCode.isPending || normalizedSellerCode === savedSellerCode}
-              >
-                {saveSellerCode.isPending ? "Salvando..." : "Salvar código"}
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              O código é tratado como texto para preservar zeros à esquerda. Exemplo: <span className="font-medium text-foreground">037</span> continua sendo 037.
-            </p>
-          </CardContent>
-        </Card>
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Link2 className="h-4 w-4" /> Código do vendedor
+              </CardTitle>
+              <CardDescription>
+                Sincroniza esta conta com os clientes do ERP. Em Painel do Vendedor &gt; Clientes serão exibidos somente os clientes cujo código do vendedor seja exatamente igual ao código informado aqui.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Input
+                  value={sellerCode}
+                  onChange={(event) => setSellerCode(event.target.value)}
+                  placeholder="Ex.: 037"
+                  maxLength={50}
+                  className="sm:max-w-xs"
+                  aria-label="Código do vendedor"
+                />
+                <Button
+                  onClick={() => saveSellerCode.mutate()}
+                  disabled={saveSellerCode.isPending || normalizedSellerCode === savedSellerCode}
+                >
+                  {saveSellerCode.isPending ? "Salvando..." : "Salvar código"}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                O código é tratado como texto para preservar zeros à esquerda. Exemplo: <span className="font-medium text-foreground">037</span> continua sendo 037.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Dados do vendedor</CardTitle>
+              <CardDescription>Consulte relatórios comerciais completos vinculados a esta conta.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SellerMarginReportDialog userId={id} sellerName={p.full_name || p.email || "Vendedor"} />
+            </CardContent>
+          </Card>
+        </>
       )}
 
       <Card>
