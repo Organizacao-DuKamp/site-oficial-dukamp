@@ -179,8 +179,8 @@ function SellerHome() {
               </CardHeader>
               <CardContent className="text-xs text-muted-foreground">
                 {query.data?.sales?.hasReport
-                  ? "TOTAL_VENDA do relatório mensal do ERP."
-                  : "Nenhum relatório encontrado para o período."}
+                  ? "Total das suas vendas no mês selecionado."
+                  : "Ainda não há dados de vendas para este período."}
               </CardContent>
             </Card>
           </div>
@@ -262,7 +262,7 @@ function SellerHome() {
             <CardHeader>
               <CardTitle className="text-lg">Vendas por mês</CardTitle>
               <CardDescription>
-                Selecione mês e ano para consultar o seu TOTAL_VENDA no relatório mensal do ERP.
+                Escolha o mês e o ano para consultar o total das suas vendas.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -292,8 +292,8 @@ function SellerHome() {
                   <p className="mt-1 text-3xl font-bold">{money(query.data?.sales?.total)}</p>
                   <p className="mt-1 text-sm text-muted-foreground">
                     {query.data?.sales?.hasReport
-                      ? "Valor de TOTAL_VENDA registrado no RELATÓRIO MARGEM VENDA."
-                      : "Nenhum relatório encontrado para este mês."}
+                      ? "Este foi o total das suas vendas no período selecionado."
+                      : "Ainda não há dados de vendas disponíveis para este mês."}
                   </p>
                 </div>
               </div>
