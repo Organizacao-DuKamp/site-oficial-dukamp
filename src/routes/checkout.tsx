@@ -12,7 +12,9 @@ import {
   type CardInstallments,
 } from "@/lib/checkout.functions";
 import { calculateDukampShipping, DUKAMP_FREIGHT_SERVICE } from "@/lib/dukamp-shipping.functions";
+import { calculateCartTax } from "@/lib/tax.functions";
 import { useSiteSettings } from "@/lib/site-settings";
+import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -216,6 +218,7 @@ async function lookupCepWithFallback(digits: string): Promise<CepLookupResult> {
 function CheckoutPage() {
   const { items, total: subtotal, clear } = useCart();
   const { data: settings } = useSiteSettings();
+  const { accountType } = useAuth();
   const nav = useNavigate();
   const [form, setForm] = useState<Form>(emptyForm);
   const [deliveryCoordinates, setDeliveryCoordinates] = useState("");
@@ -227,10 +230,13 @@ function CheckoutPage() {
   const [installments, setInstallments] = useState<CardInstallments>(1);
   const [frete, setFrete] = useState<ShippingOption | null>(null);
   const [freteOpcoes, setFreteOpcoes] = useState<ShippingOption[]>([]);
+  const [taxAmount, setTaxAmount] = useState<number | null>(null);
+  const [taxDestinationUf, setTaxDestinationUf] = useState("");
 
   const createOrder = useServerFn(createPixOrder);
   const calcFrete = useServerFn(calculateShipping);
   const calcDukampFrete = useServerFn(calculateDukampShipping);
+  const calcTax = useServerFn(calculateCartTax);
   const fetchMpKey = useServerFn(getMpPublicKey);
   const payCard = useServerFn(processCardPayment);
 
@@ -244,13 +250,21 @@ function CheckoutPage() {
   const [brickError, setBrickError] = useState<string | null>(null);
   const [focusCardPanel, setFocusCardPanel] = useState(false);
 
-  function set<K extends keyof Form>(k: K, v: string) {
-    setForm((f) => ({ ...f, [k]: v }));
+  function resetDeliveryCalculation() {
+    setFrete(null);
+    setFreteOpcoes([]);
+    setTaxAmount(null);
+    setTaxDestinationUf("");
   }
 
-  async function lookupCep(cep: string) {
+  function set<K extends keyof Form>(k: K, v: string) {
+    setForm((f) => ({ ...f, [k]: v }));
+    if (k === "cep" || k === "estado") resetDeliveryCalculation();
+  }
+
+  async function lookupCep(cep: string): Promise<CepLookupResult | null> {
     const digits = cep.replace(/\D/g, "");
-    if (digits.length !== 8) return;
+    if (digits.length !== 8) return null;
     setLoadingCep(true);
     try {
       const result = await lookupCepWithFallback(digits);
@@ -265,8 +279,10 @@ function CheckoutPage() {
       if (result.coordinates) {
         setDeliveryCoordinates((current) => current.trim() || formatCoordinatePair(result.coordinates!));
       }
+      return result;
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao buscar CEP");
+      return null;
     } finally {
       setLoadingCep(false);
     }
@@ -275,6 +291,7 @@ function CheckoutPage() {
   async function handleCalcFreteFor(
     rawCep: string,
     coordinatesOverride?: DeliveryCoordinates,
+    destinationUfOverride?: string,
   ) {
     const cep = rawCep.replace(/\D/g, "");
     const hasValidCep = cep.length === 8;
@@ -286,18 +303,32 @@ function CheckoutPage() {
     }
     if (items.length === 0) return;
 
-    setFrete(null);
-    setFreteOpcoes([]);
+    resetDeliveryCalculation();
     setLoadingFrete(true);
     try {
+      let destinationUf = String(destinationUfOverride || form.estado || "").trim().toUpperCase();
+      if (destinationUf.length !== 2 && hasValidCep) {
+        const address = await lookupCepWithFallback(cep);
+        destinationUf = String(address.estado || "").trim().toUpperCase();
+        setForm((f) => ({
+          ...f,
+          cep: address.cep || f.cep,
+          rua: address.rua || f.rua,
+          bairro: address.bairro || f.bairro,
+          cidade: address.cidade || f.cidade,
+          estado: address.estado || f.estado,
+        }));
+      }
+      if (destinationUf.length !== 2) {
+        throw new Error("Não foi possível identificar a UF para calcular o ICMS.");
+      }
+
       const itemPayload = items.map((i) => ({ product_id: i.id, quantity: i.quantity }));
       const opcoes: ShippingOption[] = [];
       const technicalErrors: string[] = [];
       let dukampUnavailableReason = "";
       let dukampOption: ShippingOption | null = null;
 
-      // O Frete Dukamp tem prioridade. Somente consultamos os Correios quando
-      // ele não estiver disponível para estes itens/local de entrega.
       try {
         const result = (await calcDukampFrete({
           data: {
@@ -320,7 +351,6 @@ function CheckoutPage() {
       }
 
       if (dukampOption) {
-        // Exclusividade: se Frete Dukamp existe, PAC/Correios não são oferecidos.
         opcoes.push(dukampOption);
       } else if (hasValidCep) {
         try {
@@ -349,21 +379,30 @@ function CheckoutPage() {
         );
       }
 
+      const taxes = (await calcTax({
+        data: {
+          destinationUf,
+          accountType: accountType === "produtor" ? "produtor" : "cliente",
+          items: itemPayload,
+        },
+      })) as any;
+
       setFreteOpcoes(opcoes);
       const defaultOption = dukampOption ?? [...opcoes].sort((a, b) => a.valor - b.valor)[0];
       setFrete(defaultOption);
+      setTaxAmount(Number(taxes.taxAmount ?? 0));
+      setTaxDestinationUf(destinationUf);
       toast.success(
         dukampOption
-          ? "Frete Dukamp disponível para este endereço"
-          : `Frete calculado: ${opcoes.length} opção(ões) disponível(is)`,
+          ? `Frete Dukamp e impostos calculados para ${destinationUf}`
+          : `Frete e impostos calculados para ${destinationUf}`,
       );
     } catch (e) {
-      setFrete(null);
-      setFreteOpcoes([]);
+      resetDeliveryCalculation();
       const raw = e instanceof Error ? e.message : String(e ?? "");
-      console.error("[Frete] Falha ao calcular", { cep, itens: items.length, error: e });
-      const detail = raw && raw !== "Invalid API Error" ? raw : "resposta inesperada do servidor (Invalid API Error). Verifique CORREIOS_TOKEN, CORREIOS_CONTRATO e CORREIOS_CEP_ORIGEM nas Environment variables da Netlify e faça Clear cache and deploy.";
-      toast.error(`Frete: ${detail}`, { duration: 10000 });
+      console.error("[Checkout] Falha ao calcular frete/impostos", { cep, itens: items.length, error: e });
+      const detail = raw && raw !== "Invalid API Error" ? raw : "resposta inesperada do servidor (Invalid API Error). Verifique as integrações e tente novamente.";
+      toast.error(`Cálculo: ${detail}`, { duration: 10000 });
     } finally {
       setLoadingFrete(false);
     }
@@ -371,8 +410,12 @@ function CheckoutPage() {
 
   async function handleCalcFrete() {
     const cep = form.cep.replace(/\D/g, "");
-    if (!form.rua && cep.length === 8) await lookupCep(cep);
-    await handleCalcFreteFor(cep);
+    let destinationUf = form.estado;
+    if (cep.length === 8) {
+      const result = await lookupCep(cep);
+      destinationUf = result?.estado || destinationUf;
+    }
+    await handleCalcFreteFor(cep, undefined, destinationUf);
   }
 
   function validateDelivery(): string | null {
@@ -394,7 +437,7 @@ function CheckoutPage() {
     }
     if (!/^\S+@\S+\.\S+$/.test(form.email)) return "E-mail inválido — confira o endereço digitado";
     if (form.estado.length !== 2) return "UF deve ter 2 letras (ex: SP, MG, GO)";
-    if (!frete) return "Calcule o frete antes de finalizar";
+    if (!frete || taxAmount == null) return "Calcule o frete e os impostos antes de finalizar";
     return null;
   }
 
@@ -414,14 +457,11 @@ function CheckoutPage() {
   }
 
   async function handleBuy() {
-    // Só chamado no fluxo Pix. Cartão finaliza pelo Brick (handleCardSubmit).
     const err = validateDelivery();
     if (err) return toast.error(err);
     setLoadingPay(true);
     try {
       const r = await createOrderNow();
-      // NÃO limpar o carrinho aqui — só ao confirmar o pagamento (a página /pedido/$id
-      // faz polling do status e limpa o carrinho quando aprovado).
       nav({ to: "/pedido/$id", params: { id: r.orderId } });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao criar pedido");
@@ -459,7 +499,6 @@ function CheckoutPage() {
         toast.error("Pagamento recusado pela operadora. Tente outro cartão.");
         throw new Error("rejected");
       }
-      // Só limpa o carrinho quando o pagamento foi efetivamente aprovado.
       if (r.status === "approved") {
         clear();
         toast.success("Pagamento aprovado!");
@@ -497,7 +536,6 @@ function CheckoutPage() {
     if (brickContainerRef.current) brickContainerRef.current.innerHTML = "";
   }
 
-  // Carrega SDK do Mercado Pago e a public key quando o método cartão é escolhido.
   useEffect(() => {
     if (method !== "card") return;
     if (typeof window === "undefined") return;
@@ -531,15 +569,17 @@ function CheckoutPage() {
     })();
   }, [method, mpPublicKey, fetchMpKey]);
 
-  // Monta o Card Payment Brick de forma estável: sem recriar durante digitação
-  // e com cleanup real para não quebrar os iframes seguros do Mercado Pago.
   useEffect(() => {
-    if (method !== "card" || !mpSdkReady || !mpPublicKey) return;
+    if (method !== "card" || !mpSdkReady || !mpPublicKey || taxAmount == null) return;
     if (typeof window === "undefined") return;
     const MP = (window as any).MercadoPago;
     if (!MP) return;
     if (!brickContainerRef.current) return;
-    const amount = computePaymentTotals(subtotal + (frete?.valor ?? 0), "card", installments).total;
+    const amount = computePaymentTotals(
+      subtotal + (frete?.valor ?? 0) + taxAmount,
+      "card",
+      installments,
+    ).total;
     if (!amount || amount <= 0) return;
 
     let cancelled = false;
@@ -603,10 +643,10 @@ function CheckoutPage() {
         if (brickControllerRef.current === createdController) brickControllerRef.current = null;
       }
     };
-    // Não incluir subtotal/frete/email nas deps: recriar o brick a cada tecla
-    // dispara "The integration with Secure Fields failed" no Mercado Pago.
+    // E-mail não entra nas dependências para não recriar Secure Fields durante digitação.
+    // Frete/imposto/subtotal entram porque alteram o valor real a ser cobrado.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [method, mpSdkReady, mpPublicKey, installments]);
+  }, [method, mpSdkReady, mpPublicKey, installments, subtotal, frete?.valor, taxAmount]);
 
   useEffect(() => {
     return () => {
@@ -614,8 +654,7 @@ function CheckoutPage() {
     };
   }, []);
 
-
-  const baseAmount = subtotal + (frete?.valor ?? 0);
+  const baseAmount = subtotal + (frete?.valor ?? 0) + (taxAmount ?? 0);
   const totals = computePaymentTotals(baseAmount, method, method === "card" ? installments : null);
   const total = totals.total;
   const totalItens = items.reduce((n, i) => n + i.quantity, 0);
@@ -648,14 +687,12 @@ function CheckoutPage() {
         <div className="mb-6">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Finalizar compra</h1>
           <p className="mt-1 text-sm sm:text-base text-muted-foreground">
-            Revise seu pedido, calcule o frete e finalize com Pix ou cartão.
+            Revise seu pedido, calcule o frete e os impostos e finalize com Pix ou cartão.
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Coluna principal */}
           <div className="lg:col-span-8 space-y-6 min-w-0">
-            {/* 1 — Revisão */}
             <Section number={1} icon={<ClipboardList className="h-4 w-4" />} title="Seu pedido">
               <div className="space-y-3">
                 {items.map((i) => (
@@ -681,14 +718,12 @@ function CheckoutPage() {
               </div>
             </Section>
 
-            {/* 2 — Entrega */}
             <Section number={2} icon={<MapPin className="h-4 w-4" />} title="Entrega">
               <div className="space-y-6">
-                {/* CEP + Calcular frete (destaque) */}
                 <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-4">
                   <Label className="text-sm font-semibold flex items-center gap-2 mb-3">
                     <Truck className="h-4 w-4 text-primary" />
-                    Calcule seu frete
+                    Calcule seu frete e impostos
                   </Label>
                   <Tabs defaultValue="cep" className="w-full">
                     <TabsList className="grid w-full grid-cols-2 mb-3">
@@ -731,7 +766,10 @@ function CheckoutPage() {
                             inputMode="text"
                             placeholder="Ex: -20.764110, -49.709500"
                             value={deliveryCoordinates}
-                            onChange={(e) => setDeliveryCoordinates(e.target.value)}
+                            onChange={(e) => {
+                              setDeliveryCoordinates(e.target.value);
+                              resetDeliveryCalculation();
+                            }}
                           />
                         </Field>
                       </div>
@@ -752,7 +790,7 @@ function CheckoutPage() {
                             cidade: r.cidade || f.cidade,
                             estado: r.estado || f.estado,
                           }));
-                          await handleCalcFreteFor(r.cep || "", coordinates);
+                          await handleCalcFreteFor(r.cep || "", coordinates, r.estado || "");
                         }}
                       />
                     </TabsContent>
@@ -830,8 +868,6 @@ function CheckoutPage() {
                   </div>
                 </div>
 
-
-                {/* Endereço */}
                 <div className="grid grid-cols-1 sm:grid-cols-6 gap-3">
                   <Field className="sm:col-span-4" label="Rua / Estrada">
                     <Input value={form.rua} onChange={(e) => set("rua", e.target.value)} placeholder="Ex: Estrada da Fazenda, KM 10" />
@@ -855,7 +891,6 @@ function CheckoutPage() {
 
                 <Separator />
 
-                {/* Dados pessoais */}
                 <div>
                   <h3 className="text-sm font-semibold mb-3">Dados para contato</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -876,7 +911,6 @@ function CheckoutPage() {
               </div>
             </Section>
 
-            {/* 3 — Pagamento */}
             <Section number={3} icon={<Wallet className="h-4 w-4" />} title="Pagamento">
               <div className="space-y-3">
                 <button
@@ -939,7 +973,7 @@ function CheckoutPage() {
                   </div>
                 </button>
 
-                {method === "card" && baseAmount > 0 && (
+                {method === "card" && taxAmount != null && baseAmount > 0 && (
                   <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
                     <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                       Escolha o parcelamento
@@ -959,12 +993,8 @@ function CheckoutPage() {
                               selected ? "border-primary bg-primary/5" : "border-border bg-background hover:border-primary/50"
                             }`}
                           >
-                            <p className="text-sm font-semibold leading-tight">
-                              {label}
-                            </p>
-                            <p className="mt-1 text-xs font-medium leading-tight">
-                              {formatBRL(parcela)}
-                            </p>
+                            <p className="text-sm font-semibold leading-tight">{label}</p>
+                            <p className="mt-1 text-xs font-medium leading-tight">{formatBRL(parcela)}</p>
                             <p className="mt-1 text-[11px] text-muted-foreground leading-tight">
                               Total {formatBRL(t.total)}
                             </p>
@@ -975,7 +1005,13 @@ function CheckoutPage() {
                   </div>
                 )}
 
-                {method === "card" && (
+                {method === "card" && taxAmount == null && (
+                  <div className="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
+                    Calcule o frete para que o ICMS seja definido pela UF de entrega antes de preencher o cartão.
+                  </div>
+                )}
+
+                {method === "card" && taxAmount != null && (
                   <div ref={cardPaymentPanelRef} className="rounded-lg border-2 border-primary/30 bg-background p-4 scroll-mt-4">
                     <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
                       <Lock className="h-4 w-4 text-primary" />
@@ -990,9 +1026,7 @@ function CheckoutPage() {
                         <Loader2 className="h-4 w-4 animate-spin" /> Carregando formulário seguro...
                       </div>
                     )}
-                    {brickError && (
-                      <p className="mt-2 text-sm text-destructive">{brickError}</p>
-                    )}
+                    {brickError && <p className="mt-2 text-sm text-destructive">{brickError}</p>}
                     {loadingPay && (
                       <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
                         <Loader2 className="h-4 w-4 animate-spin" /> Processando pagamento...
@@ -1004,7 +1038,6 @@ function CheckoutPage() {
             </Section>
           </div>
 
-          {/* Sidebar */}
           <aside className="lg:col-span-4 min-w-0">
             <div className="lg:sticky lg:top-6 space-y-4">
               <Card className="border-2 border-primary/30 shadow-md overflow-hidden">
@@ -1019,6 +1052,10 @@ function CheckoutPage() {
                   <Row
                     label="Frete"
                     value={frete ? formatBRL(frete.valor) : <span className="text-muted-foreground text-sm">A calcular</span>}
+                  />
+                  <Row
+                    label={`Impostos (ICMS)${taxDestinationUf ? ` · ${taxDestinationUf}` : ""}`}
+                    value={taxAmount != null ? formatBRL(taxAmount) : <span className="text-muted-foreground text-sm">Calculado com o frete</span>}
                   />
                   {frete && (
                     frete.servico === DUKAMP_FREIGHT_SERVICE ? (
@@ -1042,7 +1079,7 @@ function CheckoutPage() {
                     <span className="text-sm font-medium text-muted-foreground">Total</span>
                     <span className="text-2xl sm:text-3xl font-bold text-primary tracking-tight">{formatBRL(total)}</span>
                   </div>
-                  {method === "card" && installments > 1 && (
+                  {method === "card" && installments > 1 && taxAmount != null && (
                     <div className="text-right text-xs text-muted-foreground">
                       em {installments}x de <b className="text-foreground">{formatBRL(total / installments)}</b>
                     </div>
@@ -1116,8 +1153,6 @@ function CheckoutPage() {
     </SiteLayout>
   );
 }
-
-/* ---------- pieces ---------- */
 
 function Section({
   number,
