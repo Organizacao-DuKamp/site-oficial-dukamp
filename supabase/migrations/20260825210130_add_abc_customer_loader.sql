@@ -31,7 +31,7 @@ begin
     cliente = excluded.cliente,
     cidade = excluded.cidade,
     uf = excluded.uf,
-    telefone = excluded.telefone,
+    telefone = coalesce(excluded.telefone, customers.telefone),
     ultima_compra = excluded.ultima_compra,
     vendedor_codigo = excluded.vendedor_codigo,
     vendedor_nome = excluded.vendedor_nome,
