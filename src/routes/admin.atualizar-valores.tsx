@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Loader2, Upload } from "lucide-react";
-import { getDimensionsFromName } from "@/lib/product-dimensions";
+import { consumerPriceFromProducer, isSupportedTaxCode, normalizeTaxCode } from "@/lib/tax";
 
 export const Route = createFileRoute("/admin/atualizar-valores")({
   component: Page,
@@ -20,11 +20,31 @@ type ParsedRow = {
   saldo: number;
   preco1: number;
   preco2: number;
+  group: string;
+  erpIcmsRate: number;
+  taxCode: string;
+  points: number;
+  barcode: string | null;
+  fixedTable: boolean;
 };
 
 type ParseResult = {
   rows: ParsedRow[];
   errors: { line: number; message: string; raw: string }[];
+};
+
+type Ignored = {
+  line: number;
+  code: string;
+  name: string;
+  reason: string;
+};
+
+type Summary = {
+  total: number;
+  updated: number;
+  ignored: Ignored[];
+  errors: { line: number; code?: string; message: string }[];
 };
 
 function parseBRNumber(v: string): number {
@@ -38,16 +58,22 @@ function parseFile(text: string): ParseResult {
   const rows: ParsedRow[] = [];
   const errors: ParseResult["errors"] = [];
   const seen = new Set<string>();
-  const lines = text.split(/\r?\n/);
-  lines.forEach((raw, i) => {
-    const line = i + 1;
+
+  text.split(/\r?\n/).forEach((raw, index) => {
+    const line = index + 1;
     const trimmed = raw.trim();
     if (!trimmed) return;
+
     const parts = trimmed.split(";").map((p) => p.trim());
-    if (parts.length < 5) {
-      errors.push({ line, message: `Linha com ${parts.length} colunas (esperado ≥ 5)`, raw: trimmed });
+    if (parts.length < 11) {
+      errors.push({
+        line,
+        message: `Linha com ${parts.length} colunas (esperado ≥ 11)`,
+        raw: trimmed,
+      });
       return;
     }
+
     try {
       const code = parts[0];
       const name = parts[1];
@@ -55,30 +81,28 @@ function parseFile(text: string): ParseResult {
       if (!name) throw new Error("Nome vazio");
       if (seen.has(code)) throw new Error(`Código duplicado no arquivo: ${code}`);
       seen.add(code);
-      const saldo = parseBRNumber(parts[2]);
-      const preco1 = parseBRNumber(parts[3]);
-      const preco2 = parseBRNumber(parts[4]);
-      rows.push({ line, code, name, saldo, preco1, preco2 });
-    } catch (e: any) {
-      errors.push({ line, message: e.message ?? String(e), raw: trimmed });
+
+      rows.push({
+        line,
+        code,
+        name,
+        saldo: parseBRNumber(parts[2]),
+        preco1: parseBRNumber(parts[3]),
+        preco2: parseBRNumber(parts[4]),
+        group: parts[5],
+        erpIcmsRate: parseBRNumber(parts[6]),
+        taxCode: normalizeTaxCode(parts[7]),
+        points: parseBRNumber(parts[8]),
+        barcode: parts[9] || null,
+        fixedTable: parts[10].toUpperCase() === "S",
+      });
+    } catch (error: any) {
+      errors.push({ line, message: error.message ?? String(error), raw: trimmed });
     }
   });
+
   return { rows, errors };
 }
-
-function slugify(s: string) {
-  return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80) || "produto";
-}
-
-type Summary = {
-  total: number;
-  created: number;
-  updated: number;
-  activated: number;
-  deactivated: number;
-  errors: { line: number; code?: string; message: string }[];
-};
 
 function Page() {
   const { user } = useAuth();
@@ -89,75 +113,111 @@ function Page() {
 
   const logs = useQuery({
     queryKey: ["import_logs"],
-    queryFn: async () => (await supabase.from("import_logs").select("*").order("created_at", { ascending: false }).limit(20)).data ?? [],
+    queryFn: async () =>
+      (await supabase.from("import_logs").select("*").order("created_at", { ascending: false }).limit(20)).data ?? [],
   });
 
   async function handleImport() {
     if (!file) return;
     setBusy(true);
     setSummary(null);
+
     try {
       const text = await file.text();
       const { rows, errors: parseErrors } = parseFile(text);
-
       const codes = rows.map((r) => r.code);
-      const existing = new Map<string, { id: string; active: boolean }>();
-      // Fetch in chunks to avoid huge URL
+      const existing = new Map<string, { id: string; active: boolean; name: string }>();
+
       for (let i = 0; i < codes.length; i += 200) {
         const chunk = codes.slice(i, i + 200);
-        const { data, error } = await supabase.from("products").select("id, code, active").in("code", chunk);
+        const { data, error } = await supabase
+          .from("products")
+          .select("id,code,active,name")
+          .in("code", chunk);
         if (error) throw error;
-        (data ?? []).forEach((p: any) => existing.set(p.code, { id: p.id, active: p.active }));
+        (data ?? []).forEach((product: any) =>
+          existing.set(product.code, {
+            id: product.id,
+            active: Boolean(product.active),
+            name: product.name,
+          }),
+        );
       }
 
       const result: Summary = {
         total: rows.length + parseErrors.length,
-        created: 0,
         updated: 0,
-        activated: 0,
-        deactivated: 0,
+        ignored: [],
         errors: parseErrors.map((e) => ({ line: e.line, message: e.message })),
       };
 
-      for (const r of rows) {
+      for (const row of rows) {
         try {
-          const shouldBeActive = r.saldo > 0;
-          const stockInt = Math.max(0, Math.round(r.saldo));
-          const found = existing.get(r.code);
-          if (found) {
-            const patch: { consumer_price: number; producer_price: number; price: number; stock: number; active?: boolean } = {
-              consumer_price: r.preco1,
-              producer_price: r.preco2,
-              price: r.preco1,
-              stock: stockInt,
-            };
-            if (found.active !== shouldBeActive) {
-              patch.active = shouldBeActive;
-              if (shouldBeActive) result.activated++; else result.deactivated++;
-            }
-            const { error } = await supabase.from("products").update(patch).eq("id", found.id);
-            if (error) throw error;
-            result.updated++;
-          } else {
-            const dims = getDimensionsFromName(r.name);
-            const { error } = await supabase.from("products").insert({
-              code: r.code,
-              name: r.name,
-              slug: `${slugify(r.name)}-${r.code}`,
-              consumer_price: r.preco1,
-              producer_price: r.preco2,
-              price: r.preco1,
-              stock: stockInt,
-              active: shouldBeActive,
-              ...dims,
-              weight: dims.peso ?? 0,
+          const found = existing.get(row.code);
+          if (!found) {
+            result.ignored.push({
+              line: row.line,
+              code: row.code,
+              name: row.name,
+              reason: "Código não existe no cadastro atual do site",
             });
-            if (error) throw error;
-            result.created++;
-            if (shouldBeActive) result.activated++;
+            continue;
           }
-        } catch (e: any) {
-          result.errors.push({ line: r.line, code: r.code, message: e.message ?? String(e) });
+
+          if (!found.active) {
+            result.ignored.push({
+              line: row.line,
+              code: row.code,
+              name: found.name || row.name,
+              reason: "Produto inativo no site",
+            });
+            continue;
+          }
+
+          if (!isSupportedTaxCode(row.taxCode)) {
+            result.ignored.push({
+              line: row.line,
+              code: row.code,
+              name: found.name || row.name,
+              reason: `Código tributário ${row.taxCode} não faz parte desta implantação (somente 000/040)`,
+            });
+            continue;
+          }
+
+          const producerPrice = row.preco2;
+          if (!Number.isFinite(producerPrice) || producerPrice <= 0) {
+            result.ignored.push({
+              line: row.line,
+              code: row.code,
+              name: found.name || row.name,
+              reason: "PRECO2 inválido ou zerado",
+            });
+            continue;
+          }
+
+          const consumerPrice = consumerPriceFromProducer(producerPrice);
+          const patch = {
+            producer_price: producerPrice,
+            consumer_price: consumerPrice,
+            price: consumerPrice,
+            stock: Math.max(0, Math.round(row.saldo)),
+            tax_code: row.taxCode,
+            erp_group: row.group || null,
+            erp_icms_rate: row.erpIcmsRate,
+            points: row.points,
+            barcode: row.barcode,
+            fixed_table: row.fixedTable,
+          };
+
+          const { error } = await supabase.from("products").update(patch as any).eq("id", found.id);
+          if (error) throw error;
+          result.updated += 1;
+        } catch (error: any) {
+          result.errors.push({
+            line: row.line,
+            code: row.code,
+            message: error.message ?? String(error),
+          });
         }
       }
 
@@ -165,10 +225,10 @@ function Page() {
         admin_id: user!.id,
         filename: file.name,
         total: result.total,
-        created_count: result.created,
+        created_count: 0,
         updated_count: result.updated,
-        activated_count: result.activated,
-        deactivated_count: result.deactivated,
+        activated_count: 0,
+        deactivated_count: 0,
         error_count: result.errors.length,
         error_details: result.errors.slice(0, 200),
       });
@@ -176,27 +236,33 @@ function Page() {
       setSummary(result);
       qc.invalidateQueries({ queryKey: ["import_logs"] });
       qc.invalidateQueries({ queryKey: ["products"] });
-      toast.success("Importação concluída");
-    } catch (e: any) {
-      toast.error(e.message ?? "Falha na importação");
+      toast.success(
+        `Importação concluída: ${result.updated} produto(s) ativo(s) atualizado(s), ${result.ignored.length} ignorado(s).`,
+      );
+    } catch (error: any) {
+      toast.error(error.message ?? "Falha na importação");
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-4xl">
       <h1 className="text-2xl font-bold">Atualizar Valores</h1>
       <p className="text-sm text-muted-foreground mt-1">
-        Importe um arquivo <code>.txt</code> no formato Dukamp. Produtos existentes têm apenas os preços atualizados;
-        novos códigos são criados. Saldo &gt; 0 ativa o produto; saldo = 0 desativa.
+        Formato: CODIGO · DESCRICAO · SALDO · PRECO1 · PRECO2 · GRUPO · %ICMS · COD TRIBUTARIO · PONTOS · CODIGO_BARRAS · TABELA FIXA.
+        O sistema usa somente o PRECO2 como preço do produtor e calcula o preço do consumidor com acréscimo de 22%.
+        Apenas produtos já existentes e ativos são alterados; nenhum produto é criado, ativado ou desativado por esta importação.
       </p>
 
       <div className="mt-6 rounded-lg border bg-card p-4 space-y-3">
         <Input
           type="file"
           accept=".txt,text/plain"
-          onChange={(e) => { setFile(e.target.files?.[0] ?? null); setSummary(null); }}
+          onChange={(e) => {
+            setFile(e.target.files?.[0] ?? null);
+            setSummary(null);
+          }}
           disabled={busy}
         />
         <Button onClick={handleImport} disabled={!file || busy}>
@@ -208,21 +274,37 @@ function Page() {
       {summary && (
         <div className="mt-6 rounded-lg border bg-card p-4">
           <h2 className="font-semibold mb-3">Resumo</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-            <Stat label="Total processado" value={summary.total} />
-            <Stat label="Criados" value={summary.created} />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+            <Stat label="Total lido" value={summary.total} />
             <Stat label="Atualizados" value={summary.updated} />
-            <Stat label="Ativados" value={summary.activated} />
-            <Stat label="Desativados" value={summary.deactivated} />
+            <Stat label="Ignorados" value={summary.ignored.length} />
             <Stat label="Erros" value={summary.errors.length} />
           </div>
+
+          {summary.ignored.length > 0 && (
+            <div className="mt-4">
+              <div className="font-medium text-sm mb-2">Produtos ignorados</div>
+              <div className="max-h-80 overflow-auto text-xs border rounded divide-y">
+                {summary.ignored.map((item, index) => (
+                  <div key={`${item.code}-${index}`} className="p-2">
+                    <span className="font-medium">{item.code} · {item.name}</span>
+                    <span className="text-muted-foreground"> — {item.reason}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {summary.errors.length > 0 && (
             <div className="mt-4">
               <div className="font-medium text-sm mb-2">Erros</div>
               <div className="max-h-64 overflow-auto text-xs border rounded divide-y">
-                {summary.errors.map((e, i) => (
-                  <div key={i} className="p-2">
-                    <span className="text-muted-foreground">Linha {e.line}{e.code ? ` · ${e.code}` : ""}:</span> {e.message}
+                {summary.errors.map((error, index) => (
+                  <div key={index} className="p-2">
+                    <span className="text-muted-foreground">
+                      Linha {error.line}{error.code ? ` · ${error.code}` : ""}:
+                    </span>{" "}
+                    {error.message}
                   </div>
                 ))}
               </div>
@@ -234,16 +316,13 @@ function Page() {
       <div className="mt-8">
         <h2 className="font-semibold mb-2">Histórico de importações</h2>
         <div className="rounded-lg border bg-card divide-y text-sm">
-          {(logs.data ?? []).map((l: any) => (
-            <div key={l.id} className="p-3 flex flex-wrap gap-x-4 gap-y-1">
-              <div className="font-medium">{l.filename}</div>
-              <div className="text-muted-foreground">{new Date(l.created_at).toLocaleString("pt-BR")}</div>
-              <div>Total: {l.total}</div>
-              <div>Criados: {l.created_count}</div>
-              <div>Atualizados: {l.updated_count}</div>
-              <div>Ativados: {l.activated_count}</div>
-              <div>Desativados: {l.deactivated_count}</div>
-              <div className={l.error_count > 0 ? "text-destructive" : ""}>Erros: {l.error_count}</div>
+          {(logs.data ?? []).map((log: any) => (
+            <div key={log.id} className="p-3 flex flex-wrap gap-x-4 gap-y-1">
+              <div className="font-medium">{log.filename}</div>
+              <div className="text-muted-foreground">{new Date(log.created_at).toLocaleString("pt-BR")}</div>
+              <div>Total: {log.total}</div>
+              <div>Atualizados: {log.updated_count}</div>
+              <div className={log.error_count > 0 ? "text-destructive" : ""}>Erros: {log.error_count}</div>
             </div>
           ))}
           {logs.data && logs.data.length === 0 && (
