@@ -1,5 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import {
+  calculateItemIcms,
+  consumerPriceFromProducer,
+  isSupportedTaxCode,
+  normalizeTaxCode,
+  roundMoney,
+} from "@/lib/tax";
 
 const CEP_ORIGEM = (process.env.CORREIOS_CEP_ORIGEM || "15150104").replace(/\D/g, "");
 
@@ -53,8 +60,6 @@ async function getServerSupabase(mode: "admin" | "public" = "admin") {
     global: {
       fetch: (input, init) => {
         const headers = new Headers(init?.headers);
-        // Novas API keys sb_* são opacas — PostgREST rejeita Authorization: Bearer sb_*
-        // como "Invalid API key" / "Expected 3 parts in JWT; got 1".
         if (isOpaque && headers.get("Authorization") === `Bearer ${key}`) {
           headers.delete("Authorization");
         }
@@ -64,7 +69,6 @@ async function getServerSupabase(mode: "admin" | "public" = "admin") {
     },
   });
 }
-
 
 function translateMpError(msg: string): string {
   const m = (msg || "").toLowerCase();
@@ -78,7 +82,6 @@ function translateMpError(msg: string): string {
   return "Não foi possível gerar o pagamento. Verifique seus dados e tente novamente.";
 }
 
-
 function cleanSecret(value?: string) {
   return (value || "").trim();
 }
@@ -89,7 +92,10 @@ function normalizeCorreiosUser(value?: string) {
   return digits.length === 11 || digits.length === 14 ? digits : raw;
 }
 
-function summarizeCorreiosAuthIssue(attempts: Array<{ name: string; status: number; detail: string }>, usuario: string) {
+function summarizeCorreiosAuthIssue(
+  attempts: Array<{ name: string; status: number; detail: string }>,
+  usuario: string,
+) {
   const allUnauthorized = attempts.length > 0 && attempts.every((attempt) => attempt.status === 401);
   if (!allUnauthorized) return "";
 
@@ -133,7 +139,11 @@ function parseCorreiosXmlTag(xml: string, tag: string) {
   return match?.[1]?.trim() || "";
 }
 
-async function calculateLegacyCorreiosPackage(cepDest: string, servico: ServiceName, pacote: ShippingPackage) {
+async function calculateLegacyCorreiosPackage(
+  cepDest: string,
+  servico: ServiceName,
+  pacote: ShippingPackage,
+) {
   const url = new URL("https://ws.correios.com.br/calculador/CalcPrecoPrazo.aspx");
   url.searchParams.set("nCdEmpresa", "");
   url.searchParams.set("sDsSenha", "");
@@ -175,7 +185,11 @@ async function calculateLegacyCorreiosPackage(cepDest: string, servico: ServiceN
   return { valor, prazoDias: Number.isFinite(prazoDias) && prazoDias > 0 ? prazoDias : 7 };
 }
 
-async function calculateLegacyCorreiosShipping(cepDest: string, servico: ServiceName, pacotes: ShippingPackage[]) {
+async function calculateLegacyCorreiosShipping(
+  cepDest: string,
+  servico: ServiceName,
+  pacotes: ShippingPackage[],
+) {
   let valor = 0;
   let prazoDias = 0;
 
@@ -192,7 +206,13 @@ async function calculateLegacyCorreiosShipping(cepDest: string, servico: Service
   };
 }
 
-async function calculateCorreiosRestShipping(token: string, cepDest: string, _contrato: string, servico: ServiceName, pacotes: ShippingPackage[]) {
+async function calculateCorreiosRestShipping(
+  token: string,
+  cepDest: string,
+  _contrato: string,
+  servico: ServiceName,
+  pacotes: ShippingPackage[],
+) {
   const cod = SERVICES[servico].rest;
   const headers = { Authorization: `Bearer ${token}`, accept: "application/json" };
 
@@ -201,7 +221,6 @@ async function calculateCorreiosRestShipping(token: string, cepDest: string, _co
   let dataMaxima: string | undefined;
 
   for (const pacote of pacotes) {
-    // ----- PREÇO: GET /preco/v1/nacional/{coProduto}
     const precoUrl = new URL(`https://api.correios.com.br/preco/v1/nacional/${cod}`);
     precoUrl.searchParams.set("cepOrigem", CEP_ORIGEM);
     precoUrl.searchParams.set("cepDestino", cepDest);
@@ -224,13 +243,13 @@ async function calculateCorreiosRestShipping(token: string, cepDest: string, _co
       }
       throw new Error(`Correios preço falhou: ${precoRes.status} ${detail.slice(0, 200)}`);
     }
+
     const precoJson = (await precoRes.json()) as { pcFinal?: string; txErro?: string };
     if (precoJson.txErro) throw new Error(precoJson.txErro);
     const parsed = Number(String(precoJson.pcFinal || "0").replace(".", "").replace(",", "."));
     if (!Number.isFinite(parsed) || parsed <= 0) throw new Error("Correios não retornou valor de frete (pcFinal)");
     valor += parsed;
 
-    // ----- PRAZO: GET /prazo/v1/nacional/{coProduto}
     const prazoUrl = new URL(`https://api.correios.com.br/prazo/v1/nacional/${cod}`);
     prazoUrl.searchParams.set("cepOrigem", CEP_ORIGEM);
     prazoUrl.searchParams.set("cepDestino", cepDest);
@@ -266,10 +285,6 @@ function getCorreiosRestrictedApiMessage(body: string) {
   return `Correios REST bloqueado: seu usuário autenticou, mas não tem permissão para a API de preços em produção (GTW-012 / API ${apiCode}). Isso não é erro de CEP, peso ou dimensão. Peça aos Correios para liberar no contrato/cartão de postagem o acesso à API REST de Preço Nacional (/preco/v1/nacional, API ${apiCode}) para o idCorreios configurado.`;
 }
 
-function isCorreiosPermissionError(message: string) {
-  return message.includes("GTW-012") || message.includes("Correios REST bloqueado") || message.toLowerCase().includes("api restrita");
-}
-
 async function readCorreiosError(res: Response) {
   const text = await res.text();
   try {
@@ -280,8 +295,6 @@ async function readCorreiosError(res: Response) {
   }
 }
 
-// ---------- Correios CWS ----------
-// Cache em memória do token (válido por ~24h; renovamos a cada 20h).
 let cachedCorreiosToken: { token: string; expiresAt: number } | null = null;
 
 async function correiosToken() {
@@ -317,7 +330,11 @@ async function correiosToken() {
   validateCorreiosCredentials(usuario, senha, cartao);
 
   const basic = Buffer.from(`${usuario}:${senha}`).toString("base64");
-  const headers = { Authorization: `Basic ${basic}`, "Content-Type": "application/json", Accept: "application/json" };
+  const headers = {
+    Authorization: `Basic ${basic}`,
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  };
   const attempts: Array<{ name: string; status: number; detail: string }> = [];
 
   async function tryToken(name: string, url: string, body?: Record<string, string | number>) {
@@ -359,17 +376,15 @@ async function correiosToken() {
 
   if (!issued) {
     const details = attempts
-      .map((a) => `${a.name}=${a.status} (${a.detail?.slice(0, 200) || "sem detalhe"})`)
+      .map((attempt) => `${attempt.name}=${attempt.status} (${attempt.detail?.slice(0, 200) || "sem detalhe"})`)
       .join(". ");
     const authIssue = summarizeCorreiosAuthIssue(attempts, usuario);
     throw new Error(`Correios auth falhou: ${attempts.at(-1)?.status || 401}. ${details}.${authIssue}`);
   }
 
-  // cache 20h — o token dos Correios normalmente vale 24h
   cachedCorreiosToken = { token: issued.token, expiresAt: Date.now() + 20 * 60 * 60 * 1000 };
   return { token: issued.token };
 }
-
 
 export const calculateShipping = createServerFn({ method: "POST" })
   .inputValidator((data: { cepDestino: string; servico?: "PAC" | "SEDEX"; items: Array<{ product_id: string; quantity: number }> }) =>
@@ -387,9 +402,8 @@ export const calculateShipping = createServerFn({ method: "POST" })
     const cepDest = onlyDigits(data.cepDestino);
     if (cepDest.length !== 8) throw new Error("CEP de destino inválido");
 
-    // Buscar dimensões dos produtos
     const supa = await getServerSupabase("public");
-    const ids = data.items.map((i) => i.product_id);
+    const ids = data.items.map((item) => item.product_id);
     const { data: prods, error } = await supa
       .from("products")
       .select("id,name,peso,altura,largura,comprimento")
@@ -407,13 +421,13 @@ export const calculateShipping = createServerFn({ method: "POST" })
 
     const pacotes: ShippingPackage[] = [];
     for (const item of data.items) {
-      const p = prods?.find((x) => x.id === item.product_id);
-      if (!p) continue;
+      const product = prods?.find((p) => p.id === item.product_id);
+      if (!product) continue;
       const pacote = {
-        pesoKg: toCorreiosWeight(p.peso),
-        alturaCm: toCorreiosDimension(p.altura, 2),
-        larguraCm: toCorreiosDimension(p.largura, 11),
-        comprimentoCm: toCorreiosDimension(p.comprimento, 16),
+        pesoKg: toCorreiosWeight(product.peso),
+        alturaCm: toCorreiosDimension(product.altura, 2),
+        larguraCm: toCorreiosDimension(product.largura, 11),
+        comprimentoCm: toCorreiosDimension(product.comprimento, 16),
       };
       for (let q = 0; q < item.quantity; q += 1) pacotes.push(pacote);
     }
@@ -421,7 +435,6 @@ export const calculateShipping = createServerFn({ method: "POST" })
     if (!pacotes.length) throw new Error("Produto inválido no carrinho");
 
     const services: ServiceName[] = data.servico ? [data.servico] : ["SEDEX", "PAC"];
-
     const calcOne = async (servico: ServiceName) => {
       let restMsg = "";
       try {
@@ -431,17 +444,13 @@ export const calculateShipping = createServerFn({ method: "POST" })
         return await calculateCorreiosRestShipping(token, cepDest, contrato, servico, pacotes);
       } catch (error) {
         restMsg = error instanceof Error ? error.message : String(error);
-        // Invalida cache de token em 401/403 para tentar re-autenticar na próxima chamada
-        if (/HTTP 401|HTTP 403|token inválido/i.test(restMsg)) {
-          cachedCorreiosToken = null;
-        }
+        if (/HTTP 401|HTTP 403|token inválido/i.test(restMsg)) cachedCorreiosToken = null;
         console.error(`[Correios] REST falhou (${servico}); tentando calculador público`, {
           reason: restMsg.slice(0, 500),
           packages: pacotes.length,
         });
       }
-      // Fallback SEMPRE — inclusive para erros de permissão (GTW-012),
-      // pois o calculador público não exige contrato/token.
+
       try {
         return await calculateLegacyCorreiosShipping(cepDest, servico, pacotes);
       } catch (legacyError) {
@@ -453,28 +462,22 @@ export const calculateShipping = createServerFn({ method: "POST" })
       }
     };
 
-
     const results = await Promise.allSettled(services.map(calcOne));
     const opcoes = results
-      .map((r, i) => (r.status === "fulfilled" ? r.value : null))
-      .filter((v): v is NonNullable<typeof v> => v !== null);
+      .map((result) => (result.status === "fulfilled" ? result.value : null))
+      .filter((value): value is NonNullable<typeof value> => value !== null);
 
     if (!opcoes.length) {
-      const firstErr = results.find((r) => r.status === "rejected") as PromiseRejectedResult | undefined;
+      const firstErr = results.find((result) => result.status === "rejected") as PromiseRejectedResult | undefined;
       throw new Error(firstErr?.reason instanceof Error ? firstErr.reason.message : "Falha ao calcular frete");
     }
 
-    // Retrocompat: primeiro item = escolha padrão (SEDEX quando ambos)
     const primary = opcoes[0];
     return { ...primary, opcoes };
   });
 
-// ---------- Order + Mercado Pago Pix ----------
-
-// Tabela de taxas do cartão de crédito — canônico no servidor.
-// Frontend só EXIBE; o servidor recalcula do zero e ignora qualquer valor enviado.
 export const CARD_FEE_TABLE = {
-  1: 0.0502, // à vista
+  1: 0.0502,
   2: 0.0702,
   3: 0.0890,
 } as const;
@@ -525,13 +528,11 @@ const orderSchema = z.object({
   card_installments: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional(),
 });
 
-
 export const createPixOrder = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => orderSchema.parse(data))
   .handler(async ({ data }) => {
     const supa = await getServerSupabase();
 
-    // Se o usuário estiver logado, associa o pedido a ele
     let authUserId: string | null = null;
     try {
       const { getRequest } = await import("@tanstack/react-start/server");
@@ -539,66 +540,93 @@ export const createPixOrder = createServerFn({ method: "POST" })
       const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
       const token = authHeader?.replace(/^Bearer\s+/i, "");
       if (token) {
-        const { data: u } = await supa.auth.getUser(token);
-        if (u.user?.id) authUserId = u.user.id;
+        const { data: userData } = await supa.auth.getUser(token);
+        if (userData.user?.id) authUserId = userData.user.id;
       }
     } catch {
-      // segue anônimo
+      // compra anônima
     }
 
-    // Buscar produtos autoritativos (preços/nome/stock). O unit_price recebido existe
-    // apenas por retrocompatibilidade com clientes antigos e nunca é usado no total.
-    const ids = data.items.map((i) => i.product_id);
-    const { data: prods, error: pe } = await supa
+    const ids = data.items.map((item) => item.product_id);
+    const { data: prods, error: productError } = await supa
       .from("products")
-      .select("id,name,code,price,consumer_price,producer_price,on_sale,sale_consumer_price,sale_producer_price,peso,altura,largura,comprimento,stock,active")
+      .select(
+        "id,name,code,price,consumer_price,producer_price,on_sale,sale_consumer_price,sale_producer_price,peso,altura,largura,comprimento,stock,active,tax_code",
+      )
       .in("id", ids);
-    if (pe) throw new Error(pe.message);
+    if (productError) throw new Error(productError.message);
     if (!prods || prods.length !== ids.length) throw new Error("Produto inválido no carrinho");
 
     let accountType = "cliente";
     if (authUserId) {
-      const { data: profile } = await supa.from("profiles").select("account_type").eq("id", authUserId).maybeSingle();
+      const { data: profile } = await supa
+        .from("profiles")
+        .select("account_type")
+        .eq("id", authUserId)
+        .maybeSingle();
       accountType = profile?.account_type ?? "cliente";
     }
 
-    // Recalcula cada preço a partir do cadastro atual e da conta autenticada.
+    const producerAccount = accountType === "produtor";
+    const destinationUf = data.estado.trim().toUpperCase();
     let subtotal = 0;
-    const orderItems = data.items.map((i) => {
-      const p = prods.find((x) => x.id === i.product_id)!;
-      if (!p.active) throw new Error(`Produto indisponível: ${p.name}`);
-      if ((p.stock ?? 0) < i.quantity) throw new Error(`Estoque insuficiente: ${p.name}`);
-      const producer = accountType === "produtor";
-      const salePrice = producer ? (p.sale_producer_price ?? p.sale_consumer_price) : p.sale_consumer_price;
-      const regularPrice = producer ? (p.producer_price ?? p.consumer_price ?? p.price) : (p.consumer_price ?? p.price);
-      const unit = Number(p.on_sale && salePrice != null ? salePrice : regularPrice);
-      if (!Number.isFinite(unit) || unit <= 0) throw new Error(`Preço indisponível: ${p.name}`);
-      const sub = unit * i.quantity;
-      subtotal += sub;
+    let taxAmount = 0;
+
+    const orderItems = data.items.map((item) => {
+      const product = prods.find((p: any) => p.id === item.product_id) as any;
+      if (!product.active) throw new Error(`Produto indisponível: ${product.name}`);
+      if ((product.stock ?? 0) < item.quantity) throw new Error(`Estoque insuficiente: ${product.name}`);
+
+      const producerPrice = Number(product.producer_price ?? 0);
+      const hasProducerPrice = Number.isFinite(producerPrice) && producerPrice > 0;
+      const regularPrice = hasProducerPrice
+        ? (producerAccount ? producerPrice : consumerPriceFromProducer(producerPrice))
+        : Number(product.consumer_price ?? product.price ?? 0);
+      const salePrice = producerAccount
+        ? (product.sale_producer_price ?? product.sale_consumer_price)
+        : product.sale_consumer_price;
+      const unit = Number(product.on_sale && salePrice != null ? salePrice : regularPrice);
+      if (!Number.isFinite(unit) || unit <= 0) throw new Error(`Preço indisponível: ${product.name}`);
+
+      const taxCode = normalizeTaxCode(product.tax_code);
+      if (!isSupportedTaxCode(taxCode)) {
+        throw new Error(
+          `O produto ${product.name} possui código tributário ${taxCode || "não informado"}. ` +
+            "O checkout aceita automaticamente somente os códigos 000 e 040.",
+        );
+      }
+
+      const sub = roundMoney(unit * item.quantity);
+      const icms = calculateItemIcms(sub, taxCode, destinationUf);
+      subtotal = roundMoney(subtotal + sub);
+      taxAmount = roundMoney(taxAmount + icms.amount);
+
       return {
-        product_id: p.id,
-        product_code: p.code,
-        name: p.name,
+        product_id: product.id,
+        product_code: product.code,
+        name: product.name,
         unit_price: unit,
-        quantity: i.quantity,
+        base_unit_price: unit,
+        quantity: item.quantity,
         subtotal: sub,
-        peso: p.peso,
-        altura: p.altura,
-        largura: p.largura,
-        comprimento: p.comprimento,
+        tax_code: taxCode,
+        icms_rate: Number((icms.rate * 100).toFixed(2)),
+        tax_amount: icms.amount,
+        peso: product.peso,
+        altura: product.altura,
+        largura: product.largura,
+        comprimento: product.comprimento,
       };
     });
 
-    // Cálculo AUTORITATIVO de taxas e total (nunca confie no cliente)
-    const baseAmount = Number((subtotal + data.shipping_cost).toFixed(2));
+    const baseAmount = roundMoney(subtotal + taxAmount + data.shipping_cost);
     const paymentMethod = data.payment_method ?? "pix";
     const installments =
       paymentMethod === "card" ? ((data.card_installments ?? 1) as CardInstallments) : null;
     const totals = computePaymentTotals(baseAmount, paymentMethod, installments);
     const total = totals.total;
 
-    // Cria ordem
-    const { data: order, error: oe } = await supa
+    const { data: order, error: orderError } = await supa
       .from("orders")
       .insert({
         user_id: authUserId,
@@ -612,8 +640,10 @@ export const createPixOrder = createServerFn({ method: "POST" })
         complemento: data.complemento || null,
         bairro: data.bairro,
         cidade: data.cidade,
-        estado: data.estado.toUpperCase(),
+        estado: destinationUf,
         subtotal,
+        tax_amount: taxAmount,
+        tax_destination_uf: destinationUf,
         shipping_cost: data.shipping_cost,
         shipping_service: data.shipping_service,
         shipping_deadline_days: data.shipping_deadline_days,
@@ -626,12 +656,12 @@ export const createPixOrder = createServerFn({ method: "POST" })
       } as any)
       .select("*")
       .single();
-    if (oe || !order) throw new Error(oe?.message || "Falha ao criar pedido");
+    if (orderError || !order) throw new Error(orderError?.message || "Falha ao criar pedido");
 
-    const { error: ie } = await supa
+    const { error: itemError } = await supa
       .from("order_items")
-      .insert(orderItems.map((oi) => ({ ...oi, order_id: order.id })));
-    if (ie) throw new Error(ie.message);
+      .insert(orderItems.map((orderItem) => ({ ...orderItem, order_id: order.id })) as any);
+    if (itemError) throw new Error(itemError.message);
 
     const mpToken = process.env.MERCADO_PAGO_ACCESS_TOKEN!;
     if (!mpToken) throw new Error("MERCADO_PAGO_ACCESS_TOKEN ausente");
@@ -645,24 +675,23 @@ export const createPixOrder = createServerFn({ method: "POST" })
     const idType = cpf.length === 14 ? "CNPJ" : "CPF";
 
     const notifBase = process.env.PUBLIC_APP_URL || "https://dukamp.lovable.app";
-    const notification_url = `${notifBase.replace(/\/$/, "")}/api/public/mercadopago-webhook`;
+    const notificationUrl = `${notifBase.replace(/\/$/, "")}/api/public/mercadopago-webhook`;
 
     if (paymentMethod === "card") {
-      // Cartão de crédito é finalizado inline via Card Payment Brick (tokenização no navegador)
-      // e cobrança pelo servidor em `processCardPayment`. Aqui só criamos o pedido pendente.
       return {
         orderId: order.id,
         orderNumber: order.order_number,
         redirectUrl: null as string | null,
         amount: total,
+        merchandiseAmount: subtotal,
+        taxAmount,
+        shippingAmount: data.shipping_cost,
       };
     }
 
     if (paymentMethod === "boleto") {
-      // Boleto bancário via Mercado Pago (bolbradesco). Vencimento em 3 dias úteis (aprox).
       const expires = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
       const expiresIso = expires.toISOString().replace("Z", "-00:00");
-
       const zipCode = onlyDigits(data.cep);
       const streetNumber = onlyDigits(data.numero) || data.numero;
 
@@ -678,7 +707,7 @@ export const createPixOrder = createServerFn({ method: "POST" })
           description: `Pedido ${order.order_number} - Dukamp`,
           payment_method_id: "bolbradesco",
           external_reference: order.id,
-          notification_url,
+          notification_url: notificationUrl,
           date_of_expiration: expiresIso,
           payer: {
             email: data.email,
@@ -691,23 +720,25 @@ export const createPixOrder = createServerFn({ method: "POST" })
               street_number: String(streetNumber),
               neighborhood: data.bairro,
               city: data.cidade,
-              federal_unit: data.estado.toUpperCase(),
+              federal_unit: destinationUf,
             },
           },
         }),
       });
+
       if (!boletoRes.ok) {
         const raw = await boletoRes.text();
         console.error("[MercadoPago] boleto recusado", boletoRes.status, raw);
         let mpMsg = "";
         try {
-          const j = JSON.parse(raw) as { message?: string; cause?: Array<{ code?: number; description?: string }> };
-          mpMsg = j.cause?.[0]?.description || j.message || "";
+          const body = JSON.parse(raw) as { message?: string; cause?: Array<{ description?: string }> };
+          mpMsg = body.cause?.[0]?.description || body.message || "";
         } catch {
           // ignore
         }
         throw new Error(mpMsg || "Não foi possível gerar o boleto. Verifique os dados e tente novamente.");
       }
+
       const mpB = (await boletoRes.json()) as {
         id: number | string;
         status: string;
@@ -731,10 +762,12 @@ export const createPixOrder = createServerFn({ method: "POST" })
         orderNumber: order.order_number,
         redirectUrl: null as string | null,
         amount: total,
+        merchandiseAmount: subtotal,
+        taxAmount,
+        shippingAmount: data.shipping_cost,
       };
     }
 
-    // ---------- Pix (fluxo original inalterado) ----------
     const expires = new Date(Date.now() + 30 * 60 * 1000);
     const expiresIso = expires.toISOString().replace("Z", "-00:00");
 
@@ -750,7 +783,7 @@ export const createPixOrder = createServerFn({ method: "POST" })
         description: `Pedido ${order.order_number} - Dukamp`,
         payment_method_id: "pix",
         external_reference: order.id,
-        notification_url,
+        notification_url: notificationUrl,
         date_of_expiration: expiresIso,
         payer: {
           email: data.email,
@@ -760,19 +793,20 @@ export const createPixOrder = createServerFn({ method: "POST" })
         },
       }),
     });
+
     if (!mpRes.ok) {
       const raw = await mpRes.text();
       console.error("[MercadoPago] pagamento recusado", mpRes.status, raw);
       let mpMsg = "";
       try {
-        const j = JSON.parse(raw) as { message?: string; cause?: Array<{ code?: number; description?: string }> };
-        mpMsg = j.cause?.[0]?.description || j.message || "";
+        const body = JSON.parse(raw) as { message?: string; cause?: Array<{ description?: string }> };
+        mpMsg = body.cause?.[0]?.description || body.message || "";
       } catch {
         // ignore
       }
-      const friendly = translateMpError(mpMsg);
-      throw new Error(friendly);
+      throw new Error(translateMpError(mpMsg));
     }
+
     const mp = (await mpRes.json()) as {
       id: number | string;
       status: string;
@@ -780,24 +814,31 @@ export const createPixOrder = createServerFn({ method: "POST" })
         transaction_data?: { qr_code?: string; qr_code_base64?: string; ticket_url?: string };
       };
     };
+    const transactionData = mp.point_of_interaction?.transaction_data;
 
-    const td = mp.point_of_interaction?.transaction_data;
     await supa
       .from("orders")
       .update({
         mp_payment_id: String(mp.id),
-        mp_qr_code: td?.qr_code || null,
-        mp_qr_code_base64: td?.qr_code_base64 || null,
-        mp_ticket_url: td?.ticket_url || null,
+        mp_qr_code: transactionData?.qr_code || null,
+        mp_qr_code_base64: transactionData?.qr_code_base64 || null,
+        mp_ticket_url: transactionData?.ticket_url || null,
         mp_expires_at: expires.toISOString(),
         payment_status: (mp.status as "pending" | "approved" | "in_process") || "pending",
       })
       .eq("id", order.id);
 
-    return { orderId: order.id, orderNumber: order.order_number, redirectUrl: null as string | null, amount: total };
+    return {
+      orderId: order.id,
+      orderNumber: order.order_number,
+      redirectUrl: null as string | null,
+      amount: total,
+      merchandiseAmount: subtotal,
+      taxAmount,
+      shippingAmount: data.shipping_cost,
+    };
   });
 
-// Retorna a Public Key do Mercado Pago para o Card Payment Brick no navegador.
 export const getMpPublicKey = createServerFn({ method: "GET" }).handler(async () => {
   const key = process.env.MERCADO_PAGO_PUBLIC_KEY;
   if (!key) throw new Error("MERCADO_PAGO_PUBLIC_KEY não configurada");
@@ -819,8 +860,6 @@ const cardPaymentSchema = z.object({
   }),
 });
 
-// Cobra um pedido pendente via Mercado Pago usando o token de cartão gerado no navegador.
-// O valor cobrado é SEMPRE o `orders.total` recalculado no servidor — cliente não pode manipular.
 export const processCardPayment = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => cardPaymentSchema.parse(data))
   .handler(async ({ data }) => {
@@ -829,7 +868,17 @@ export const processCardPayment = createServerFn({ method: "POST" })
       .from("orders")
       .select("id,order_number,total,payment_method,payment_status,card_installments,email,customer_name,cpf_cnpj" as any)
       .eq("id", data.order_id)
-      .single<{ id: string; order_number: string; total: number; payment_method: string; payment_status: string; card_installments: number | null; email: string; customer_name: string; cpf_cnpj: string }>();
+      .single<{
+        id: string;
+        order_number: string;
+        total: number;
+        payment_method: string;
+        payment_status: string;
+        card_installments: number | null;
+        email: string;
+        customer_name: string;
+        cpf_cnpj: string;
+      }>();
     if (error || !order) throw new Error("Pedido não encontrado");
 
     if (order.payment_method !== "card") throw new Error("Pedido não é de cartão de crédito");
@@ -842,7 +891,7 @@ export const processCardPayment = createServerFn({ method: "POST" })
     if (!mpToken) throw new Error("MERCADO_PAGO_ACCESS_TOKEN ausente");
 
     const notifBase = process.env.PUBLIC_APP_URL || "https://dukamp.lovable.app";
-    const notification_url = `${notifBase.replace(/\/$/, "")}/api/public/mercadopago-webhook`;
+    const notificationUrl = `${notifBase.replace(/\/$/, "")}/api/public/mercadopago-webhook`;
 
     const payRes = await fetch("https://api.mercadopago.com/v1/payments", {
       method: "POST",
@@ -859,7 +908,7 @@ export const processCardPayment = createServerFn({ method: "POST" })
         payment_method_id: data.payment_method_id,
         issuer_id: data.issuer_id || undefined,
         external_reference: order.id,
-        notification_url,
+        notification_url: notificationUrl,
         statement_descriptor: "DUKAMP",
         payer: {
           email: data.payer.email,
@@ -870,7 +919,11 @@ export const processCardPayment = createServerFn({ method: "POST" })
 
     const raw = await payRes.text();
     let body: any = {};
-    try { body = JSON.parse(raw); } catch {}
+    try {
+      body = JSON.parse(raw);
+    } catch {
+      // ignore
+    }
     if (!payRes.ok) {
       console.error("[MercadoPago] cartão recusado", payRes.status, raw);
       const mpMsg = body?.cause?.[0]?.description || body?.message || "";
@@ -902,14 +955,15 @@ export const getOrderPublic = createServerFn({ method: "GET" })
     const { data: order, error } = await supa
       .from("orders")
       .select(
-        "id,order_number,customer_name,email,total,subtotal,shipping_cost,shipping_service,shipping_deadline_days,payment_method,payment_status,mp_qr_code,mp_qr_code_base64,mp_ticket_url,mp_expires_at,created_at,tracking_code,tracking_status,posted_at,label_created_at",
+        "id,order_number,customer_name,email,total,subtotal,tax_amount,tax_destination_uf,shipping_cost,shipping_service,shipping_deadline_days,payment_method,payment_status,mp_qr_code,mp_qr_code_base64,mp_ticket_url,mp_expires_at,created_at,tracking_code,tracking_status,posted_at,label_created_at",
       )
       .eq("id", data.id)
       .single();
     if (error || !order) throw new Error("Pedido não encontrado");
+
     const { data: items } = await supa
       .from("order_items")
-      .select("name,quantity,unit_price,subtotal")
+      .select("name,quantity,unit_price,subtotal,tax_code,icms_rate,tax_amount")
       .eq("order_id", data.id);
     return { order, items: items || [] };
   });
