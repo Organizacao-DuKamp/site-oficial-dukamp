@@ -43,7 +43,7 @@ export const calculateCartTax = createServerFn({ method: "POST" })
     const ids = [...new Set(data.items.map((item) => item.product_id))];
     const { data: products, error } = await (supa as any)
       .from("products")
-      .select("id,name,active,producer_price,tax_code")
+      .select("id,name,active,producer_price,on_sale,sale_consumer_price,sale_producer_price,tax_code")
       .in("id", ids);
 
     if (error) throw new Error(error.message || "Falha ao consultar os produtos para cálculo de ICMS.");
@@ -68,7 +68,17 @@ export const calculateCartTax = createServerFn({ method: "POST" })
         throw new Error(`Preço do produtor indisponível: ${product.name}`);
       }
 
-      const unitPrice = data.accountType === "produtor" ? producerPrice : consumerPriceFromProducer(producerPrice);
+      const regularPrice = data.accountType === "produtor"
+        ? producerPrice
+        : consumerPriceFromProducer(producerPrice);
+      const salePrice = data.accountType === "produtor"
+        ? (product.sale_producer_price ?? product.sale_consumer_price)
+        : product.sale_consumer_price;
+      const unitPrice = Number(product.on_sale && salePrice != null ? salePrice : regularPrice);
+      if (!Number.isFinite(unitPrice) || unitPrice <= 0) {
+        throw new Error(`Preço indisponível: ${product.name}`);
+      }
+
       const baseAmount = roundMoney(unitPrice * item.quantity);
       const icms = calculateItemIcms(baseAmount, taxCode, data.destinationUf);
       merchandiseAmount = roundMoney(merchandiseAmount + baseAmount);
