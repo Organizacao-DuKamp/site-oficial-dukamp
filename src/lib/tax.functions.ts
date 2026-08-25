@@ -41,7 +41,7 @@ export const calculateCartTax = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const supa = await getServerSupabase();
     const ids = [...new Set(data.items.map((item) => item.product_id))];
-    const { data: products, error } = await supa
+    const { data: products, error } = await (supa as any)
       .from("products")
       .select("id,name,active,producer_price,tax_code")
       .in("id", ids);
