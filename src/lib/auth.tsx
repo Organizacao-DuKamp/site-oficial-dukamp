@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { PROTECTED_ADMIN_EMAIL } from "@/lib/constants";
+import { consumerPriceFromProducer } from "@/lib/tax";
 
 export type AccountType = "cliente" | "revendedor" | "produtor" | "empresa" | "vendedor" | "admin";
 
@@ -187,8 +188,9 @@ type PixFields = {
 };
 
 export function regularPriceForAccount(product: PriceFields, type: AccountType): number {
-  if (type === "produtor" && product.producer_price != null) {
-    return Number(product.producer_price);
+  const producerPrice = Number(product.producer_price ?? 0);
+  if (Number.isFinite(producerPrice) && producerPrice > 0) {
+    return type === "produtor" ? producerPrice : consumerPriceFromProducer(producerPrice);
   }
   return Number(product.consumer_price ?? product.price ?? 0);
 }

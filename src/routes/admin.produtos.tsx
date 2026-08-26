@@ -34,10 +34,9 @@ function ProductsAdmin() {
       columns={[
         { key: "name", label: "Nome" },
         { key: "code", label: "Código" },
+        { key: "tax_code", label: "Cód. trib." },
         { key: "consumer_price", label: "Consumidor", format: (v) => v != null ? Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—" },
-        
         { key: "producer_price", label: "Produtor Rural", format: (v) => v != null ? Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—" },
-
         { key: "on_sale", label: "Promoção", format: (v) => v ? "Sim" : "—" },
         { key: "category_position", label: "Posição", format: (v) => v ?? "—" },
         { key: "stock", label: "Estoque" },
@@ -51,9 +50,14 @@ function ProductsAdmin() {
         { name: "category_id", label: "Categoria", type: "select", options: (cats.data ?? []).map((c) => ({ value: c.id, label: c.name })) },
         { name: "catalog_id", label: "Catálogo (categoria)", type: "select", options: (catalogs.data ?? []).map((c) => ({ value: c.id, label: c.name })) },
         { name: "category_position", label: "Posição na categoria (deixe vazio para ordem padrão)", type: "number", step: "1" },
-        { name: "consumer_price", label: "Preço — Consumidor", type: "number", step: "0.01", required: true, defaultValue: 0 },
-        
-        { name: "producer_price", label: "Preço — Produtor Rural", type: "number", step: "0.01" },
+        { name: "producer_price", label: "Preço — Produtor Rural (PRECO2 / fonte principal)", type: "number", step: "0.01" },
+        { name: "consumer_price", label: "Preço — Consumidor (referência; site usa produtor + 22%)", type: "number", step: "0.01", required: true, defaultValue: 0 },
+        { name: "tax_code", label: "Código tributário (000/040)" },
+        { name: "erp_group", label: "Grupo ERP" },
+        { name: "erp_icms_rate", label: "% ICMS do ERP", type: "number", step: "0.01" },
+        { name: "points", label: "Pontos", type: "number", step: "0.001" },
+        { name: "barcode", label: "Código de barras" },
+        { name: "fixed_table", label: "Tabela fixa", type: "boolean", defaultValue: false },
         { name: "on_sale", label: "Produto em promoção", type: "boolean", defaultValue: false },
         { name: "sale_consumer_price", label: "PROMOÇÃO — Preço Consumidor", type: "number", step: "0.01", showIf: (v) => !!v.on_sale },
         { name: "sale_producer_price", label: "PROMOÇÃO — Preço Produtor Rural", type: "number", step: "0.01", showIf: (v) => !!v.on_sale },
@@ -62,9 +66,7 @@ function ProductsAdmin() {
         { name: "price", label: "Preço base (legado)", type: "number", step: "0.01", defaultValue: 0 },
         { name: "pix_price", label: "Preço PIX (legado)", type: "number", step: "0.01" },
         { name: "consumer_pix_price", label: "PIX — Consumidor", type: "number", step: "0.01" },
-        
         { name: "producer_pix_price", label: "PIX — Produtor Rural", type: "number", step: "0.01" },
-
         { name: "installments", label: "Parcelas", type: "number", defaultValue: 1 },
         { name: "stock", label: "Estoque", type: "number", defaultValue: 0 },
         { name: "peso", label: "Peso (kg)", type: "number", step: "0.001" },

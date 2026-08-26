@@ -36,7 +36,7 @@ async function listPortfolioCustomers(supabaseAdmin: any, sellerCode: string): P
   const rows: PortfolioCustomer[] = [];
   const pageSize = 1000;
   for (let from = 0; ; from += pageSize) {
-    const { data, error } = await supabaseAdmin.from("customers").select("id,codigo,cliente,cidade,uf,telefone,celular,email,cnpj_cpf,ultima_compra,compra_ano,vendedor_codigo,vendedor_nome").eq("vendedor_codigo", sellerCode).range(from, from + pageSize - 1);
+    const { data, error } = await supabaseAdmin.from("customers").select("id,codigo,cliente,cidade,uf,telefone,celular,email,cnpj_cpf,ultima_compra,compra_ano,vendedor_codigo,vendedor_nome").eq("vendedor_codigo", sellerCode).eq("abc_na_carteira_atual", true).range(from, from + pageSize - 1);
     if (error) throw error;
     const batch = (data ?? []) as PortfolioCustomer[];
     rows.push(...batch);
@@ -66,7 +66,7 @@ async function authorizedCustomer(supabaseAdmin: any, user: SellerUser, customer
   if (!customer) return null;
   if (scope === "portfolio") {
     const sellerCode = sellerCodeFromUser(user);
-    if (!sellerCode || String(customer.vendedor_codigo ?? "").trim() !== sellerCode) return null;
+    if (!sellerCode || customer.abc_na_carteira_atual !== true || String(customer.vendedor_codigo ?? "").trim() !== sellerCode) return null;
   } else {
     const cutoff = sixMonthsAgoDate();
     const lastPurchase = customer.ultima_compra ? String(customer.ultima_compra).slice(0, 10) : null;
@@ -233,7 +233,7 @@ export const Route = createFileRoute("/api/seller/clients")({
           const saleValue = parseSaleValue(payload.saleValue);
           if (!customerCode || !saleNotes || saleValue <= 0 || saleValue > 999999999999) return errorResponse("Informe código do cliente, produtos/observação e um valor válido.", 400);
           try {
-            const { data: customer, error: customerError } = await supabaseAdmin.from("customers").select("id,codigo,cliente,vendedor_codigo").eq("codigo", customerCode).eq("vendedor_codigo", sellerCode).maybeSingle();
+            const { data: customer, error: customerError } = await supabaseAdmin.from("customers").select("id,codigo,cliente,vendedor_codigo").eq("codigo", customerCode).eq("vendedor_codigo", sellerCode).eq("abc_na_carteira_atual", true).maybeSingle();
             if (customerError) throw customerError;
             if (!customer) return errorResponse("Esse código de cliente não pertence à sua carteira.", 404);
             const { data: saleRequest, error } = await supabaseAdmin.from("seller_sale_requests").insert({ seller_user_id: user.id, seller_record_id: seller.sellerId, seller_code: sellerCode, seller_name: seller.name, customer_id: customer.id, customer_code: customer.codigo, customer_name: customer.cliente, sale_notes: saleNotes, sale_value: Number(saleValue.toFixed(2)), status: "new" }).select("id,status,created_at").single();
