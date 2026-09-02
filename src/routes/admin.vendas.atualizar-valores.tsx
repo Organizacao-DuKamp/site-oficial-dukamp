@@ -215,6 +215,10 @@ function AtualizarValoresVendedores() {
 
   async function handleImport() {
     if (!file || !parsed) return;
+    if (totalDifference > 0.01) {
+      toast.error("A soma dos vendedores não confere com o TOTAL do PDF. Confira o arquivo antes de atualizar.");
+      return;
+    }
     setImporting(true);
     setResult(null);
 
@@ -279,7 +283,7 @@ function AtualizarValoresVendedores() {
           <Button
             type="button"
             onClick={() => void handleImport()}
-            disabled={!parsed || parsing || importing}
+            disabled={!parsed || parsing || importing || totalDifference > 0.01}
             className="shrink-0"
           >
             {importing ? (

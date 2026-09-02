@@ -200,7 +200,7 @@ export async function parseSellerMarginPdf(file: Blob): Promise<ParsedSellerMarg
   }
 
   const totalIndex = lines.findIndex(
-    (line, index) => index > headerIndex && /^\s*TOTAL\.\*/i.test(line),
+    (line, index) => index > headerIndex && /^\s*TOTAL\b/i.test(line),
   );
   if (totalIndex < 0) {
     throw new Error("O total do relatório não foi encontrado no PDF.");

@@ -303,7 +303,6 @@ export const Route = createFileRoute("/api/admin/seller-margin-reports")({
           if (code && report.seller_user_id) previousByCode.set(code, report.seller_user_id);
         }
 
-        const linkedByCode = new Map<string, SellerMapping>();
         const warnings: string[] = [];
         const unlinkedRows: Array<{ code: string; name: string }> = [];
         let linked = 0;
