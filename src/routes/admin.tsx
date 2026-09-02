@@ -40,6 +40,7 @@ const NAV: NavEntry[] = [
       { to: "/admin/vendas/clientes", label: "Clientes", icon: Users },
       { to: "/admin/vendas/historico", label: "Histórico de Vendas", icon: History },
       { to: "/admin/vendas/painel", label: "Painel", icon: BarChart3 },
+      { to: "/admin/vendas/atualizar-valores", label: "Atualizar valores", icon: RefreshCw },
     ],
   },
   { to: "/admin/equipe-vendas", label: "Equipe de Vendas", icon: UserSquare2 },
