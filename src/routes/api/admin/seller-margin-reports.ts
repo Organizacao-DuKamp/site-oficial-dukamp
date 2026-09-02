@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import type { User } from "@supabase/supabase-js";
 
 type IncomingReportRow = Record<string, unknown>;
 
@@ -61,7 +62,9 @@ function normalizeSellerCode(value: string): string {
 }
 
 function readText(value: unknown, label: string, maximumLength: number): string {
-  const text = String(value ?? "").replace(/[\r\n]+/g, " ").trim();
+  const text = String(value ?? "")
+    .replace(/[\r\n]+/g, " ")
+    .trim();
   if (!text || text.length > maximumLength) {
     throw new Error(label + " inválido.");
   }
@@ -120,7 +123,9 @@ function namesLookCompatible(reportName: string, accountName: string): boolean {
   const account = normalizeName(accountName);
   if (!report || !account) return true;
 
-  return account.startsWith(report) || report.startsWith(account.slice(0, Math.min(4, account.length)));
+  return (
+    account.startsWith(report) || report.startsWith(account.slice(0, Math.min(4, account.length)))
+  );
 }
 
 async function authorizeAdmin(request: Request) {
@@ -182,12 +187,12 @@ function validateRows(value: unknown): ValidatedReportRow[] {
   });
 }
 
-function accountName(user: any, fallback: string): string {
+function accountName(user: User, fallback: string): string {
   const metadata = user.user_metadata ?? {};
   return String(metadata.full_name ?? user.email ?? fallback).trim() || fallback;
 }
 
-function accountSellerCode(user: any): string | null {
+function accountSellerCode(user: User): string | null {
   const value = user.app_metadata?.seller_code;
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
@@ -210,7 +215,10 @@ export const Route = createFileRoute("/api/admin/seller-margin-reports")({
 
         if (error) {
           console.error("[admin-seller-margin-reports] Falha ao listar relatórios:", error);
-          return response({ error: "Não foi possível consultar o histórico de relatórios." }, { status: 500 });
+          return response(
+            { error: "Não foi possível consultar o histórico de relatórios." },
+            { status: 500 },
+          );
         }
 
         return response({ reports: data ?? [] });
@@ -252,12 +260,15 @@ export const Route = createFileRoute("/api/admin/seller-margin-reports")({
         const { listAllAuthUsers, resolveSellerIdentity } =
           await import("@/lib/seller-system.server");
 
-        let users: any[];
+        let users: User[];
         try {
           users = await listAllAuthUsers(authorization.supabaseAdmin);
         } catch (error) {
           console.error("[admin-seller-margin-reports] Falha ao listar contas:", error);
-          return response({ error: "Não foi possível consultar as contas de vendedores." }, { status: 500 });
+          return response(
+            { error: "Não foi possível consultar as contas de vendedores." },
+            { status: 500 },
+          );
         }
 
         const sellerByCode = new Map<string, SellerMapping>();
@@ -293,7 +304,10 @@ export const Route = createFileRoute("/api/admin/seller-margin-reports")({
           .eq("report_month", reportMonth);
 
         if (existingError) {
-          console.error("[admin-seller-margin-reports] Falha ao consultar histórico:", existingError);
+          console.error(
+            "[admin-seller-margin-reports] Falha ao consultar histórico:",
+            existingError,
+          );
           return response({ error: "Não foi possível preparar a atualização." }, { status: 500 });
         }
 
@@ -310,22 +324,27 @@ export const Route = createFileRoute("/api/admin/seller-margin-reports")({
         const records = rows.map((row) => {
           const current = sellerByCode.get(row.code);
           const previousUserId = previousByCode.get(row.code);
-          const seller = current ?? (
-            previousUserId
+          const seller =
+            current ??
+            (previousUserId
               ? {
                   userId: previousUserId,
                   accountName: "",
                   source: "previous_report" as const,
                 }
-              : null
-          );
+              : null);
 
           if (seller) {
             linked += 1;
             if (current && !namesLookCompatible(row.name, current.accountName)) {
               warnings.push(
-                "Código " + row.code + ': o PDF traz "' + row.name +
-                '" e a conta está como "' + current.accountName + '". A vinculação foi feita pelo código.',
+                "Código " +
+                  row.code +
+                  ': o PDF traz "' +
+                  row.name +
+                  '" e a conta está como "' +
+                  current.accountName +
+                  '". A vinculação foi feita pelo código.',
               );
             }
           } else {
@@ -369,7 +388,10 @@ export const Route = createFileRoute("/api/admin/seller-margin-reports")({
 
         if (upsertError) {
           console.error("[admin-seller-margin-reports] Falha ao salvar relatório:", upsertError);
-          return response({ error: "Não foi possível salvar os valores dos vendedores." }, { status: 500 });
+          return response(
+            { error: "Não foi possível salvar os valores dos vendedores." },
+            { status: 500 },
+          );
         }
 
         return response({

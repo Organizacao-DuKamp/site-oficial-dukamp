@@ -43,9 +43,7 @@ function decodePdfString(value: string): string {
 
   return value
     .replace(/\\([\\()nrtbf])/g, (_match, code: string) => escapes[code] ?? code)
-    .replace(/\\([0-7]{1,3})/g, (_match, octal: string) =>
-      String.fromCharCode(parseInt(octal, 8)),
-    )
+    .replace(/\\([0-7]{1,3})/g, (_match, octal: string) => String.fromCharCode(parseInt(octal, 8)))
     .replace(/\\\r?\n/g, "");
 }
 
@@ -142,11 +140,11 @@ function parseNumber(value: string, kind: "amount" | "tonnage"): number {
   const normalized = value.trim();
   const parsed =
     kind === "tonnage"
-      ? Number(normalized.includes(",") ? normalized.replace(/\./g, "").replace(",", ".") : normalized)
+      ? Number(
+          normalized.includes(",") ? normalized.replace(/\./g, "").replace(",", ".") : normalized,
+        )
       : Number(
-          normalized.includes(",")
-            ? normalized.replace(/\./g, "").replace(",", ".")
-            : normalized,
+          normalized.includes(",") ? normalized.replace(/\./g, "").replace(",", ".") : normalized,
         );
 
   if (!Number.isFinite(parsed)) {
@@ -170,11 +168,7 @@ function nextNonEmptyLine(lines: string[], index: number): string {
 }
 
 function isAggregateRow(name: string, nextLine: string): boolean {
-  return (
-    /^-+$/.test(nextLine) ||
-    /^(FILIA|EXTER|MATRI)$/i.test(name) ||
-    /^TOTAL/i.test(name)
-  );
+  return /^-+$/.test(nextLine) || /^(FILIA|EXTER|MATRI)$/i.test(name) || /^TOTAL/i.test(name);
 }
 
 export async function parseSellerMarginPdf(file: Blob): Promise<ParsedSellerMarginReport> {

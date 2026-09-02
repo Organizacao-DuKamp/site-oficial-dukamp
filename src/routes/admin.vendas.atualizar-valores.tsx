@@ -1,7 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { AlertCircle, CheckCircle2, FileText, History, Loader2, RefreshCw, Upload } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  FileText,
+  History,
+  Loader2,
+  RefreshCw,
+  Upload,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -78,10 +86,12 @@ function money(value: number | string | null | undefined): string {
 }
 
 function percent(value: number | string | null | undefined): string {
-  return Number(value ?? 0).toLocaleString("pt-BR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }) + "%";
+  return (
+    Number(value ?? 0).toLocaleString("pt-BR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }) + "%"
+  );
 }
 
 function tons(value: number | string | null | undefined): string {
@@ -118,10 +128,7 @@ async function loadHistory(): Promise<{ reports: ReportHistoryRow[] }> {
   return request<{ reports: ReportHistoryRow[] }>("/api/admin/seller-margin-reports");
 }
 
-async function importReport(
-  file: File,
-  report: ParsedSellerMarginReport,
-): Promise<ImportResult> {
+async function importReport(file: File, report: ParsedSellerMarginReport): Promise<ImportResult> {
   return request<ImportResult>("/api/admin/seller-margin-reports", {
     method: "POST",
     body: JSON.stringify({
@@ -137,11 +144,7 @@ function groupHistory(reports: ReportHistoryRow[]): HistoryGroup[] {
   const groups = new Map<string, HistoryGroup>();
 
   for (const report of reports) {
-    const key = [
-      report.period_start,
-      report.period_end,
-      report.source_file,
-    ].join("|");
+    const key = [report.period_start, report.period_end, report.source_file].join("|");
     const current = groups.get(key);
 
     if (current) {
@@ -216,7 +219,9 @@ function AtualizarValoresVendedores() {
   async function handleImport() {
     if (!file || !parsed) return;
     if (totalDifference > 0.01) {
-      toast.error("A soma dos vendedores não confere com o TOTAL do PDF. Confira o arquivo antes de atualizar.");
+      toast.error(
+        "A soma dos vendedores não confere com o TOTAL do PDF. Confira o arquivo antes de atualizar.",
+      );
       return;
     }
     setImporting(true);
@@ -232,7 +237,9 @@ function AtualizarValoresVendedores() {
           : imported.totalRows + " vendedor(es) importado(s) no período.",
       );
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Não foi possível importar o relatório.");
+      toast.error(
+        error instanceof Error ? error.message : "Não foi possível importar o relatório.",
+      );
     } finally {
       setImporting(false);
     }
@@ -253,9 +260,9 @@ function AtualizarValoresVendedores() {
           <Badge variant="secondary">RELATÓRIO MARGEM VENDA</Badge>
         </div>
         <p className="mt-1 max-w-4xl text-sm text-muted-foreground">
-          Envie o PDF gerado pelo ERP para atualizar os valores dos vendedores no período
-          informado no próprio relatório. O sistema lê o arquivo no navegador, mostra uma
-          prévia e grava os dados no histórico do painel do vendedor.
+          Envie o PDF gerado pelo ERP para atualizar os valores dos vendedores no período informado
+          no próprio relatório. O sistema lê o arquivo no navegador, mostra uma prévia e grava os
+          dados no histórico do painel do vendedor.
         </p>
       </div>
 
@@ -267,8 +274,8 @@ function AtualizarValoresVendedores() {
           <div>
             <h2 className="font-semibold">Importar relatório PDF</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              O arquivo deve conter a tabela COD VEND e o período no título, como
-              “RELATORIO MARGEM VENDA DE 01/08/26 ATE 31/08/26”.
+              O arquivo deve conter a tabela COD VEND e o período no título, como “RELATORIO MARGEM
+              VENDA DE 01/08/26 ATE 31/08/26”.
             </p>
           </div>
         </div>
@@ -313,7 +320,8 @@ function AtualizarValoresVendedores() {
             <div>
               <h2 className="font-semibold">Prévia da importação</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Arquivo: {file?.name} · Período: {dateBR(parsed.periodStart)} a {dateBR(parsed.periodEnd)}
+                Arquivo: {file?.name} · Período: {dateBR(parsed.periodStart)} a{" "}
+                {dateBR(parsed.periodEnd)}
               </p>
             </div>
             <Badge variant="outline">{parsed.rows.length} vendedores encontrados</Badge>
@@ -321,24 +329,35 @@ function AtualizarValoresVendedores() {
 
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="rounded-xl bg-muted/40 p-4">
-              <div className="text-xs uppercase tracking-wide text-muted-foreground">Total do PDF</div>
-              <div className="mt-1 text-xl font-bold">{parsed.reportTotal === null ? "—" : money(parsed.reportTotal)}</div>
+              <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                Total do PDF
+              </div>
+              <div className="mt-1 text-xl font-bold">
+                {parsed.reportTotal === null ? "—" : money(parsed.reportTotal)}
+              </div>
             </div>
             <div className="rounded-xl bg-muted/40 p-4">
-              <div className="text-xs uppercase tracking-wide text-muted-foreground">Soma dos vendedores</div>
+              <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                Soma dos vendedores
+              </div>
               <div className="mt-1 text-xl font-bold">{money(importedTotal)}</div>
             </div>
             <div className="rounded-xl bg-muted/40 p-4">
-              <div className="text-xs uppercase tracking-wide text-muted-foreground">Período identificado</div>
-              <div className="mt-1 text-xl font-bold">{MONTHS[Number(parsed.periodStart.slice(5, 7)) - 1]} {parsed.periodStart.slice(0, 4)}</div>
+              <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                Período identificado
+              </div>
+              <div className="mt-1 text-xl font-bold">
+                {MONTHS[Number(parsed.periodStart.slice(5, 7)) - 1]}{" "}
+                {parsed.periodStart.slice(0, 4)}
+              </div>
             </div>
           </div>
 
           {totalDifference > 0.01 && (
             <div className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-              A soma das linhas ({money(importedTotal)}) não confere com o TOTAL do PDF
-              ({money(parsed.reportTotal ?? 0)}). Confira o arquivo antes de atualizar.
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />A soma das linhas (
+              {money(importedTotal)}) não confere com o TOTAL do PDF (
+              {money(parsed.reportTotal ?? 0)}). Confira o arquivo antes de atualizar.
             </div>
           )}
 
@@ -370,9 +389,9 @@ function AtualizarValoresVendedores() {
           </div>
 
           <p className="text-xs text-muted-foreground">
-            Os campos completos do relatório também serão gravados, incluindo devoluções,
-            custos, comissão e margens de aditivos, sacarias e balcão. Para o mesmo código
-            e mês, a nova importação substitui os valores anteriores.
+            Os campos completos do relatório também serão gravados, incluindo devoluções, custos,
+            comissão e margens de aditivos, sacarias e balcão. Para o mesmo código e mês, a nova
+            importação substitui os valores anteriores.
           </p>
         </section>
       )}
@@ -401,8 +420,8 @@ function AtualizarValoresVendedores() {
             <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
               <p className="font-semibold">Linhas salvas sem conta de vendedor</p>
               <p className="mt-1">
-                Elas continuam no histórico administrativo e serão vinculadas automaticamente
-                quando uma conta for associada ao mesmo código.
+                Elas continuam no histórico administrativo e serão vinculadas automaticamente quando
+                uma conta for associada ao mesmo código.
               </p>
               <p className="mt-2 font-mono text-xs">
                 {result.unlinkedRows.map((row) => row.code + " - " + row.name).join(" · ")}
@@ -414,7 +433,9 @@ function AtualizarValoresVendedores() {
             <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
               <p className="font-semibold">Avisos de conferência</p>
               <ul className="mt-1 list-disc space-y-1 pl-5">
-                {result.warnings.map((warning) => <li key={warning}>{warning}</li>)}
+                {result.warnings.map((warning) => (
+                  <li key={warning}>{warning}</li>
+                ))}
               </ul>
             </div>
           )}
@@ -435,10 +456,14 @@ function AtualizarValoresVendedores() {
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => void queryClient.invalidateQueries({ queryKey: ["admin-seller-margin-reports"] })}
+            onClick={() =>
+              void queryClient.invalidateQueries({ queryKey: ["admin-seller-margin-reports"] })
+            }
             disabled={history.isFetching}
           >
-            <RefreshCw className={history.isFetching ? "mr-2 h-4 w-4 animate-spin" : "mr-2 h-4 w-4"} />
+            <RefreshCw
+              className={history.isFetching ? "mr-2 h-4 w-4 animate-spin" : "mr-2 h-4 w-4"}
+            />
             Atualizar histórico
           </Button>
         </div>
@@ -446,7 +471,9 @@ function AtualizarValoresVendedores() {
         {history.isError ? (
           <div className="flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
             <AlertCircle className="h-4 w-4" />
-            {history.error instanceof Error ? history.error.message : "Não foi possível carregar o histórico."}
+            {history.error instanceof Error
+              ? history.error.message
+              : "Não foi possível carregar o histórico."}
           </div>
         ) : history.isPending ? (
           <div className="flex items-center justify-center rounded-xl border bg-card p-10 text-muted-foreground">
@@ -472,15 +499,21 @@ function AtualizarValoresVendedores() {
                 {groups.map((group) => (
                   <tr key={group.key} className="border-t">
                     <td className="p-3">
-                      <div className="font-medium">{dateBR(group.periodStart)} a {dateBR(group.periodEnd)}</div>
+                      <div className="font-medium">
+                        {dateBR(group.periodStart)} a {dateBR(group.periodEnd)}
+                      </div>
                       <div className="text-xs text-muted-foreground">
                         {group.linkedRows} vinculados · {group.rows - group.linkedRows} sem conta
                       </div>
                     </td>
-                    <td className="p-3 max-w-[240px] truncate" title={group.sourceFile}>{group.sourceFile}</td>
+                    <td className="p-3 max-w-[240px] truncate" title={group.sourceFile}>
+                      {group.sourceFile}
+                    </td>
                     <td className="p-3 text-right">{group.rows}</td>
                     <td className="p-3 text-right font-semibold">{money(group.totalVenda)}</td>
-                    <td className="p-3 text-xs text-muted-foreground">{dateTimeBR(group.updatedAt)}</td>
+                    <td className="p-3 text-xs text-muted-foreground">
+                      {dateTimeBR(group.updatedAt)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -490,9 +523,9 @@ function AtualizarValoresVendedores() {
       </section>
 
       <div className="flex items-start gap-2 rounded-xl border bg-muted/30 p-4 text-xs text-muted-foreground">
-        <FileText className="mt-0.5 h-4 w-4 shrink-0" />
-        O sistema ignora as linhas de subtotal das filiais e o bloco de bonificações; importa
-        somente as linhas individuais de vendedores e mantém os campos completos da tabela principal.
+        <FileText className="mt-0.5 h-4 w-4 shrink-0" />O sistema ignora as linhas de subtotal das
+        filiais e o bloco de bonificações; importa somente as linhas individuais de vendedores e
+        mantém os campos completos da tabela principal.
       </div>
     </div>
   );
