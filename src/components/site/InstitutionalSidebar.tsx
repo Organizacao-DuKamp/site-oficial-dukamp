@@ -111,6 +111,23 @@ function AdaptiveMedia({
     }
   }, [active]);
 
+  // O conteúdo institucional permanece montado dentro do Sheet no mobile mesmo
+  // quando ele está fechado. Pausa a mídia assim que ela deixa de estar visível
+  // e retoma apenas se o usuário não tiver pausado manualmente.
+  useEffect(() => {
+    if (!video) return;
+    const element = videoRef.current;
+    if (!element) return;
+
+    if (!active) {
+      persistState();
+      element.pause();
+      return;
+    }
+
+    if (!userPausedRef.current) void startPlayback();
+  }, [active, persistState, startPlayback, video]);
+
   // Se o navegador silenciou automaticamente, tenta devolver o som na primeira
   // interação. Nunca desfaz um mute escolhido explicitamente pelo usuário.
   useEffect(() => {
@@ -268,7 +285,7 @@ function AdaptiveMedia({
   );
 }
 
-function AdCard({ ad }: { ad: Ad }) {
+function AdCard({ ad, active = true }: { ad: Ad; active?: boolean }) {
   const items = useMemo(() => mediaList(ad), [ad]);
   const [idx, setIdx] = useState(() => {
     const rememberedIndex = adVisitIndex.get(ad.id) ?? 0;
@@ -312,7 +329,7 @@ function AdCard({ ad }: { ad: Ad }) {
   useEffect(() => {
     if (timer.current) window.clearTimeout(timer.current);
     timer.current = null;
-    if (items.length <= 1) return;
+    if (!active || items.length <= 1) return;
     const currentItem = items[idx];
     if (!currentItem || isVideoUrl(currentItem)) return;
 
@@ -321,7 +338,7 @@ function AdCard({ ad }: { ad: Ad }) {
       if (timer.current) window.clearTimeout(timer.current);
       timer.current = null;
     };
-  }, [advance, idx, items]);
+  }, [active, advance, idx, items]);
 
   const current = items[idx];
   const [prev, setPrev] = useState<string | null>(null);
@@ -344,7 +361,7 @@ function AdCard({ ad }: { ad: Ad }) {
     <div className="rounded-lg border bg-card overflow-hidden hover:shadow-md transition-shadow">
       {current && (
         <div className="relative">
-          <AdaptiveMedia url={current} onEnded={() => advance(current)} active />
+          <AdaptiveMedia url={current} onEnded={() => advance(current)} active={active} />
           {prev && prev !== current && (
             <div className={`absolute inset-0 pointer-events-none transition-opacity duration-700 ease-in-out ${fading ? "opacity-0" : "opacity-100"}`}>
               <AdaptiveMedia url={prev} active={false} />
@@ -365,7 +382,7 @@ function AdCard({ ad }: { ad: Ad }) {
   return ad.link_url ? <a href={ad.link_url} className="block">{inner}</a> : <div>{inner}</div>;
 }
 
-export function InstitutionalSidebar() {
+export function InstitutionalSidebar({ active = true }: { active?: boolean } = {}) {
   const { data } = useQuery({
     queryKey: ["institutional_ads"],
     queryFn: async () => {
@@ -389,7 +406,7 @@ export function InstitutionalSidebar() {
       }}
     >
       <div className="lg:h-full lg:overflow-hidden lg:pr-1">
-        {first && <AdCard ad={first} />}
+        {first && <AdCard ad={first} active={active} />}
       </div>
     </aside>
   );

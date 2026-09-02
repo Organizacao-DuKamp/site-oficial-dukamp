@@ -377,7 +377,7 @@ export function MainNav() {
                 })}
               </ul>
               <div className="mt-6">
-                <InstitutionalSidebar />
+                <InstitutionalSidebar active={open} />
               </div>
             </SheetContent>
           </Sheet>
