@@ -34,19 +34,21 @@ export const Route = createFileRoute("/api/admin/seller-margin-report")({
         const seller = await resolveSellerIdentity(supabaseAdmin, targetResult.data.user);
         if (!seller) return errorResponse("Esta conta não está configurada como vendedor.", 400);
 
-        const { data: report, error } = await supabaseAdmin
+        const { data: reports, error } = await supabaseAdmin
           .from("seller_monthly_margin_reports")
           .select("*")
           .eq("seller_user_id", userId)
           .eq("report_year", year)
           .eq("report_month", month)
-          .maybeSingle();
+          .order("period_end", { ascending: false })
+          .order("updated_at", { ascending: false })
+          .limit(1);
         if (error) {
           console.error("[admin-seller-margin-report] Falha ao consultar relatório:", error);
           return errorResponse("Não foi possível consultar o relatório mensal.", 500);
         }
 
-        return Response.json({ report }, { headers: { "Cache-Control": "no-store" } });
+        return Response.json({ report: reports?.[0] ?? null }, { headers: { "Cache-Control": "no-store" } });
       },
     },
   },
