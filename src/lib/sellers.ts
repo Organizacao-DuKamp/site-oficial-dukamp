@@ -6,6 +6,7 @@ export type Seller = {
   user_id?: string | null;
   slug: string;
   show_on_team?: boolean;
+  erp_seller_code?: string | null;
   name: string;
   role: string | null;
   region: string | null;
