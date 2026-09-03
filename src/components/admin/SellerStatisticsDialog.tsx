@@ -1,389 +1,115 @@
 import { useQuery } from "@tanstack/react-query";
-import {
-  ArrowDownRight,
-  ArrowUpRight,
-  BarChart3,
-  CalendarDays,
-  FileSpreadsheet,
-  Loader2,
-  Search,
-  ShoppingCart,
-  Users,
-} from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, BarChart3, CalendarDays, FileSpreadsheet, Loader2, Search, ShoppingCart, Users } from "lucide-react";
 import { useMemo, useState } from "react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import type { Seller } from "@/lib/sellers";
 
 type PeriodMode = "month" | "day" | "year" | "custom";
-
 type StatisticsResponse = {
-  error?: string;
-  sellerCodeMissing?: boolean;
+  error?: string; sellerCodeMissing?: boolean;
   seller?: { id: string | null; name: string; code: string | null };
   period?: { from: string; to: string; previousFrom?: string; previousTo?: string };
-  summary?: Record<string, number>;
-  comparison?: Record<string, number | null>;
-  dataQuality?: { hasMarginData: boolean; partialWithoutBaseline: boolean };
-  annualSeries?: Array<{
-    month: number;
-    label: string;
-    total_venda: number;
-    margem_bruta: number;
-    tonelagem: number;
-    hasData: boolean;
-  }>;
+  summary?: Record<string, number>; previousSummary?: Record<string, number>; comparison?: Record<string, number | null>;
+  dataQuality?: { hasMarginData: boolean; hasPreviousMarginData?: boolean; partialWithoutBaseline: boolean };
+  annualSeries?: Array<{ month: number; label: string; total_venda: number; previous_total_venda: number; margem_bruta: number; tonelagem: number; hasData: boolean; previousHasData?: boolean }>;
+  comparisonSeries?: Array<{ label: string; current: number; previous: number }>;
   marginReport?: Record<string, string | number | null> | null;
-  clients?: Array<{
-    id: string;
-    code: string;
-    name: string;
-    city: string | null;
-    uf: string | null;
-    phone: string | null;
-    email: string | null;
-    lastPurchase: string | null;
-    annualPurchase: number;
-  }>;
-  nearBlueClients?: Array<{
-    id: string;
-    codigo: string;
-    cliente: string;
-    cidade: string | null;
-    uf: string | null;
-    ultima_compra: string;
-    entersBlueAt: string;
-    daysRemaining: number;
-  }>;
-  topCustomers?: Array<{
-    id: string;
-    code: string;
-    name: string;
-    city: string | null;
-    uf: string | null;
-    total: number;
-  }>;
-  actions?: Array<{
-    id: string;
-    type: "sale" | "quote";
-    title: string;
-    description: string;
-    customerCode: string | null;
-    value: number;
-    status: string;
-    notes: string | null;
-    sellerName: string | null;
-    createdAt: string;
-  }>;
+  clients?: Array<{ id: string; code: string; name: string; city: string | null; uf: string | null; phone: string | null; email: string | null; lastPurchase: string | null; annualPurchase: number }>;
+  nearBlueClients?: Array<{ id: string; codigo: string; cliente: string; cidade: string | null; uf: string | null; ultima_compra: string; entersBlueAt: string; daysRemaining: number }>;
+  topCustomers?: Array<{ id: string; code: string; name: string; city: string | null; uf: string | null; total: number }>;
+  actions?: Array<{ id: string; type: "sale" | "quote"; title: string; description: string; customerCode: string | null; value: number; status: string; notes: string | null; sellerName: string | null; createdAt: string }>;
 };
 
-function money(value: unknown) {
-  return Number(value ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
-
-function number(value: unknown, digits = 2) {
-  return Number(value ?? 0).toLocaleString("pt-BR", {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-  });
-}
-
-function dateBR(value?: string | null) {
-  if (!value) return "—";
-  return new Date(`${value.slice(0, 10)}T12:00:00`).toLocaleDateString("pt-BR");
-}
-
-function dateTimeBR(value: string) {
-  return new Date(value).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
-}
-
-function lastDayOfMonth(month: string) {
-  const [year, monthNumber] = month.split("-").map(Number);
-  return new Date(Date.UTC(year, monthNumber, 0, 12)).toISOString().slice(0, 10);
-}
-
-function resolvePeriod(
-  mode: PeriodMode,
-  values: { day: string; month: string; year: string; customFrom: string; customTo: string },
-) {
+function money(value: unknown) { return Number(value ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }); }
+function number(value: unknown, digits = 2) { return Number(value ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: digits, maximumFractionDigits: digits }); }
+function dateBR(value?: string | null) { if (!value) return "—"; return new Date(`${value.slice(0, 10)}T12:00:00`).toLocaleDateString("pt-BR"); }
+function dateTimeBR(value: string) { return new Date(value).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }); }
+function lastDayOfMonth(month: string) { const [year, monthNumber] = month.split("-").map(Number); return new Date(Date.UTC(year, monthNumber, 0, 12)).toISOString().slice(0, 10); }
+function resolvePeriod(mode: PeriodMode, values: { day: string; month: string; year: string; customFrom: string; customTo: string }) {
   const today = new Date().toISOString().slice(0, 10);
   if (mode === "day") return { from: values.day, to: values.day };
-  if (mode === "month") {
-    const from = `${values.month}-01`;
-    const fullEnd = lastDayOfMonth(values.month);
-    return { from, to: values.month === today.slice(0, 7) ? today : fullEnd };
-  }
-  if (mode === "year") {
-    const from = `${values.year}-01-01`;
-    return { from, to: values.year === today.slice(0, 4) ? today : `${values.year}-12-31` };
-  }
+  if (mode === "month") { const from = `${values.month}-01`; const fullEnd = lastDayOfMonth(values.month); return { from, to: values.month === today.slice(0, 7) ? today : fullEnd }; }
+  if (mode === "year") { const from = `${values.year}-01-01`; return { from, to: values.year === today.slice(0, 4) ? today : `${values.year}-12-31` }; }
   return { from: values.customFrom, to: values.customTo };
 }
-
 async function loadStatistics(sellerId: string | null, mode: PeriodMode, from: string, to: string) {
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
-  if (!token) throw new Error("Sessão expirada. Entre novamente.");
-
-  const params = new URLSearchParams({ view: "statistics", from, to, preset: mode });
-  if (sellerId) params.set("sellerId", sellerId);
-  const response = await fetch(`/api/admin/seller-margin-reports?${params.toString()}`, {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: "no-store",
-  });
-  const payload = (await response.json().catch(() => ({}))) as StatisticsResponse;
-  if (!response.ok) throw new Error(payload.error || "Não foi possível carregar as estatísticas.");
-  return payload;
+  const { data } = await supabase.auth.getSession(); const token = data.session?.access_token; if (!token) throw new Error("Sessão expirada. Entre novamente.");
+  const params = new URLSearchParams({ view: "statistics", from, to, preset: mode }); if (sellerId) params.set("sellerId", sellerId);
+  const response = await fetch(`/api/admin/seller-margin-reports?${params.toString()}`, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
+  const payload = (await response.json().catch(() => ({}))) as StatisticsResponse; if (!response.ok) throw new Error(payload.error || "Não foi possível carregar as estatísticas."); return payload;
 }
-
 function Trend({ value, inverse = false }: { value: number | null | undefined; inverse?: boolean }) {
-  if (value === null || value === undefined || !Number.isFinite(value)) {
-    return <span className="text-xs text-muted-foreground">sem base anterior</span>;
-  }
-  const good = inverse ? value <= 0 : value >= 0;
-  const Icon = value >= 0 ? ArrowUpRight : ArrowDownRight;
-  return (
-    <span className={`inline-flex items-center gap-1 text-xs font-semibold ${good ? "text-emerald-600" : "text-red-600"}`}>
-      <Icon className="h-3.5 w-3.5" />
-      {Math.abs(value).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}% vs. período anterior
-    </span>
-  );
+  if (value === null || value === undefined || !Number.isFinite(value)) return <span className="text-xs text-muted-foreground">sem base anterior disponível</span>;
+  const good = inverse ? value <= 0 : value >= 0; const Icon = value >= 0 ? ArrowUpRight : ArrowDownRight;
+  return <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold ${good ? "bg-emerald-500/10 text-emerald-600" : "bg-red-500/10 text-red-600"}`}><Icon className="h-3.5 w-3.5" />{Math.abs(value).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}% vs. período anterior</span>;
 }
-
 function MetricCard({ label, value, trend, inverse, helper }: { label: string; value: string; trend?: number | null; inverse?: boolean; helper?: string }) {
-  return (
-    <div className="rounded-xl border bg-card p-4 shadow-sm">
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="mt-2 text-2xl font-bold tracking-tight">{value}</p>
-      <div className="mt-2">{helper ? <span className="text-xs text-muted-foreground">{helper}</span> : <Trend value={trend} inverse={inverse} />}</div>
-    </div>
-  );
+  return <div className="group rounded-2xl border bg-card p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"><p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">{label}</p><p className="mt-2 text-2xl font-bold tracking-tight">{value}</p><div className="mt-3">{helper ? <span className="text-xs text-muted-foreground">{helper}</span> : <Trend value={trend} inverse={inverse} />}</div></div>;
 }
-
-function ReportField({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg border bg-muted/20 p-3">
-      <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</dt>
-      <dd className="mt-1 break-words text-base font-semibold">{value}</dd>
-    </div>
-  );
-}
-
-function statusLabel(value: string) {
-  const labels: Record<string, string> = {
-    draft: "Rascunho",
-    sent: "Enviado",
-    accepted: "Aceito",
-    declined: "Recusado",
-    expired: "Expirado",
-    pending: "Pendente",
-    reviewed: "Revisado",
-    completed: "Concluído",
-  };
-  return labels[value] ?? value;
-}
+function ReportField({ label, value }: { label: string; value: string }) { return <div className="rounded-lg border bg-muted/20 p-3"><dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</dt><dd className="mt-1 break-words text-base font-semibold">{value}</dd></div>; }
+function statusLabel(value: string) { const labels: Record<string, string> = { draft: "Rascunho", sent: "Enviado", accepted: "Aceito", declined: "Recusado", expired: "Expirado", pending: "Pendente", reviewed: "Revisado", completed: "Concluído" }; return labels[value] ?? value; }
+function previousLabel(mode: PeriodMode) { return mode === "day" ? "Dia anterior" : mode === "month" ? "Mês anterior" : mode === "year" ? "Ano anterior" : "Período anterior"; }
 
 export function SellerStatisticsDialog({ seller }: { seller?: Seller | null }) {
-  const today = new Date().toISOString().slice(0, 10);
-  const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState<PeriodMode>("month");
-  const [day, setDay] = useState(today);
-  const [month, setMonth] = useState(today.slice(0, 7));
-  const [year, setYear] = useState(today.slice(0, 4));
-  const [customFrom, setCustomFrom] = useState(`${today.slice(0, 7)}-01`);
-  const [customTo, setCustomTo] = useState(today);
-  const [clientSearch, setClientSearch] = useState("");
+  const today = new Date().toISOString().slice(0, 10); const [open, setOpen] = useState(false); const [mode, setMode] = useState<PeriodMode>("month");
+  const [day, setDay] = useState(today); const [month, setMonth] = useState(today.slice(0, 7)); const [year, setYear] = useState(today.slice(0, 4));
+  const [customFrom, setCustomFrom] = useState(`${today.slice(0, 7)}-01`); const [customTo, setCustomTo] = useState(today); const [clientSearch, setClientSearch] = useState("");
   const period = resolvePeriod(mode, { day, month, year, customFrom, customTo });
+  const query = useQuery({ queryKey: ["admin-sales-statistics", seller?.id ?? "dukamp", mode, period.from, period.to], enabled: open && Boolean(period.from && period.to && period.from <= period.to), queryFn: () => loadStatistics(seller?.id ?? null, mode, period.from, period.to) });
+  const filteredClients = useMemo(() => { const clients = query.data?.clients ?? []; const search = clientSearch.trim().toLocaleLowerCase("pt-BR"); if (!search) return clients; return clients.filter((client) => [client.name, client.code, client.city, client.uf, client.phone, client.email].filter(Boolean).join(" ").toLocaleLowerCase("pt-BR").includes(search)); }, [query.data?.clients, clientSearch]);
+  const summary = query.data?.summary ?? {}; const comparison = query.data?.comparison ?? {}; const isDukamp = !seller; const currentYear = Number(period.to.slice(0, 4));
 
-  const query = useQuery({
-    queryKey: ["admin-sales-statistics", seller?.id ?? "dukamp", mode, period.from, period.to],
-    enabled: open && Boolean(period.from && period.to && period.from <= period.to),
-    queryFn: () => loadStatistics(seller?.id ?? null, mode, period.from, period.to),
-  });
+  return <Dialog open={open} onOpenChange={setOpen}>
+    <DialogTrigger asChild>{isDukamp ? <Button variant="outline"><BarChart3 className="mr-2 h-4 w-4" /> Estatísticas DuKamp</Button> : <Button variant="outline" size="sm"><BarChart3 className="mr-1.5 h-4 w-4" /> Estatísticas</Button>}</DialogTrigger>
+    <DialogContent className="max-h-[94vh] w-[96vw] max-w-7xl overflow-y-auto">
+      <DialogHeader><DialogTitle>{isDukamp ? "Estatísticas DuKamp" : `Estatísticas • ${seller.name}`}</DialogTitle><DialogDescription>{isDukamp ? "Visão consolidada da operação comercial, margem, carteira e atividades." : `Desempenho completo do vendedor${seller.erp_seller_code ? ` • COD VEND ${seller.erp_seller_code}` : ""}.`}</DialogDescription></DialogHeader>
+      <div className="rounded-2xl border bg-gradient-to-br from-muted/40 to-background p-4 shadow-sm">
+        <div className="mb-3 flex flex-wrap items-center gap-2"><CalendarDays className="h-4 w-4 text-primary" />{(["month", "day", "year", "custom"] as PeriodMode[]).map((item) => <Button key={item} type="button" size="sm" variant={mode === item ? "default" : "outline"} onClick={() => setMode(item)}>{item === "month" ? "Mês" : item === "day" ? "Dia" : item === "year" ? "Ano" : "Data específica"}</Button>)}</div>
+        <div className="grid gap-2 sm:max-w-xl sm:grid-cols-2">{mode === "day" && <Input type="date" value={day} onChange={(e) => setDay(e.target.value)} />}{mode === "month" && <Input type="month" value={month} onChange={(e) => setMonth(e.target.value)} />}{mode === "year" && <Input type="number" min={2025} max={2100} value={year} onChange={(e) => setYear(e.target.value)} />}{mode === "custom" && <><Input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} /><Input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} /></>}</div>
+        <p className="mt-2 text-xs text-muted-foreground">Período analisado: {dateBR(period.from)} a {dateBR(period.to)}</p>
+      </div>
 
-  const filteredClients = useMemo(() => {
-    const clients = query.data?.clients ?? [];
-    const search = clientSearch.trim().toLocaleLowerCase("pt-BR");
-    if (!search) return clients;
-    return clients.filter((client) =>
-      [client.name, client.code, client.city, client.uf, client.phone, client.email]
-        .filter(Boolean)
-        .join(" ")
-        .toLocaleLowerCase("pt-BR")
-        .includes(search),
-    );
-  }, [query.data?.clients, clientSearch]);
-
-  const summary = query.data?.summary ?? {};
-  const comparison = query.data?.comparison ?? {};
-  const isDukamp = !seller;
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {isDukamp ? (
-          <Button variant="outline"><BarChart3 className="mr-2 h-4 w-4" /> Estatísticas DuKamp</Button>
-        ) : (
-          <Button variant="outline" size="sm"><BarChart3 className="mr-1.5 h-4 w-4" /> Estatísticas</Button>
-        )}
-      </DialogTrigger>
-      <DialogContent className="max-h-[94vh] w-[96vw] max-w-7xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{isDukamp ? "Estatísticas DuKamp" : `Estatísticas • ${seller.name}`}</DialogTitle>
-          <DialogDescription>
-            {isDukamp
-              ? "Visão consolidada da operação comercial, margem, carteira e atividades."
-              : `Desempenho completo do vendedor${seller.erp_seller_code ? ` • COD VEND ${seller.erp_seller_code}` : ""}.`}
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="rounded-xl border bg-muted/20 p-3">
-          <div className="mb-3 flex flex-wrap items-center gap-2">
-            <CalendarDays className="h-4 w-4 text-primary" />
-            {(["month", "day", "year", "custom"] as PeriodMode[]).map((item) => (
-              <Button key={item} type="button" size="sm" variant={mode === item ? "default" : "outline"} onClick={() => setMode(item)}>
-                {item === "month" ? "Mês" : item === "day" ? "Dia" : item === "year" ? "Ano" : "Data específica"}
-              </Button>
-            ))}
+      {query.isPending ? <div className="flex min-h-72 items-center justify-center gap-2 text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" /> Consolidando dados...</div> : query.isError ? <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-5 text-sm text-red-700">{query.error instanceof Error ? query.error.message : "Não foi possível carregar as estatísticas."}</div> : query.data?.sellerCodeMissing ? <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-5"><p className="font-semibold text-amber-700">Código do vendedor ainda não vinculado</p><p className="mt-1 text-sm text-muted-foreground">Feche esta janela, clique no lápis deste vendedor e informe o campo <b>COD VEND (ERP)</b>.</p></div> : query.data ? <Tabs defaultValue="overview" className="space-y-5">
+        <TabsList className="grid w-full grid-cols-3"><TabsTrigger value="overview">Visão geral</TabsTrigger><TabsTrigger value="margin">Margem lucro</TabsTrigger><TabsTrigger value="actions">Últimas ações</TabsTrigger></TabsList>
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <MetricCard label="Vendas" value={money(summary.total_venda)} trend={comparison.total_venda} /><MetricCard label="Margem bruta" value={money(summary.margem_bruta)} trend={comparison.margem_bruta} /><MetricCard label="Margem" value={`${number(summary.margem_percentual)}%`} trend={comparison.margem_percentual} /><MetricCard label="Tonelagem" value={`${number(summary.tonelagem, 3)} t`} trend={comparison.tonelagem} />
+            <MetricCard label="Custo total" value={money(summary.total_custo)} trend={comparison.total_custo} inverse /><MetricCard label="Devoluções" value={money(summary.devolucao)} trend={comparison.devolucao} inverse /><MetricCard label="Sacarias" value={money(summary.sacarias)} trend={comparison.sacarias} /><MetricCard label="Balcão" value={money(summary.balcao)} trend={comparison.balcao} />
+            <MetricCard label="Aditivos" value={money(summary.aditivos)} trend={comparison.aditivos} /><MetricCard label="Comissão representante" value={money(summary.comissao_representante)} trend={comparison.comissao_representante} /><MetricCard label="Orçamentos" value={number(summary.quotes, 0)} trend={comparison.quotes} /><MetricCard label="Registros de venda" value={number(summary.sale_requests, 0)} trend={comparison.sale_requests} />
           </div>
-          <div className="grid gap-2 sm:max-w-xl sm:grid-cols-2">
-            {mode === "day" && <Input type="date" value={day} onChange={(event) => setDay(event.target.value)} />}
-            {mode === "month" && <Input type="month" value={month} onChange={(event) => setMonth(event.target.value)} />}
-            {mode === "year" && <Input type="number" min={2025} max={2100} value={year} onChange={(event) => setYear(event.target.value)} />}
-            {mode === "custom" && <><Input type="date" value={customFrom} onChange={(event) => setCustomFrom(event.target.value)} /><Input type="date" value={customTo} onChange={(event) => setCustomTo(event.target.value)} /></>}
+
+          <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-gradient-to-r from-emerald-500/5 via-background to-red-500/5 px-5 py-4">
+              <div className="flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10"><BarChart3 className="h-5 w-5 text-primary" /></div><div><h3 className="font-semibold">Evolução de vendas • {currentYear} × {currentYear - 1}</h3><p className="text-xs text-muted-foreground">Barras sobrepostas para comparar rapidamente o histórico atual com o ano anterior.</p></div></div>
+              <div className="flex items-center gap-3 text-xs font-medium"><span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-full bg-emerald-600" />{currentYear}</span><span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-full bg-red-500" />{currentYear - 1}</span></div>
+            </div>
+            <div className="h-80 w-full px-2 pb-3 pt-5">
+              <ResponsiveContainer width="100%" height="100%"><BarChart data={query.data.annualSeries ?? []} barGap={-24} margin={{ top: 8, right: 18, left: 8, bottom: 0 }}><defs><linearGradient id="salesCurrent" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#16a34a" stopOpacity={1} /><stop offset="100%" stopColor="#22c55e" stopOpacity={0.72} /></linearGradient><linearGradient id="salesPrevious" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#ef4444" stopOpacity={0.62} /><stop offset="100%" stopColor="#f87171" stopOpacity={0.3} /></linearGradient></defs><CartesianGrid strokeDasharray="4 6" vertical={false} opacity={0.35} /><XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} /><YAxis axisLine={false} tickLine={false} tickFormatter={(value) => `R$${Math.round(Number(value) / 1000)}k`} width={68} /><Tooltip cursor={{ fill: "rgba(148,163,184,.08)" }} contentStyle={{ borderRadius: 14, border: "1px solid rgba(148,163,184,.25)", boxShadow: "0 12px 30px rgba(0,0,0,.12)" }} formatter={(value, name) => [money(value), name]} labelFormatter={(label) => String(label).toUpperCase()} /><Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} /><Bar dataKey="previous_total_venda" name={`${currentYear - 1} • anterior`} fill="url(#salesPrevious)" radius={[9, 9, 3, 3]} barSize={30} /><Bar dataKey="total_venda" name={`${currentYear} • atual`} fill="url(#salesCurrent)" radius={[9, 9, 3, 3]} barSize={30} /></BarChart></ResponsiveContainer>
+            </div>
           </div>
-          <p className="mt-2 text-xs text-muted-foreground">Período analisado: {dateBR(period.from)} a {dateBR(period.to)}</p>
-        </div>
 
-        {query.isPending ? (
-          <div className="flex min-h-72 items-center justify-center gap-2 text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" /> Consolidando dados...</div>
-        ) : query.isError ? (
-          <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-5 text-sm text-red-700">{query.error instanceof Error ? query.error.message : "Não foi possível carregar as estatísticas."}</div>
-        ) : query.data?.sellerCodeMissing ? (
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-5">
-            <p className="font-semibold text-amber-700">Código do vendedor ainda não vinculado</p>
-            <p className="mt-1 text-sm text-muted-foreground">Feche esta janela, clique no lápis deste vendedor e informe o campo <b>COD VEND (ERP)</b>. Depois disso os relatórios, clientes e ações serão ligados automaticamente.</p>
+          <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+            <div className="border-b px-5 py-4"><h3 className="font-semibold">Atual × {previousLabel(mode)}</h3><p className="text-xs text-muted-foreground">Comparação direta do filtro selecionado: <span className="font-medium text-emerald-600">verde = atual</span> e <span className="font-medium text-red-500">vermelho = anterior</span>.</p></div>
+            <div className="h-64 p-4"><ResponsiveContainer width="100%" height="100%"><BarChart data={query.data.comparisonSeries ?? []} barGap={-34}><CartesianGrid strokeDasharray="4 6" vertical={false} opacity={0.3} /><XAxis dataKey="label" axisLine={false} tickLine={false} /><YAxis axisLine={false} tickLine={false} tickFormatter={(value) => `R$${Math.round(Number(value) / 1000)}k`} /><Tooltip formatter={(value) => money(value)} contentStyle={{ borderRadius: 14 }} /><Bar dataKey="previous" name={previousLabel(mode)} fill="#ef4444" fillOpacity={0.48} radius={[10, 10, 3, 3]} barSize={42} /><Bar dataKey="current" name="Atual" fill="#16a34a" fillOpacity={0.9} radius={[10, 10, 3, 3]} barSize={42} /></BarChart></ResponsiveContainer></div>
           </div>
-        ) : query.data ? (
-          <Tabs defaultValue="overview" className="space-y-5">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="overview">Visão geral</TabsTrigger>
-              <TabsTrigger value="margin">Margem lucro</TabsTrigger>
-              <TabsTrigger value="actions">Últimas ações</TabsTrigger>
-            </TabsList>
 
-            <TabsContent value="overview" className="space-y-6">
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <MetricCard label="Vendas" value={money(summary.total_venda)} trend={comparison.total_venda} />
-                <MetricCard label="Margem bruta" value={money(summary.margem_bruta)} trend={comparison.margem_bruta} />
-                <MetricCard label="Margem" value={`${number(summary.margem_percentual)}%`} trend={comparison.margem_percentual} />
-                <MetricCard label="Tonelagem" value={`${number(summary.tonelagem, 3)} t`} trend={comparison.tonelagem} />
-                <MetricCard label="Custo total" value={money(summary.total_custo)} trend={comparison.total_custo} inverse />
-                <MetricCard label="Devoluções" value={money(summary.devolucao)} trend={comparison.devolucao} inverse />
-                <MetricCard label="Sacarias" value={money(summary.sacarias)} trend={comparison.sacarias} />
-                <MetricCard label="Balcão" value={money(summary.balcao)} trend={comparison.balcao} />
-                <MetricCard label="Aditivos" value={money(summary.aditivos)} trend={comparison.aditivos} />
-                <MetricCard label="Comissão representante" value={money(summary.comissao_representante)} trend={comparison.comissao_representante} />
-                <MetricCard label="Orçamentos" value={number(summary.quotes, 0)} trend={comparison.quotes} />
-                <MetricCard label="Registros de venda" value={number(summary.sale_requests, 0)} trend={comparison.sale_requests} />
-              </div>
+          {query.data.dataQuality?.partialWithoutBaseline && mode === "day" && <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm text-amber-800">Para alguns dias antigos não existe fechamento diário individual. O histórico mensal e anual existente continua sendo usado normalmente nas comparações.</div>}
 
-              {query.data.dataQuality?.partialWithoutBaseline && (
-                <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm text-amber-800">Para parte deste intervalo ainda não existe um snapshot anterior do PDF. Os próximos arquivos diários ficam preservados e tornam a comparação por dia cada vez mais precisa.</div>
-              )}
+          <div className="grid gap-4 lg:grid-cols-3"><div className="rounded-xl border bg-card p-4"><div className="mb-3 flex items-center gap-2"><Users className="h-4 w-4 text-primary" /><h3 className="font-semibold">Top 3 clientes</h3></div><div className="space-y-3">{(query.data.topCustomers ?? []).map((client, index) => <div key={client.id} className="flex items-center justify-between gap-3 rounded-lg bg-muted/30 p-3"><div className="min-w-0"><p className="truncate font-medium">{index + 1}. {client.name}</p><p className="text-xs text-muted-foreground">{client.code} • {[client.city, client.uf].filter(Boolean).join("/")}</p></div><span className="shrink-0 text-sm font-semibold">{money(client.total)}</span></div>)}{!query.data.topCustomers?.length && <p className="text-sm text-muted-foreground">Sem dados de clientes.</p>}</div></div>
+            <div className="rounded-xl border bg-card p-4 lg:col-span-2"><div className="mb-3 flex items-center justify-between gap-2"><div className="flex items-center gap-2"><CalendarDays className="h-4 w-4 text-primary" /><h3 className="font-semibold">Próximos à Lista Azul</h3></div><span className="text-xs text-muted-foreground">{summary.near_blue_count ?? 0} cliente(s)</span></div><div className="max-h-64 overflow-auto"><table className="w-full text-sm"><thead className="sticky top-0 bg-card text-left text-xs text-muted-foreground"><tr><th className="py-2">Cliente</th><th>Local</th><th>Entrada</th><th className="text-right">Faltam</th></tr></thead><tbody>{(query.data.nearBlueClients ?? []).map((client) => <tr key={client.id} className="border-t"><td className="py-2 pr-2 font-medium">{client.cliente}</td><td>{[client.cidade, client.uf].filter(Boolean).join("/") || "—"}</td><td>{dateBR(client.entersBlueAt)}</td><td className="text-right">{client.daysRemaining}d</td></tr>)}</tbody></table>{!query.data.nearBlueClients?.length && <p className="py-5 text-center text-sm text-muted-foreground">Nenhum cliente entra na Lista Azul nos próximos 30 dias.</p>}</div></div></div>
 
-              <div className="rounded-xl border bg-card p-4">
-                <div className="mb-4 flex items-center gap-2"><BarChart3 className="h-5 w-5 text-primary" /><div><h3 className="font-semibold">Vendas no ano de {period.to.slice(0, 4)}</h3><p className="text-xs text-muted-foreground">Totais mensais importados pelo relatório de margem.</p></div></div>
-                <div className="h-72 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={query.data.annualSeries ?? []}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="label" />
-                      <YAxis tickFormatter={(value) => `R$${Math.round(Number(value) / 1000)}k`} width={68} />
-                      <Tooltip formatter={(value) => money(value)} labelFormatter={(label) => String(label).toUpperCase()} />
-                      <Bar dataKey="total_venda" name="Vendas" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
+          <div className="rounded-xl border bg-card p-4"><div className="mb-3 flex flex-wrap items-center justify-between gap-3"><div><h3 className="font-semibold">Lista de clientes</h3><p className="text-xs text-muted-foreground">{summary.portfolio_count ?? 0} cliente(s) na carteira atual.</p></div><div className="relative w-full sm:w-72"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input className="pl-8" placeholder="Buscar cliente..." value={clientSearch} onChange={(e) => setClientSearch(e.target.value)} /></div></div><div className="max-h-80 overflow-auto rounded-lg border"><table className="w-full text-sm"><thead className="sticky top-0 bg-card text-left text-xs text-muted-foreground"><tr><th className="p-2">Código</th><th>Cliente</th><th>Cidade</th><th>Última compra</th><th className="pr-2 text-right">Compra no ano</th></tr></thead><tbody>{filteredClients.map((client) => <tr key={client.id} className="border-t"><td className="p-2">{client.code}</td><td className="font-medium">{client.name}</td><td>{[client.city, client.uf].filter(Boolean).join("/") || "—"}</td><td>{dateBR(client.lastPurchase)}</td><td className="pr-2 text-right">{money(client.annualPurchase)}</td></tr>)}</tbody></table></div></div>
+        </TabsContent>
 
-              <div className="grid gap-4 lg:grid-cols-3">
-                <div className="rounded-xl border bg-card p-4">
-                  <div className="mb-3 flex items-center gap-2"><Users className="h-4 w-4 text-primary" /><h3 className="font-semibold">Top 3 clientes</h3></div>
-                  <div className="space-y-3">
-                    {(query.data.topCustomers ?? []).map((client, index) => (
-                      <div key={client.id} className="flex items-center justify-between gap-3 rounded-lg bg-muted/30 p-3"><div className="min-w-0"><p className="truncate font-medium">{index + 1}. {client.name}</p><p className="text-xs text-muted-foreground">{client.code} • {[client.city, client.uf].filter(Boolean).join("/")}</p></div><span className="shrink-0 text-sm font-semibold">{money(client.total)}</span></div>
-                    ))}
-                    {!query.data.topCustomers?.length && <p className="text-sm text-muted-foreground">Sem dados de clientes.</p>}
-                  </div>
-                </div>
+        <TabsContent value="margin" className="space-y-4"><div className="rounded-xl border bg-card p-4"><div className="mb-4 flex items-center gap-2"><FileSpreadsheet className="h-5 w-5 text-primary" /><div><h3 className="font-semibold">RELATÓRIO MARGEM VENDA</h3><p className="text-xs text-muted-foreground">Mesmos indicadores usados na análise completa do vendedor.</p></div></div>{query.data.marginReport ? <><div className="mb-4 rounded-lg bg-primary/5 p-3 text-sm">Período do snapshot: {dateBR(String(query.data.marginReport.period_start))} a {dateBR(String(query.data.marginReport.period_end))}</div><dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"><ReportField label="COD" value={String(query.data.marginReport.report_seller_code ?? "—")} /><ReportField label="VEND" value={String(query.data.marginReport.report_seller_name ?? "—")} /><ReportField label="TOT_VENDA" value={money(query.data.marginReport.total_venda)} /><ReportField label="DEVOLUCAO" value={money(query.data.marginReport.devolucao)} /><ReportField label="ADITIVOS" value={money(query.data.marginReport.aditivos)} /><ReportField label="SACARIAS" value={money(query.data.marginReport.sacarias)} /><ReportField label="BALCAO" value={money(query.data.marginReport.balcao)} /><ReportField label="TT_CUSTO" value={money(query.data.marginReport.total_custo)} /><ReportField label="MARGEM" value={`${number(query.data.marginReport.margem_percentual)}%`} /><ReportField label="CMS_REP" value={money(query.data.marginReport.comissao_representante)} /><ReportField label="TONELAG" value={number(query.data.marginReport.tonelagem, 3)} /><ReportField label="MR_BRUTA" value={money(query.data.marginReport.margem_bruta)} /><ReportField label="MR_ADITI" value={money(query.data.marginReport.margem_aditivos)} /><ReportField label="% MRG ADITIVOS" value={`${number(query.data.marginReport.margem_aditivos_percentual)}%`} /><ReportField label="MR_SACAR" value={money(query.data.marginReport.margem_sacarias)} /><ReportField label="% MRG SACARIAS" value={`${number(query.data.marginReport.margem_sacarias_percentual)}%`} /><ReportField label="MR_BALCA" value={money(query.data.marginReport.margem_balcao)} /><ReportField label="% MRG BALCAO" value={`${number(query.data.marginReport.margem_balcao_percentual)}%`} /></dl><p className="mt-3 text-xs text-muted-foreground">Fonte: {String(query.data.marginReport.source_file ?? "—")}</p></> : <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"><ReportField label="TOT_VENDA" value={money(summary.total_venda)} /><ReportField label="DEVOLUCAO" value={money(summary.devolucao)} /><ReportField label="ADITIVOS" value={money(summary.aditivos)} /><ReportField label="SACARIAS" value={money(summary.sacarias)} /><ReportField label="BALCAO" value={money(summary.balcao)} /><ReportField label="TT_CUSTO" value={money(summary.total_custo)} /><ReportField label="MARGEM" value={`${number(summary.margem_percentual)}%`} /><ReportField label="CMS_REP" value={money(summary.comissao_representante)} /><ReportField label="TONELAG" value={number(summary.tonelagem, 3)} /><ReportField label="MR_BRUTA" value={money(summary.margem_bruta)} /><ReportField label="MR_ADITI" value={money(summary.margem_aditivos)} /><ReportField label="MR_SACAR" value={money(summary.margem_sacarias)} /><ReportField label="MR_BALCA" value={money(summary.margem_balcao)} /></dl>}</div></TabsContent>
 
-                <div className="rounded-xl border bg-card p-4 lg:col-span-2">
-                  <div className="mb-3 flex items-center justify-between gap-2"><div className="flex items-center gap-2"><CalendarDays className="h-4 w-4 text-primary" /><h3 className="font-semibold">Próximos à Lista Azul</h3></div><span className="text-xs text-muted-foreground">{summary.near_blue_count ?? 0} cliente(s)</span></div>
-                  <div className="max-h-64 overflow-auto">
-                    <table className="w-full text-sm"><thead className="sticky top-0 bg-card text-left text-xs text-muted-foreground"><tr><th className="py-2">Cliente</th><th>Local</th><th>Entrada</th><th className="text-right">Faltam</th></tr></thead><tbody>
-                      {(query.data.nearBlueClients ?? []).map((client) => <tr key={client.id} className="border-t"><td className="py-2 pr-2 font-medium">{client.cliente}</td><td>{[client.cidade, client.uf].filter(Boolean).join("/") || "—"}</td><td>{dateBR(client.entersBlueAt)}</td><td className="text-right">{client.daysRemaining}d</td></tr>)}
-                    </tbody></table>
-                    {!query.data.nearBlueClients?.length && <p className="py-5 text-center text-sm text-muted-foreground">Nenhum cliente entra na Lista Azul nos próximos 30 dias.</p>}
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-xl border bg-card p-4">
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-3"><div><h3 className="font-semibold">Lista de clientes</h3><p className="text-xs text-muted-foreground">{summary.portfolio_count ?? 0} cliente(s) na carteira atual.</p></div><div className="relative w-full sm:w-72"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input className="pl-8" placeholder="Buscar cliente..." value={clientSearch} onChange={(event) => setClientSearch(event.target.value)} /></div></div>
-                <div className="max-h-80 overflow-auto rounded-lg border">
-                  <table className="w-full text-sm"><thead className="sticky top-0 bg-card text-left text-xs text-muted-foreground"><tr><th className="p-2">Código</th><th>Cliente</th><th>Cidade</th><th>Última compra</th><th className="pr-2 text-right">Compra no ano</th></tr></thead><tbody>
-                    {filteredClients.map((client) => <tr key={client.id} className="border-t"><td className="p-2">{client.code}</td><td className="font-medium">{client.name}</td><td>{[client.city, client.uf].filter(Boolean).join("/") || "—"}</td><td>{dateBR(client.lastPurchase)}</td><td className="pr-2 text-right">{money(client.annualPurchase)}</td></tr>)}
-                  </tbody></table>
-                </div>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="margin" className="space-y-4">
-              <div className="rounded-xl border bg-card p-4">
-                <div className="mb-4 flex items-center gap-2"><FileSpreadsheet className="h-5 w-5 text-primary" /><div><h3 className="font-semibold">RELATÓRIO MARGEM VENDA</h3><p className="text-xs text-muted-foreground">Mesmos indicadores usados na análise completa do vendedor.</p></div></div>
-                {query.data.marginReport ? (
-                  <><div className="mb-4 rounded-lg bg-primary/5 p-3 text-sm">Período do snapshot: {dateBR(String(query.data.marginReport.period_start))} a {dateBR(String(query.data.marginReport.period_end))}</div><dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    <ReportField label="COD" value={String(query.data.marginReport.report_seller_code ?? "—")} /><ReportField label="VEND" value={String(query.data.marginReport.report_seller_name ?? "—")} /><ReportField label="TOT_VENDA" value={money(query.data.marginReport.total_venda)} /><ReportField label="DEVOLUCAO" value={money(query.data.marginReport.devolucao)} /><ReportField label="ADITIVOS" value={money(query.data.marginReport.aditivos)} /><ReportField label="SACARIAS" value={money(query.data.marginReport.sacarias)} /><ReportField label="BALCAO" value={money(query.data.marginReport.balcao)} /><ReportField label="TT_CUSTO" value={money(query.data.marginReport.total_custo)} /><ReportField label="MARGEM" value={`${number(query.data.marginReport.margem_percentual)}%`} /><ReportField label="CMS_REP" value={money(query.data.marginReport.comissao_representante)} /><ReportField label="TONELAG" value={number(query.data.marginReport.tonelagem, 3)} /><ReportField label="MR_BRUTA" value={money(query.data.marginReport.margem_bruta)} /><ReportField label="MR_ADITI" value={money(query.data.marginReport.margem_aditivos)} /><ReportField label="% MRG ADITIVOS" value={`${number(query.data.marginReport.margem_aditivos_percentual)}%`} /><ReportField label="MR_SACAR" value={money(query.data.marginReport.margem_sacarias)} /><ReportField label="% MRG SACARIAS" value={`${number(query.data.marginReport.margem_sacarias_percentual)}%`} /><ReportField label="MR_BALCA" value={money(query.data.marginReport.margem_balcao)} /><ReportField label="% MRG BALCAO" value={`${number(query.data.marginReport.margem_balcao_percentual)}%`} />
-                  </dl><p className="mt-3 text-xs text-muted-foreground">Fonte: {String(query.data.marginReport.source_file ?? "—")}</p></>
-                ) : (
-                  <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"><ReportField label="TOT_VENDA" value={money(summary.total_venda)} /><ReportField label="DEVOLUCAO" value={money(summary.devolucao)} /><ReportField label="ADITIVOS" value={money(summary.aditivos)} /><ReportField label="SACARIAS" value={money(summary.sacarias)} /><ReportField label="BALCAO" value={money(summary.balcao)} /><ReportField label="TT_CUSTO" value={money(summary.total_custo)} /><ReportField label="MARGEM" value={`${number(summary.margem_percentual)}%`} /><ReportField label="CMS_REP" value={money(summary.comissao_representante)} /><ReportField label="TONELAG" value={number(summary.tonelagem, 3)} /><ReportField label="MR_BRUTA" value={money(summary.margem_bruta)} /><ReportField label="MR_ADITI" value={money(summary.margem_aditivos)} /><ReportField label="MR_SACAR" value={money(summary.margem_sacarias)} /><ReportField label="MR_BALCA" value={money(summary.margem_balcao)} /></dl>
-                )}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="actions" className="space-y-3">
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><MetricCard label="Orçamentos" value={number(summary.quotes, 0)} trend={comparison.quotes} /><MetricCard label="Valor orçado" value={money(summary.quote_value)} trend={comparison.quote_value} /><MetricCard label="Registros de venda" value={number(summary.sale_requests, 0)} trend={comparison.sale_requests} /><MetricCard label="Valor registrado" value={money(summary.sale_value)} trend={comparison.sale_value} /></div>
-              <div className="rounded-xl border bg-card">
-                <div className="border-b p-4"><h3 className="font-semibold">Todas as ações no período</h3><p className="text-xs text-muted-foreground">Orçamentos e registros de venda em ordem cronológica.</p></div>
-                <div className="max-h-[50vh] overflow-auto divide-y">
-                  {(query.data.actions ?? []).map((action) => <div key={action.id} className="flex gap-3 p-4"><div className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">{action.type === "quote" ? <FileSpreadsheet className="h-4 w-4" /> : <ShoppingCart className="h-4 w-4" />}</div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center justify-between gap-2"><p className="font-medium">{action.title} • {action.description}</p><span className="text-xs text-muted-foreground">{dateTimeBR(action.createdAt)}</span></div><p className="mt-1 text-sm text-muted-foreground">{isDukamp && action.sellerName ? `${action.sellerName} • ` : ""}{statusLabel(action.status)}{action.value > 0 ? ` • ${money(action.value)}` : ""}</p>{action.notes && <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{action.notes}</p>}</div></div>)}
-                  {!query.data.actions?.length && <p className="p-8 text-center text-sm text-muted-foreground">Nenhuma ação encontrada neste período.</p>}
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
-        ) : null}
-      </DialogContent>
-    </Dialog>
-  );
+        <TabsContent value="actions" className="space-y-3"><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><MetricCard label="Orçamentos" value={number(summary.quotes, 0)} trend={comparison.quotes} /><MetricCard label="Valor orçado" value={money(summary.quote_value)} trend={comparison.quote_value} /><MetricCard label="Registros de venda" value={number(summary.sale_requests, 0)} trend={comparison.sale_requests} /><MetricCard label="Valor registrado" value={money(summary.sale_value)} trend={comparison.sale_value} /></div><div className="rounded-xl border bg-card"><div className="border-b p-4"><h3 className="font-semibold">Todas as ações no período</h3><p className="text-xs text-muted-foreground">Orçamentos e registros de venda em ordem cronológica.</p></div><div className="max-h-[50vh] divide-y overflow-auto">{(query.data.actions ?? []).map((action) => <div key={action.id} className="flex gap-3 p-4"><div className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">{action.type === "quote" ? <FileSpreadsheet className="h-4 w-4" /> : <ShoppingCart className="h-4 w-4" />}</div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center justify-between gap-2"><p className="font-medium">{action.title} • {action.description}</p><span className="text-xs text-muted-foreground">{dateTimeBR(action.createdAt)}</span></div><p className="mt-1 text-sm text-muted-foreground">{isDukamp && action.sellerName ? `${action.sellerName} • ` : ""}{statusLabel(action.status)}{action.value > 0 ? ` • ${money(action.value)}` : ""}</p>{action.notes && <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{action.notes}</p>}</div></div>)}{!query.data.actions?.length && <p className="p-8 text-center text-sm text-muted-foreground">Nenhuma ação encontrada neste período.</p>}</div></div></TabsContent>
+      </Tabs> : null}
+    </DialogContent>
+  </Dialog>;
 }
