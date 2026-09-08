@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowDownRight,
@@ -80,14 +80,22 @@ const MONTHS = [
   "Dezembro",
 ];
 
+// Cores explícitas: o tema da DuKamp usa OKLCH nas variáveis CSS.
+// Recharts recebia hsl(var(--primary)), o que gerava uma cor SVG inválida,
+// escondia linhas/barras e fazia as fatias caírem no preto padrão do navegador.
 const CHART_COLORS = [
-  "hsl(var(--primary))",
-  "hsl(var(--chart-2))",
-  "hsl(var(--chart-3))",
-  "hsl(var(--chart-4))",
-  "hsl(var(--chart-5))",
-  "hsl(var(--muted-foreground))",
+  "#159447",
+  "#2563EB",
+  "#F59E0B",
+  "#7C3AED",
+  "#E11D48",
+  "#0891B2",
+  "#65A30D",
+  "#EA580C",
 ];
+const CURRENT_COLOR = "#159447";
+const PREVIOUS_COLOR = "#94A3B8";
+const GRID_COLOR = "#CBD5E1";
 
 const money = new Intl.NumberFormat("pt-BR", {
   style: "currency",
@@ -345,14 +353,16 @@ function DukampExpensesPage() {
         .filter((item) => periodKey(item.year, item.month) === key)
         .reduce((sum, item) => sum + item.amount, 0),
     }));
+    const monthsWithValues = monthlyTrend.filter((item) => item.total !== 0).length;
+    const hasTrendData = monthsWithValues > 0;
 
     const currentValues = scopeValues.filter((item) => periodKey(item.year, item.month) === activePeriod);
     const previousValues = scopeValues.filter((item) => periodKey(item.year, item.month) === previous);
     const currentTotal = currentValues.reduce((sum, item) => sum + item.amount, 0);
     const previousTotal = previousValues.reduce((sum, item) => sum + item.amount, 0);
-    const change = previousTotal > 0 ? ((currentTotal - previousTotal) / previousTotal) * 100 : null;
-    const average = monthlyTrend.length
-      ? monthlyTrend.reduce((sum, item) => sum + item.total, 0) / monthlyTrend.length
+    const change = previousTotal !== 0 ? ((currentTotal - previousTotal) / Math.abs(previousTotal)) * 100 : null;
+    const average = monthsWithValues
+      ? monthlyTrend.reduce((sum, item) => sum + item.total, 0) / monthsWithValues
       : 0;
 
     const groupCurrent = new Map<number, number>();
@@ -370,23 +380,37 @@ function DukampExpensesPage() {
       groupPrevious.set(groupCode, (groupPrevious.get(groupCode) ?? 0) + item.amount);
     }
 
+    const nameForGroup = (code: number) =>
+      selectedCategory == null
+        ? categoryByCode.get(code)?.name ?? String(code)
+        : subcategoryByCode.get(code)?.name ?? String(code);
+
     const breakdown = Array.from(groupCurrent.entries())
+      .filter(([, total]) => total !== 0)
       .map(([code, total]) => ({
         code,
-        name:
-          selectedCategory == null
-            ? categoryByCode.get(code)?.name ?? String(code)
-            : subcategoryByCode.get(code)?.name ?? String(code),
+        name: nameForGroup(code),
         total,
         previous: groupPrevious.get(code) ?? 0,
       }))
-      .sort((a, b) => b.total - a.total);
+      .sort((a, b) => Math.abs(b.total) - Math.abs(a.total));
 
-    const comparison = breakdown.slice(0, 10).map((item) => ({
-      name: item.name.length > 22 ? `${item.name.slice(0, 22)}…` : item.name,
-      atual: item.total,
-      anterior: item.previous,
-    }));
+    const comparisonCodes = Array.from(
+      new Set([...groupCurrent.keys(), ...groupPrevious.keys()]),
+    );
+    const comparison = comparisonCodes
+      .map((code) => ({
+        name: nameForGroup(code),
+        atual: groupCurrent.get(code) ?? 0,
+        anterior: groupPrevious.get(code) ?? 0,
+      }))
+      .filter((item) => item.atual !== 0 || item.anterior !== 0)
+      .sort((a, b) => Math.abs(b.atual) - Math.abs(a.atual))
+      .slice(0, 10)
+      .map((item) => ({
+        ...item,
+        name: item.name.length > 22 ? `${item.name.slice(0, 22)}…` : item.name,
+      }));
 
     const detailRows = currentValues
       .map((item) => {
@@ -399,7 +423,7 @@ function DukampExpensesPage() {
           amount: item.amount,
         };
       })
-      .sort((a, b) => b.amount - a.amount);
+      .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount));
 
     const top = breakdown[0];
     const selectedCategoryName = selectedCategory
@@ -414,6 +438,8 @@ function DukampExpensesPage() {
       activePeriod,
       previous,
       monthlyTrend,
+      monthsWithValues,
+      hasTrendData,
       currentTotal,
       previousTotal,
       change,
@@ -486,6 +512,9 @@ function DukampExpensesPage() {
       onNavigate={() => setMobileOpen(false)}
     />
   );
+
+  const activeFilterName =
+    computed.selectedSubcategoryName ?? computed.selectedCategoryName ?? "o filtro selecionado";
 
   return (
     <div className="flex min-h-screen bg-muted/30">
@@ -563,7 +592,7 @@ function DukampExpensesPage() {
               icon={<BarChart3 className="h-4 w-4" />}
               label="Média mensal"
               value={money.format(computed.average)}
-              helper={`${computed.monthlyTrend.length} meses com dados`}
+              helper={computed.monthsWithValues === 1 ? "1 mês com lançamento" : `${computed.monthsWithValues} meses com lançamentos`}
             />
             <MetricCard
               icon={<ArrowDownRight className="h-4 w-4" />}
@@ -576,15 +605,31 @@ function DukampExpensesPage() {
           <section className="mt-4 grid gap-4 2xl:grid-cols-[1.35fr_1fr]">
             <Panel title="Evolução mensal" subtitle="Como o total do filtro se comportou ao longo de 2026">
               <div className="h-[310px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={computed.monthlyTrend} margin={{ top: 10, right: 12, left: 8, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.25} />
-                    <XAxis dataKey="period" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis tickFormatter={(value) => compactMoney.format(Number(value))} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} width={72} />
-                    <Tooltip formatter={(value: any) => money.format(Number(value))} />
-                    <Line type="monotone" dataKey="total" name="Despesas" stroke="hsl(var(--primary))" strokeWidth={3} dot={{ r: 3 }} activeDot={{ r: 5 }} />
-                  </LineChart>
-                </ResponsiveContainer>
+                {computed.hasTrendData ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={computed.monthlyTrend} margin={{ top: 10, right: 12, left: 8, bottom: 0 }}>
+                      <CartesianGrid stroke={GRID_COLOR} strokeDasharray="3 3" vertical={false} opacity={0.55} />
+                      <XAxis dataKey="period" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                      <YAxis tickFormatter={(value) => compactMoney.format(Number(value))} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} width={72} />
+                      <Tooltip formatter={(value: any) => [money.format(Number(value)), "Despesas"]} />
+                      <Line
+                        type="monotone"
+                        dataKey="total"
+                        name="Despesas"
+                        stroke={CURRENT_COLOR}
+                        strokeWidth={3}
+                        connectNulls
+                        dot={{ r: 4, fill: CURRENT_COLOR, stroke: "#FFFFFF", strokeWidth: 2 }}
+                        activeDot={{ r: 6, fill: CURRENT_COLOR, stroke: "#FFFFFF", strokeWidth: 2 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <EmptyChartState
+                    title="Sem lançamentos para exibir"
+                    description={`Não há valores registrados em 2026 para ${activeFilterName}.`}
+                  />
+                )}
               </div>
             </Panel>
 
@@ -593,24 +638,41 @@ function DukampExpensesPage() {
               subtitle={periodLabel(computed.activePeriod)}
             >
               <div className="h-[310px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={computed.breakdown.slice(0, 8)}
-                      dataKey="total"
-                      nameKey="name"
-                      innerRadius="54%"
-                      outerRadius="82%"
-                      paddingAngle={2}
-                    >
-                      {computed.breakdown.slice(0, 8).map((entry, index) => (
-                        <Cell key={entry.code} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value: any) => money.format(Number(value))} />
-                    <Legend formatter={(value) => String(value).length > 25 ? `${String(value).slice(0, 25)}…` : value} />
-                  </PieChart>
-                </ResponsiveContainer>
+                {computed.breakdown.length > 0 && computed.currentTotal !== 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={computed.breakdown.slice(0, 8)}
+                        dataKey="total"
+                        nameKey="name"
+                        innerRadius="54%"
+                        outerRadius="82%"
+                        paddingAngle={2}
+                      >
+                        {computed.breakdown.slice(0, 8).map((entry, index) => (
+                          <Cell
+                            key={entry.code}
+                            fill={CHART_COLORS[index % CHART_COLORS.length]}
+                            stroke="#FFFFFF"
+                            strokeWidth={2}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value: any, name: any) => [money.format(Number(value)), String(name)]} />
+                      <Legend
+                        iconType="circle"
+                        formatter={(value) =>
+                          String(value).length > 25 ? `${String(value).slice(0, 25)}…` : value
+                        }
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <EmptyChartState
+                    title={`Sem lançamentos em ${periodLabel(computed.activePeriod)}`}
+                    description={`Este filtro está zerado no período selecionado. A evolução mensal continua mostrando os meses em que houve valor.`}
+                  />
+                )}
               </div>
             </Panel>
           </section>
@@ -621,17 +683,24 @@ function DukampExpensesPage() {
               subtitle={`${periodLabel(computed.previous)} × ${periodLabel(computed.activePeriod)} · maiores itens do período`}
             >
               <div className="h-[360px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={computed.comparison} margin={{ top: 10, right: 12, left: 8, bottom: 70 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.25} />
-                    <XAxis dataKey="name" angle={-35} textAnchor="end" interval={0} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <YAxis tickFormatter={(value) => compactMoney.format(Number(value))} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} width={72} />
-                    <Tooltip formatter={(value: any) => money.format(Number(value))} />
-                    <Legend />
-                    <Bar dataKey="anterior" name="Mês anterior" fill="hsl(var(--muted-foreground))" radius={[5, 5, 0, 0]} />
-                    <Bar dataKey="atual" name="Período atual" fill="hsl(var(--primary))" radius={[5, 5, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                {computed.comparison.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={computed.comparison} margin={{ top: 10, right: 12, left: 8, bottom: 70 }}>
+                      <CartesianGrid stroke={GRID_COLOR} strokeDasharray="3 3" vertical={false} opacity={0.55} />
+                      <XAxis dataKey="name" angle={-35} textAnchor="end" interval={0} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+                      <YAxis tickFormatter={(value) => compactMoney.format(Number(value))} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} width={72} />
+                      <Tooltip formatter={(value: any) => money.format(Number(value))} />
+                      <Legend />
+                      <Bar dataKey="anterior" name="Mês anterior" fill={PREVIOUS_COLOR} radius={[5, 5, 0, 0]} />
+                      <Bar dataKey="atual" name="Período atual" fill={CURRENT_COLOR} radius={[5, 5, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <EmptyChartState
+                    title="Sem valores para comparar"
+                    description={`Não há lançamentos em ${periodLabel(computed.previous)} nem em ${periodLabel(computed.activePeriod)} para este filtro.`}
+                  />
+                )}
               </div>
             </Panel>
           </section>
@@ -657,7 +726,9 @@ function DukampExpensesPage() {
                         <td className="px-2 py-3 text-muted-foreground">{row.category}</td>
                         <td className="px-2 py-3 text-right font-semibold tabular-nums">{money.format(row.amount)}</td>
                         <td className="px-2 py-3 text-right tabular-nums text-muted-foreground">
-                          {computed.currentTotal > 0 ? `${((row.amount / computed.currentTotal) * 100).toFixed(1)}%` : "0,0%"}
+                          {computed.currentTotal !== 0
+                            ? `${((row.amount / computed.currentTotal) * 100).toFixed(1)}%`
+                            : "0,0%"}
                         </td>
                       </tr>
                     ))}
@@ -686,7 +757,7 @@ function MetricCard({
   helper,
   tone = "neutral",
 }: {
-  icon: React.ReactNode;
+  icon: ReactNode;
   label: string;
   value: string;
   helper: string;
@@ -711,6 +782,20 @@ function MetricCard({
   );
 }
 
+function EmptyChartState({ title, description }: { title: string; description: string }) {
+  return (
+    <div className="grid h-full place-items-center px-6 text-center">
+      <div className="max-w-sm">
+        <div className="mx-auto mb-3 grid h-11 w-11 place-items-center rounded-xl bg-muted text-muted-foreground">
+          <BarChart3 className="h-5 w-5" />
+        </div>
+        <p className="text-sm font-semibold">{title}</p>
+        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{description}</p>
+      </div>
+    </div>
+  );
+}
+
 function Panel({
   title,
   subtitle,
@@ -718,7 +803,7 @@ function Panel({
 }: {
   title: string;
   subtitle: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <div className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
