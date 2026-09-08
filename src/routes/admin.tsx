@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard, Package, Tag, FolderTree, Image as ImageIcon,
   Megaphone, Users, Settings, LogOut, ExternalLink, MessageSquare, Menu, ClipboardList, FileText, RefreshCw, Navigation,
-  ShoppingBag, ChevronDown, BarChart3, History, ListOrdered, Boxes, UserSquare2, Bell,
+  ShoppingBag, ChevronDown, BarChart3, History, ListOrdered, Boxes, UserSquare2, Bell, WalletCards,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -17,7 +17,7 @@ export const Route = createFileRoute("/admin")({
   component: AdminLayout,
 });
 
-type NavLeaf = { to: string; label: string; icon: any; exact?: boolean };
+type NavLeaf = { to: string; label: string; icon: any; exact?: boolean; masterOnly?: boolean };
 type NavGroup = { label: string; icon: any; basePath: string; children: NavLeaf[] };
 type NavEntry = NavLeaf | NavGroup;
 
@@ -43,12 +43,13 @@ const NAV: NavEntry[] = [
       { to: "/admin/vendas/atualizar-valores", label: "Atualizar valores", icon: RefreshCw },
     ],
   },
+  { to: "/admin/despesas-dukamp", label: "Despesas DuKamp", icon: WalletCards, masterOnly: true },
   { to: "/admin/equipe-vendas", label: "Equipe de Vendas", icon: UserSquare2 },
   { to: "/admin/banners", label: "Banners", icon: ImageIcon },
   { to: "/admin/anuncios", label: "Anúncios", icon: Megaphone },
   { to: "/admin/atendimentos", label: "Atendimentos", icon: MessageSquare },
   { to: "/admin/solicitacoes", label: "Solicitações", icon: ClipboardList },
-  { to: "/admin/contas", label: "Contas", icon: Users },
+  { to: "/admin/contas", label: "Contas", icon: Users, masterOnly: true },
   { to: "/admin/navbar", label: "Menu (Navbar)", icon: Navigation },
   { to: "/admin/configuracoes", label: "Configurações", icon: Settings },
   { to: "/admin/footer", label: "Footer", icon: FileText },
@@ -87,7 +88,7 @@ function SidebarContent({ pathname, onNavigate, signOut, isMaster, pendingReques
   isMaster: boolean;
   pendingRequests: number;
 }) {
-  const items = NAV.filter((n) => isGroup(n) || n.to !== "/admin/contas" || isMaster);
+  const items = NAV.filter((n) => isGroup(n) || !n.masterOnly || isMaster);
   return (
     <>
       <Link to="/admin" onClick={onNavigate} className="flex items-center gap-2 px-4 h-16 border-b">
@@ -194,6 +195,22 @@ function AdminLayout() {
         </div>
       </div>
     );
+  }
+
+  const isExpensesArea = pathname === "/admin/despesas-dukamp" || pathname.startsWith("/admin/despesas-dukamp/");
+  if (isExpensesArea) {
+    if (!isMasterAdmin) {
+      return (
+        <div className="min-h-screen grid place-items-center text-center px-4 bg-muted/30">
+          <div>
+            <h1 className="text-xl font-bold">Área financeira restrita</h1>
+            <p className="text-sm text-muted-foreground mt-2">Somente a conta-mestre da DuKamp pode acessar esta área.</p>
+            <Button className="mt-4" variant="outline" onClick={() => nav({ to: "/admin" })}>Voltar ao painel</Button>
+          </div>
+        </div>
+      );
+    }
+    return <Outlet />;
   }
 
   const pendingRequestCount = pendingRequests.data ?? 0;
