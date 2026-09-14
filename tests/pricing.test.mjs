@@ -27,17 +27,23 @@ for (const [name, slug] of [
   ["Arames e Ferragens", "arames-e-ferragens"],
 ]) {
   test(name + " is exempt for both consumer and producer", () => {
-    for (const catalogs of [{ name }, { slug }, { name: "  " + name.toUpperCase() + "  " }]) {
+    for (const catalogs of [
+      { name },
+      { slug },
+      { name: "  " + name.toUpperCase() + "  " },
+      [{ name, slug }],
+    ]) {
       const p = { ...product, catalogs };
       assert.equal(priceForAccount(p), 100);
       assert.equal(priceForAccount(p, "cliente"), 100);
       assert.equal(priceForAccount(p, "produtor"), 100);
+      assert.equal(consumerTaxRate(p), 0);
     }
   });
 }
 
 test("all other categories and uncategorized products receive 22%", () => {
-  for (const catalogs of [null, { name: "Vacinas" }, { name: "Outros" }]) {
+  for (const catalogs of [null, { name: "Vacinas" }, { name: "Outros" }, [{ slug: "vacinas" }]]) {
     assert.equal(priceForAccount({ ...product, catalogs }), 122);
   }
 });
@@ -55,6 +61,18 @@ test("promotions and Pix use the same 22% rule", () => {
   assert.equal(pixPriceForAccount(p), 85.4);
   assert.equal(pixPriceForAccount(p, "produtor"), 70);
   assert.equal(regularPriceForAccount(p), 122);
+});
+
+test("exempt categories never receive 22%, including Pix", () => {
+  const p = {
+    producer_price: 181.94,
+    consumer_price: 221.97,
+    producer_pix_price: 177.71,
+    consumer_pix_price: 216.81,
+    catalogs: [{ name: "Ferragens", slug: "ferragens" }],
+  };
+  assert.equal(priceForAccount(p), 181.94);
+  assert.equal(pixPriceForAccount(p), 177.71);
 });
 
 test("rounding and mixed cart totals use the new rate once", () => {
