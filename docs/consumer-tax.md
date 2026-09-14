@@ -1,6 +1,6 @@
-# Preço por perfil — regra comercial de 18%
+# Preço por perfil — regra comercial de 22%
 
-O preço-base é o preço do produtor cadastrado. Para consumidor e visitante, aplica-se uma única vez base × 1,18. Produtor rural paga a base sem acréscimo.
+O preço-base é o preço do produtor cadastrado. Para consumidor e visitante, aplica-se uma única vez base × 1,22. Produtor rural paga a base sem acréscimo.
 
 Categorias isentas: Pets, Utensílios Gerais, Lonas e Coberturas, Arames e Ferragens. No banco atual Arames e Ferragens são dois catálogos separados; ambos são isentos. A categoria combinada também é reconhecida.
 
