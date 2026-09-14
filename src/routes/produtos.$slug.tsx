@@ -61,7 +61,7 @@ function Page() {
   const [qty, setQtyState] = useState(1);
   const { data: p, isLoading, isFetched } = useQuery({
     queryKey: ["product", slug],
-    queryFn: async () => (await supabase.from("products").select("*").eq("slug", slug).maybeSingle()).data,
+    queryFn: async () => (await supabase.from("products").select("*,catalogs(name,slug)").eq("slug", slug).maybeSingle()).data,
   });
   if (isLoading || !isFetched) {
     return (

@@ -161,7 +161,7 @@ function CarrinhoPage() {
       )
       .join("\n");
     const extras = frete && taxAmount != null
-      ? `\nFrete (${frete.servico}): ${formatBRL(frete.valor)}\nImpostos (ICMS): ${formatBRL(taxAmount)}${destinationUf ? ` — ${destinationUf}` : ""}`
+      ? `\nFrete (${frete.servico}): ${formatBRL(frete.valor)}\nImpostos adicionais: ${formatBRL(taxAmount)}${destinationUf ? ` — ${destinationUf}` : ""}`
       : "";
     const msg = `Olá! Gostaria de finalizar o pedido:\n\n${linhas}${extras}\n\nTotal: ${formatBRL(grandTotal)}`;
     const url = whatsappLink(settings?.phone, msg);
@@ -339,7 +339,7 @@ function CarrinhoPage() {
                 <span>{frete ? formatBRL(frete.valor) : "Calcular pelo CEP"}</span>
               </div>
               <div className="flex justify-between text-muted-foreground">
-                <span>Impostos (ICMS){destinationUf ? ` · ${destinationUf}` : ""}</span>
+                <span>Impostos adicionais{destinationUf ? ` · ${destinationUf}` : ""}</span>
                 <span>{taxAmount != null ? formatBRL(taxAmount) : "Calculado com o frete"}</span>
               </div>
               <div className="border-t pt-2 flex justify-between font-semibold text-base">

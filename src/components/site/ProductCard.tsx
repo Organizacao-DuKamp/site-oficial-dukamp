@@ -9,6 +9,7 @@ import { OptimizedImage } from "@/components/ui/optimized-image";
 import { toast } from "sonner";
 
 export type ProductLite = {
+  catalogs?: { name?: string | null; slug?: string | null } | null;
   id: string;
   name: string;
   slug: string;

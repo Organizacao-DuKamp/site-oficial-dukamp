@@ -60,7 +60,7 @@ function useCategoryPreview(catalogId: string | undefined) {
     queryFn: async () => {
       const { data } = await supabase
         .from("products")
-        .select("id,name,slug,images,price,consumer_price,producer_price")
+        .select("id,name,slug,images,price,consumer_price,producer_price,on_sale,sale_producer_price,catalogs(name,slug)")
         .eq("active", true)
         .eq("catalog_id", catalogId!)
         .order("name")

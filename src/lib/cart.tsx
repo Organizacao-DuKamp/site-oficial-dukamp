@@ -1,3 +1,7 @@
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/lib/auth";
+import { priceForAccount } from "@/lib/pricing";
+import { supabase } from "@/integrations/supabase/client";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
 export type CartItem = {
@@ -10,6 +14,7 @@ export type CartItem = {
 
 type CartCtx = {
   items: CartItem[];
+  pricingReady: boolean;
   add: (item: Omit<CartItem, "quantity">, qty?: number) => void;
   /** Replaces the complete cart in a single state update (for example, after accepting a quote). */
   replaceItems: (items: CartItem[]) => void;
@@ -24,8 +29,30 @@ const Ctx = createContext<CartCtx | null>(null);
 const KEY = "dukamp_cart_v1";
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
+  const [storedItems, setItems] = useState<CartItem[]>([]);
   const [hydrated, setHydrated] = useState(false);
+
+  const { accountType, loading: authLoading } = useAuth();
+  const ids = [...new Set(storedItems.map(item => item.id))].sort();
+  const products = useQuery({
+    queryKey: ["cart-current-prices", ids],
+    enabled: hydrated && ids.length > 0,
+    staleTime: 0,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("products")
+        .select("id,price,consumer_price,producer_price,on_sale,sale_producer_price,catalogs(name,slug)")
+        .in("id", ids);
+      if (error) throw error;
+      if (data.length !== ids.length) throw new Error("Produto do carrinho não encontrado.");
+      return data;
+    },
+  });
+  const pricingReady = hydrated && !authLoading &&
+    (ids.length === 0 || Boolean(products.data && !products.isError));
+  const items = storedItems.map(item => {
+    const product = products.data?.find(product => product.id === item.id);
+    return product ? { ...item, price: priceForAccount(product, accountType) } : item;
+  });
 
   useEffect(() => {
     try {
@@ -65,7 +92,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const count = items.reduce((s, i) => s + i.quantity, 0);
   const total = items.reduce((s, i) => s + i.quantity * i.price, 0);
 
-  return <Ctx.Provider value={{ items, add, replaceItems, remove, setQty, clear, count, total }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ items, pricingReady, add, replaceItems, remove, setQty, clear, count, total }}>{children}</Ctx.Provider>;
 }
 
 export function useCart() {

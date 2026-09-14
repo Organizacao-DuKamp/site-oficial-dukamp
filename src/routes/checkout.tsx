@@ -216,7 +216,7 @@ async function lookupCepWithFallback(digits: string): Promise<CepLookupResult> {
 }
 
 function CheckoutPage() {
-  const { items, total: subtotal, clear } = useCart();
+  const { items, total: subtotal, clear, pricingReady } = useCart();
   const { data: settings } = useSiteSettings();
   const { accountType } = useAuth();
   const nav = useNavigate();
@@ -419,6 +419,7 @@ function CheckoutPage() {
   }
 
   function validateDelivery(): string | null {
+    if (!pricingReady) return "Aguarde a atualização dos preços ou recarregue a página.";
     const labels: Record<keyof Form, string> = {
       customer_name: "Nome completo",
       email: "E-mail",
@@ -1007,7 +1008,7 @@ function CheckoutPage() {
 
                 {method === "card" && taxAmount == null && (
                   <div className="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
-                    Calcule o frete para que o ICMS seja definido pela UF de entrega antes de preencher o cartão.
+                    Calcule o frete antes de preencher o cartão. O imposto aplicável já está incluído no preço dos produtos.
                   </div>
                 )}
 
@@ -1054,7 +1055,7 @@ function CheckoutPage() {
                     value={frete ? formatBRL(frete.valor) : <span className="text-muted-foreground text-sm">A calcular</span>}
                   />
                   <Row
-                    label={`Impostos (ICMS)${taxDestinationUf ? ` · ${taxDestinationUf}` : ""}`}
+                    label={`Impostos adicionais${taxDestinationUf ? ` · ${taxDestinationUf}` : ""}`}
                     value={taxAmount != null ? formatBRL(taxAmount) : <span className="text-muted-foreground text-sm">Calculado com o frete</span>}
                   />
                   {frete && (

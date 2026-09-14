@@ -21,7 +21,7 @@ function Page() {
     enabled: !!cat.data?.id,
     queryKey: ["catalog", slug, "products"],
     queryFn: async () => {
-      const { data } = await supabase.from("products").select("*").eq("active", true).gt("stock", 0).eq("catalog_id", cat.data!.id);
+      const { data } = await supabase.from("products").select("*,catalogs(name,slug)").eq("active", true).gt("stock", 0).eq("catalog_id", cat.data!.id);
       return data ?? [];
     },
   });

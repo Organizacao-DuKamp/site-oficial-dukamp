@@ -1,12 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import {
-  calculateItemIcms,
-  consumerPriceFromProducer,
-  isSupportedTaxCode,
-  normalizeTaxCode,
-  roundMoney,
-} from "@/lib/tax";
+import { normalizeTaxCode, roundMoney } from "@/lib/tax";
+import { priceForAccount } from "@/lib/pricing";
 
 const CEP_ORIGEM = (process.env.CORREIOS_CEP_ORIGEM || "15150104").replace(/\D/g, "");
 
@@ -534,24 +529,19 @@ export const createPixOrder = createServerFn({ method: "POST" })
     const supa = await getServerSupabase();
 
     let authUserId: string | null = null;
-    try {
-      const { getRequest } = await import("@tanstack/react-start/server");
-      const req = getRequest();
-      const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
-      const token = authHeader?.replace(/^Bearer\s+/i, "");
-      if (token) {
-        const { data: userData } = await supa.auth.getUser(token);
-        if (userData.user?.id) authUserId = userData.user.id;
-      }
-    } catch {
-      // compra anônima
+    const { getRequest } = await import("@tanstack/react-start/server");
+    const token = getRequest().headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+    if (token) {
+      const { data: userData, error: authError } = await supa.auth.getUser(token);
+      if (authError || !userData.user) throw new Error("Sessão inválida. Entre novamente.");
+      authUserId = userData.user.id;
     }
 
     const ids = data.items.map((item) => item.product_id);
     const { data: prods, error: productError } = await supa
       .from("products")
       .select(
-        "id,name,code,price,consumer_price,producer_price,on_sale,sale_consumer_price,sale_producer_price,peso,altura,largura,comprimento,stock,active,tax_code",
+        "id,name,code,price,consumer_price,producer_price,on_sale,sale_consumer_price,sale_producer_price,peso,altura,largura,comprimento,stock,active,tax_code,catalogs(name,slug)",
       )
       .in("id", ids);
     if (productError) throw new Error(productError.message);
@@ -559,15 +549,15 @@ export const createPixOrder = createServerFn({ method: "POST" })
 
     let accountType = "cliente";
     if (authUserId) {
-      const { data: profile } = await supa
+      const { data: profile, error: profileError } = await supa
         .from("profiles")
         .select("account_type")
         .eq("id", authUserId)
         .maybeSingle();
+      if (profileError) throw new Error("Não foi possível verificar o tipo da conta.");
       accountType = profile?.account_type ?? "cliente";
     }
 
-    const producerAccount = accountType === "produtor";
     const destinationUf = data.estado.trim().toUpperCase();
     let subtotal = 0;
     let taxAmount = 0;
@@ -577,27 +567,12 @@ export const createPixOrder = createServerFn({ method: "POST" })
       if (!product.active) throw new Error(`Produto indisponível: ${product.name}`);
       if ((product.stock ?? 0) < item.quantity) throw new Error(`Estoque insuficiente: ${product.name}`);
 
-      const producerPrice = Number(product.producer_price ?? 0);
-      const hasProducerPrice = Number.isFinite(producerPrice) && producerPrice > 0;
-      const regularPrice = hasProducerPrice
-        ? (producerAccount ? producerPrice : consumerPriceFromProducer(producerPrice))
-        : Number(product.consumer_price ?? product.price ?? 0);
-      const salePrice = producerAccount
-        ? (product.sale_producer_price ?? product.sale_consumer_price)
-        : product.sale_consumer_price;
-      const unit = Number(product.on_sale && salePrice != null ? salePrice : regularPrice);
+      const unit = priceForAccount(product, accountType);
       if (!Number.isFinite(unit) || unit <= 0) throw new Error(`Preço indisponível: ${product.name}`);
-
       const taxCode = normalizeTaxCode(product.tax_code);
-      if (!isSupportedTaxCode(taxCode)) {
-        throw new Error(
-          `O produto ${product.name} possui código tributário ${taxCode || "não informado"}. ` +
-            "O checkout aceita automaticamente somente os códigos 000 e 040.",
-        );
-      }
-
       const sub = roundMoney(unit * item.quantity);
-      const icms = calculateItemIcms(sub, taxCode, destinationUf);
+      // Consumer tax is already included in the unit price; never charge it twice.
+      const icms = { rate: 0, amount: 0 };
       subtotal = roundMoney(subtotal + sub);
       taxAmount = roundMoney(taxAmount + icms.amount);
 

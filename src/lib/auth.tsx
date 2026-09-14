@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { PROTECTED_ADMIN_EMAIL } from "@/lib/constants";
-import { consumerPriceFromProducer } from "@/lib/tax";
+export { regularPriceForAccount, priceForAccount, isOnSaleForAccount, pixPriceForAccount } from "@/lib/pricing";
 
 export type AccountType = "cliente" | "revendedor" | "produtor" | "empresa" | "vendedor" | "admin";
 
@@ -167,65 +167,4 @@ export function useAuth() {
   const context = useContext(Ctx);
   if (!context) throw new Error("useAuth must be used within AuthProvider");
   return context;
-}
-
-type PriceFields = {
-  price?: number | null;
-  consumer_price?: number | null;
-  producer_price?: number | null;
-  on_sale?: boolean | null;
-  sale_consumer_price?: number | null;
-  sale_producer_price?: number | null;
-};
-
-type PixFields = {
-  pix_price?: number | null;
-  consumer_pix_price?: number | null;
-  producer_pix_price?: number | null;
-  on_sale?: boolean | null;
-  sale_consumer_pix_price?: number | null;
-  sale_producer_pix_price?: number | null;
-};
-
-export function regularPriceForAccount(product: PriceFields, type: AccountType): number {
-  const producerPrice = Number(product.producer_price ?? 0);
-  if (Number.isFinite(producerPrice) && producerPrice > 0) {
-    return type === "produtor" ? producerPrice : consumerPriceFromProducer(producerPrice);
-  }
-  return Number(product.consumer_price ?? product.price ?? 0);
-}
-
-export function priceForAccount(product: PriceFields, type: AccountType): number {
-  if (product.on_sale) {
-    const sale =
-      type === "produtor"
-        ? product.sale_producer_price ?? product.sale_consumer_price
-        : product.sale_consumer_price;
-    if (sale != null) return Number(sale);
-  }
-  return regularPriceForAccount(product, type);
-}
-
-export function isOnSaleForAccount(product: PriceFields, type: AccountType): boolean {
-  if (!product.on_sale) return false;
-  const sale =
-    type === "produtor"
-      ? product.sale_producer_price ?? product.sale_consumer_price
-      : product.sale_consumer_price;
-  return sale != null && Number(sale) < regularPriceForAccount(product, type);
-}
-
-export function pixPriceForAccount(product: PixFields, type: AccountType): number | null {
-  if (product.on_sale) {
-    const sale =
-      type === "produtor"
-        ? product.sale_producer_pix_price ?? product.sale_consumer_pix_price
-        : product.sale_consumer_pix_price;
-    if (sale != null) return Number(sale);
-  }
-
-  let value: number | null | undefined;
-  if (type === "produtor") value = product.producer_pix_price;
-  else value = product.consumer_pix_price ?? product.pix_price;
-  return value != null ? Number(value) : null;
 }

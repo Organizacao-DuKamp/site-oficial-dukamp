@@ -51,7 +51,7 @@ function ProductsAdmin() {
         { name: "catalog_id", label: "Catálogo (categoria)", type: "select", options: (catalogs.data ?? []).map((c) => ({ value: c.id, label: c.name })) },
         { name: "category_position", label: "Posição na categoria (deixe vazio para ordem padrão)", type: "number", step: "1" },
         { name: "producer_price", label: "Preço — Produtor Rural (PRECO2 / fonte principal)", type: "number", step: "0.01" },
-        { name: "consumer_price", label: "Preço — Consumidor (referência; site usa produtor + 22%)", type: "number", step: "0.01", required: true, defaultValue: 0 },
+        { name: "consumer_price", label: "Preço — Consumidor (referência; site usa produtor + 18%, salvo categorias isentas)", type: "number", step: "0.01", required: true, defaultValue: 0 },
         { name: "tax_code", label: "Código tributário (000/040)" },
         { name: "erp_group", label: "Grupo ERP" },
         { name: "erp_icms_rate", label: "% ICMS do ERP", type: "number", step: "0.01" },

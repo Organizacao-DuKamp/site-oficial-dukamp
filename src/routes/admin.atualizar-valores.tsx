@@ -1,3 +1,4 @@
+import { regularPriceForAccount } from "@/lib/pricing";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -7,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Loader2, Upload } from "lucide-react";
-import { consumerPriceFromProducer, isSupportedTaxCode, normalizeTaxCode } from "@/lib/tax";
+import { isSupportedTaxCode, normalizeTaxCode } from "@/lib/tax";
 
 export const Route = createFileRoute("/admin/atualizar-valores")({
   component: Page,
@@ -126,13 +127,13 @@ function Page() {
       const text = await file.text();
       const { rows, errors: parseErrors } = parseFile(text);
       const codes = rows.map((r) => r.code);
-      const existing = new Map<string, { id: string; active: boolean; name: string }>();
+      const existing = new Map<string, { id: string; active: boolean; name: string; catalogs?: { name?: string | null; slug?: string | null } | null }>();
 
       for (let i = 0; i < codes.length; i += 200) {
         const chunk = codes.slice(i, i + 200);
         const { data, error } = await supabase
           .from("products")
-          .select("id,code,active,name")
+          .select("id,code,active,name,catalogs(name,slug)")
           .in("code", chunk);
         if (error) throw error;
         (data ?? []).forEach((product: any) =>
@@ -140,6 +141,7 @@ function Page() {
             id: product.id,
             active: Boolean(product.active),
             name: product.name,
+            catalogs: product.catalogs,
           }),
         );
       }
@@ -195,7 +197,7 @@ function Page() {
             continue;
           }
 
-          const consumerPrice = consumerPriceFromProducer(producerPrice);
+          const consumerPrice = regularPriceForAccount({ producer_price: producerPrice, catalogs: found.catalogs }, "cliente");
           const patch = {
             producer_price: producerPrice,
             consumer_price: consumerPrice,
@@ -251,7 +253,7 @@ function Page() {
       <h1 className="text-2xl font-bold">Atualizar Valores</h1>
       <p className="text-sm text-muted-foreground mt-1">
         Formato: CODIGO · DESCRICAO · SALDO · PRECO1 · PRECO2 · GRUPO · %ICMS · COD TRIBUTARIO · PONTOS · CODIGO_BARRAS · TABELA FIXA.
-        O sistema usa somente o PRECO2 como preço do produtor e calcula o preço do consumidor com acréscimo de 22%.
+        O sistema usa somente o PRECO2 como preço do produtor e calcula o preço do consumidor com acréscimo de 18%, exceto Pets, Utensílios Gerais, Lonas e Coberturas e Arames e Ferragens. Produtor rural paga o preço-base sem acréscimo.
         Apenas produtos já existentes e ativos são alterados; nenhum produto é criado, ativado ou desativado por esta importação.
       </p>
 

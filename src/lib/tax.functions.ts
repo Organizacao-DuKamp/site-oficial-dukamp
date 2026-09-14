@@ -1,12 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import {
-  calculateItemIcms,
-  consumerPriceFromProducer,
-  isSupportedTaxCode,
-  normalizeTaxCode,
-  roundMoney,
-} from "@/lib/tax";
+import { normalizeTaxCode, roundMoney } from "@/lib/tax";
+import { priceForAccount } from "@/lib/pricing";
 
 async function getServerSupabase() {
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
@@ -40,10 +35,24 @@ export const calculateCartTax = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => taxInput.parse(data))
   .handler(async ({ data }) => {
     const supa = await getServerSupabase();
+    // Resolve the account from a verified session, not the caller's accountType.
+    let accountType = "cliente";
+    const { getRequest } = await import("@tanstack/react-start/server");
+    const token = getRequest().headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+    if (token) {
+      const { data: authData, error: authError } = await supa.auth.getUser(token);
+      if (authError) throw new Error("Sessão inválida. Entre novamente.");
+      if (authData.user) {
+        const { data: profile, error: profileError } = await supa.from("profiles")
+          .select("account_type").eq("id", authData.user.id).maybeSingle();
+        if (profileError) throw new Error("Não foi possível verificar o tipo da conta.");
+        accountType = profile?.account_type ?? "cliente";
+      }
+    }
     const ids = [...new Set(data.items.map((item) => item.product_id))];
     const { data: products, error } = await (supa as any)
       .from("products")
-      .select("id,name,active,producer_price,on_sale,sale_consumer_price,sale_producer_price,tax_code")
+      .select("id,name,active,price,consumer_price,producer_price,on_sale,sale_consumer_price,sale_producer_price,tax_code,catalogs(name,slug)")
       .in("id", ids);
 
     if (error) throw new Error(error.message || "Falha ao consultar os produtos para cálculo de ICMS.");
@@ -56,31 +65,12 @@ export const calculateCartTax = createServerFn({ method: "POST" })
       if (!product?.active) throw new Error(`Produto indisponível: ${product?.name || item.product_id}`);
 
       const taxCode = normalizeTaxCode(product.tax_code);
-      if (!isSupportedTaxCode(taxCode)) {
-        throw new Error(
-          `O produto ${product.name} possui código tributário ${taxCode || "não informado"}. ` +
-            "O cálculo automático aceita somente 000 e 040.",
-        );
-      }
-
-      const producerPrice = Number(product.producer_price ?? 0);
-      if (!Number.isFinite(producerPrice) || producerPrice <= 0) {
-        throw new Error(`Preço do produtor indisponível: ${product.name}`);
-      }
-
-      const regularPrice = data.accountType === "produtor"
-        ? producerPrice
-        : consumerPriceFromProducer(producerPrice);
-      const salePrice = data.accountType === "produtor"
-        ? (product.sale_producer_price ?? product.sale_consumer_price)
-        : product.sale_consumer_price;
-      const unitPrice = Number(product.on_sale && salePrice != null ? salePrice : regularPrice);
+      const unitPrice = priceForAccount(product, accountType);
       if (!Number.isFinite(unitPrice) || unitPrice <= 0) {
         throw new Error(`Preço indisponível: ${product.name}`);
       }
-
       const baseAmount = roundMoney(unitPrice * item.quantity);
-      const icms = calculateItemIcms(baseAmount, taxCode, data.destinationUf);
+      const icms = { rate: 0, amount: 0 }; // Tax is included in unitPrice.
       merchandiseAmount = roundMoney(merchandiseAmount + baseAmount);
       taxAmount = roundMoney(taxAmount + icms.amount);
 
