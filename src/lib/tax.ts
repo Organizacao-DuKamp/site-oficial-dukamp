@@ -1,6 +1,6 @@
 export type SupportedTaxCode = "000" | "040";
 
-export const CONSUMER_MARKUP = 0.18;
+export const CONSUMER_MARKUP = 0.22;
 export const DUKAMP_ORIGIN_UF = "SP" as const;
 
 // Matriz ICMS 2026 enviada pela Dukamp, considerando origem em SP.
