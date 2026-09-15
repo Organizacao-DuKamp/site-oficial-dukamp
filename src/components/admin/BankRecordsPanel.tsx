@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ArrowLeftRight, Landmark } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Bar,
@@ -27,7 +28,13 @@ const money = (cents: number) => currency.format(cents / 100);
 const compact = (value: number) =>
   new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(value);
 const tooltipMoney = (value: unknown) => currency.format(Number(value));
-const panel = "rounded-2xl border bg-card p-4 shadow-sm sm:p-6";
+const panel = "min-w-0 rounded-2xl border border-border/70 bg-card p-4 shadow-sm sm:p-6";
+const chartTooltipStyle = {
+  borderRadius: 12,
+  border: "1px solid #E2E8F0",
+  boxShadow: "0 8px 24px #0F172A12",
+  fontSize: 12,
+};
 
 export function BankRecordsPanel() {
   const { isMasterAdmin } = useAuth();
@@ -98,9 +105,12 @@ export function BankRecordsPanel() {
   }));
 
   return (
-    <div className="space-y-5">
-      <header className="flex flex-col justify-between gap-4 xl:flex-row xl:items-end">
-        <div>
+    <div className="min-w-0 space-y-6">
+      <header className="flex flex-col justify-between gap-5 rounded-2xl border border-emerald-600/15 bg-gradient-to-br from-emerald-50/70 to-card p-5 dark:from-emerald-950/20 sm:p-6 xl:flex-row xl:items-end">
+        <div className="min-w-0">
+          <div className="mb-3 inline-flex rounded-xl bg-emerald-600/10 p-2.5 text-emerald-700 dark:text-emerald-400">
+            <Landmark className="h-5 w-5" />
+          </div>
           <p className="text-xs text-muted-foreground">Despesas DuKamp / Controle bancário</p>
           <h1 className="mt-2 text-2xl font-bold sm:text-3xl">Registros bancários</h1>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
@@ -108,7 +118,7 @@ export function BankRecordsPanel() {
             dos documentos enviados.
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex min-w-0 shrink-0 gap-3 rounded-xl border bg-card/80 p-3">
           <label className="flex flex-col gap-1 text-xs font-medium">
             Ano
             <select
@@ -122,11 +132,11 @@ export function BankRecordsPanel() {
               ))}
             </select>
           </label>
-          <label className="flex flex-col gap-1 text-xs font-medium">
+          <label className="flex min-w-0 flex-col gap-1 text-xs font-medium">
             Mês
             <select
               aria-label="Mês dos registros"
-              className="h-10 rounded-lg border bg-background px-3 text-sm"
+              className="h-10 w-full min-w-0 rounded-lg border bg-background px-3 text-sm"
               value={selected.month}
               onChange={(e) => setPeriod({ year: selected.year, month: Number(e.target.value) })}
             >
@@ -153,7 +163,12 @@ export function BankRecordsPanel() {
         />
         <Metric
           label="Comparação com mês anterior"
-          value={comparison ? money(comparison.difference) : "Sem base"}
+          comparison
+          value={
+            comparison
+              ? `${comparison.difference > 0 ? "+ " : ""}${money(comparison.difference)}`
+              : "Sem base"
+          }
           note={
             comparison
               ? comparison.percent === null
@@ -182,7 +197,7 @@ export function BankRecordsPanel() {
               <CartesianGrid stroke="#CBD5E1" strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="name" tick={{ fontSize: 11 }} />
               <YAxis tickFormatter={compact} width={65} />
-              <Tooltip formatter={tooltipMoney} />
+              <Tooltip formatter={tooltipMoney} contentStyle={chartTooltipStyle} />
               <Legend />
               <Line
                 dataKey="total"
@@ -215,7 +230,8 @@ export function BankRecordsPanel() {
         <>
           <section className={panel}>
             <h2 className="font-semibold">Valores do mês por grupo</h2>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-2 inline-flex flex-wrap items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700 dark:bg-red-950/30 dark:text-red-300">
+              <ArrowLeftRight className="h-3.5 w-3.5 shrink-0" />
               {previous
                 ? `Comparação com ${BANK_MONTHS[previous.month - 1]}/${previous.year}`
                 : "Mês anterior indisponível; exibindo apenas o período selecionado."}{" "}
@@ -378,12 +394,40 @@ export function BankRecordsPanel() {
     </div>
   );
 }
-function Metric({ label, value, note }: { label: string; value: string; note: string }) {
+function Metric({
+  label,
+  value,
+  note,
+  comparison = false,
+}: {
+  label: string;
+  value: string;
+  note: string;
+  comparison?: boolean;
+}) {
   return (
-    <div className="rounded-xl border bg-card p-4">
-      <p className="text-xs font-medium text-muted-foreground">{label}</p>
-      <p className="mt-3 break-words text-xl font-bold tabular-nums sm:text-2xl">{value}</p>
-      <p className="mt-2 text-xs leading-5 text-muted-foreground">{note}</p>
+    <div
+      className={`relative min-w-0 overflow-hidden rounded-2xl border p-5 shadow-sm ${comparison ? "border-red-200 bg-gradient-to-br from-red-50 to-card dark:border-red-900/60 dark:from-red-950/30" : "border-border/70 bg-card"}`}
+    >
+      <div
+        className={`absolute inset-x-0 top-0 h-1 ${comparison ? "bg-red-500" : "bg-emerald-600/70"}`}
+      />
+      <p
+        className={`flex items-center gap-2 text-xs font-semibold ${comparison ? "text-red-700 dark:text-red-300" : "text-muted-foreground"}`}
+      >
+        {comparison && <ArrowLeftRight className="h-4 w-4 shrink-0" />}
+        {label}
+      </p>
+      <p
+        className={`mt-4 break-words text-xl font-bold tracking-tight tabular-nums sm:text-2xl ${comparison ? "text-red-700 dark:text-red-300" : "text-foreground"}`}
+      >
+        {value}
+      </p>
+      <p
+        className={`mt-3 text-xs leading-5 ${comparison ? "font-medium text-red-700 dark:text-red-300" : "text-muted-foreground"}`}
+      >
+        {note}
+      </p>
     </div>
   );
 }
