@@ -33,6 +33,7 @@ import { Route as AdminBannersRouteImport } from './routes/admin.banners'
 import { Route as AdminCatalogosRouteImport } from './routes/admin.catalogos'
 import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
 import { Route as AdminConfiguracoesRouteImport } from './routes/admin.configuracoes'
+import { Route as AdminDespesasDukampRouteImport } from './routes/admin.despesas-dukamp'
 import { Route as AdminEquipeVendasRouteImport } from './routes/admin.equipe-vendas'
 import { Route as AdminEstoqueRouteImport } from './routes/admin.estoque'
 import { Route as AdminFooterRouteImport } from './routes/admin.footer'
@@ -203,6 +204,11 @@ const AdminCategoriasRoute = AdminCategoriasRouteImport.update({
 const AdminConfiguracoesRoute = AdminConfiguracoesRouteImport.update({
   id: '/configuracoes',
   path: '/configuracoes',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminDespesasDukampRoute = AdminDespesasDukampRouteImport.update({
+  id: '/despesas-dukamp',
+  path: '/despesas-dukamp',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminEquipeVendasRoute = AdminEquipeVendasRouteImport.update({
@@ -495,6 +501,7 @@ export interface FileRoutesByFullPath {
   '/admin/catalogos': typeof AdminCatalogosRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
+  '/admin/despesas-dukamp': typeof AdminDespesasDukampRoute
   '/admin/equipe-vendas': typeof AdminEquipeVendasRoute
   '/admin/estoque': typeof AdminEstoqueRoute
   '/admin/footer': typeof AdminFooterRoute
@@ -568,6 +575,7 @@ export interface FileRoutesByTo {
   '/admin/catalogos': typeof AdminCatalogosRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
+  '/admin/despesas-dukamp': typeof AdminDespesasDukampRoute
   '/admin/equipe-vendas': typeof AdminEquipeVendasRoute
   '/admin/estoque': typeof AdminEstoqueRoute
   '/admin/footer': typeof AdminFooterRoute
@@ -646,6 +654,7 @@ export interface FileRoutesById {
   '/admin/catalogos': typeof AdminCatalogosRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
+  '/admin/despesas-dukamp': typeof AdminDespesasDukampRoute
   '/admin/equipe-vendas': typeof AdminEquipeVendasRoute
   '/admin/estoque': typeof AdminEstoqueRoute
   '/admin/footer': typeof AdminFooterRoute
@@ -725,6 +734,7 @@ export interface FileRouteTypes {
     | '/admin/catalogos'
     | '/admin/categorias'
     | '/admin/configuracoes'
+    | '/admin/despesas-dukamp'
     | '/admin/equipe-vendas'
     | '/admin/estoque'
     | '/admin/footer'
@@ -798,6 +808,7 @@ export interface FileRouteTypes {
     | '/admin/catalogos'
     | '/admin/categorias'
     | '/admin/configuracoes'
+    | '/admin/despesas-dukamp'
     | '/admin/equipe-vendas'
     | '/admin/estoque'
     | '/admin/footer'
@@ -875,6 +886,7 @@ export interface FileRouteTypes {
     | '/admin/catalogos'
     | '/admin/categorias'
     | '/admin/configuracoes'
+    | '/admin/despesas-dukamp'
     | '/admin/equipe-vendas'
     | '/admin/estoque'
     | '/admin/footer'
@@ -1142,6 +1154,13 @@ declare module '@tanstack/react-router' {
       path: '/configuracoes'
       fullPath: '/admin/configuracoes'
       preLoaderRoute: typeof AdminConfiguracoesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/despesas-dukamp': {
+      id: '/admin/despesas-dukamp'
+      path: '/despesas-dukamp'
+      fullPath: '/admin/despesas-dukamp'
+      preLoaderRoute: typeof AdminDespesasDukampRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/equipe-vendas': {
@@ -1512,6 +1531,7 @@ interface AdminRouteChildren {
   AdminCatalogosRoute: typeof AdminCatalogosRoute
   AdminCategoriasRoute: typeof AdminCategoriasRoute
   AdminConfiguracoesRoute: typeof AdminConfiguracoesRoute
+  AdminDespesasDukampRoute: typeof AdminDespesasDukampRoute
   AdminEquipeVendasRoute: typeof AdminEquipeVendasRoute
   AdminEstoqueRoute: typeof AdminEstoqueRoute
   AdminFooterRoute: typeof AdminFooterRoute
@@ -1536,6 +1556,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCatalogosRoute: AdminCatalogosRoute,
   AdminCategoriasRoute: AdminCategoriasRoute,
   AdminConfiguracoesRoute: AdminConfiguracoesRoute,
+  AdminDespesasDukampRoute: AdminDespesasDukampRoute,
   AdminEquipeVendasRoute: AdminEquipeVendasRoute,
   AdminEstoqueRoute: AdminEstoqueRoute,
   AdminFooterRoute: AdminFooterRoute,

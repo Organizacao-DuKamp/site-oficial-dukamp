@@ -33,6 +33,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { BankRecordsPanel } from "@/components/admin/BankRecordsPanel";
+import { BANK_RECORDS_CODE } from "@/lib/bank-reports";
 
 export const Route = createFileRoute("/admin/despesas-dukamp")({
   ssr: false,
@@ -152,7 +154,7 @@ async function loadExpensesData(): Promise<ExpensesData> {
       name: String(row.name),
       sort_order: Number(row.sort_order ?? 0),
     })),
-    subcategories: (subcategoriesResult.data ?? []).map((row: any) => ({
+    subcategories: [...(subcategoriesResult.data ?? []), { code: BANK_RECORDS_CODE, category_code: 9001, name: "Registros bancários", sort_order: 0 }].map((row: any) => ({
       code: Number(row.code),
       category_code: Number(row.category_code),
       name: String(row.name),
@@ -537,6 +539,7 @@ function DukampExpensesPage() {
         </header>
 
         <main className="mx-auto max-w-[1600px] p-4 sm:p-6 lg:p-8">
+          {selectedSubcategory === BANK_RECORDS_CODE ? <BankRecordsPanel /> : <>
           <div className="mb-6 flex flex-col justify-between gap-4 xl:flex-row xl:items-end">
             <div>
               <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
@@ -744,6 +747,7 @@ function DukampExpensesPage() {
               </div>
             </Panel>
           </section>
+          </>}
         </main>
       </div>
     </div>
