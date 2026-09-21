@@ -499,7 +499,9 @@ const orderSchema = z.object({
   customer_name: z.string().min(2).max(120),
   email: z.string().email(),
   phone: z.string().min(8).max(30),
-  cpf_cnpj: z.string().min(11).max(20),
+  cpf_cnpj: z.string().refine((value) => [11, 14].includes(onlyDigits(value).length), {
+    message: "Informe um CPF com 11 dígitos ou um CNPJ com 14 dígitos.",
+  }),
   cep: z.string().min(8),
   rua: z.string().min(2).max(200),
   numero: z.string().min(1).max(20),
@@ -524,7 +526,15 @@ const orderSchema = z.object({
 });
 
 export const createPixOrder = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => orderSchema.parse(data))
+  .inputValidator((data: unknown) => {
+    const result = orderSchema.safeParse(data);
+    if (!result.success) {
+      const documentError = result.error.issues.find((issue) => issue.path[0] === "cpf_cnpj");
+      if (documentError) throw new Error(documentError.message);
+      throw result.error;
+    }
+    return result.data;
+  })
   .handler(async ({ data }) => {
     const supa = await getServerSupabase();
 
@@ -601,6 +611,9 @@ export const createPixOrder = createServerFn({ method: "POST" })
     const totals = computePaymentTotals(baseAmount, paymentMethod, installments);
     const total = totals.total;
 
+    const cpf = onlyDigits(data.cpf_cnpj);
+    const idType = cpf.length === 14 ? "CNPJ" : "CPF";
+
     const { data: order, error: orderError } = await supa
       .from("orders")
       .insert({
@@ -643,11 +656,6 @@ export const createPixOrder = createServerFn({ method: "POST" })
 
     const [firstName, ...rest] = data.customer_name.trim().split(/\s+/);
     const lastName = rest.join(" ") || firstName;
-    const cpf = onlyDigits(data.cpf_cnpj);
-    if (cpf.length !== 11 && cpf.length !== 14) {
-      throw new Error("CPF/CNPJ inválido: informe 11 dígitos (CPF) ou 14 dígitos (CNPJ)");
-    }
-    const idType = cpf.length === 14 ? "CNPJ" : "CPF";
 
     const notifBase = process.env.PUBLIC_APP_URL || "https://dukamp.lovable.app";
     const notificationUrl = `${notifBase.replace(/\/$/, "")}/api/public/mercadopago-webhook`;
