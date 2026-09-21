@@ -436,6 +436,10 @@ function CheckoutPage() {
     for (const k of ["customer_name", "email", "phone", "cpf_cnpj", "cep", "rua", "numero", "bairro", "cidade", "estado"] as const) {
       if (!form[k]?.trim()) return `Preencha o campo: ${labels[k]}`;
     }
+    const documentLength = form.cpf_cnpj.replace(/\D/g, "").length;
+    if (documentLength !== 11 && documentLength !== 14) {
+      return "Informe um CPF com 11 dígitos ou um CNPJ com 14 dígitos.";
+    }
     if (!/^\S+@\S+\.\S+$/.test(form.email)) return "E-mail inválido — confira o endereço digitado";
     if (form.estado.length !== 2) return "UF deve ter 2 letras (ex: SP, MG, GO)";
     if (!frete || taxAmount == null) return "Calcule o frete e os impostos antes de finalizar";
@@ -905,7 +909,7 @@ function CheckoutPage() {
                       <Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="seunome@email.com" />
                     </Field>
                     <Field label="CPF ou CNPJ">
-                      <Input value={form.cpf_cnpj} inputMode="numeric" onChange={(e) => set("cpf_cnpj", e.target.value)} placeholder="Somente números" />
+                      <Input value={form.cpf_cnpj} inputMode="numeric" onChange={(e) => set("cpf_cnpj", e.target.value.replace(/\D/g, "").slice(0, 14))} placeholder="Somente números" />
                     </Field>
                   </div>
                 </div>
