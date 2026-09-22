@@ -447,9 +447,9 @@ function DukampLegacyArchive() {
             </div>
             <h1 className="mt-4 text-3xl font-bold tracking-tight">ERP Dukamp</h1>
             <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-              Reconstrução web dos sistemas Clipper da Dukamp. O módulo de Compras já utiliza uma
-              base operacional própria; o arquivo original permanece disponível para conferência e
-              auditoria.
+              Reconstrução web dos sistemas Clipper da Dukamp. O lançador e os menus de Compras
+              seguem a estrutura encontrada em WMENUS; o arquivo original permanece disponível para
+              conferência e auditoria.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -478,8 +478,8 @@ function DukampLegacyArchive() {
         <div>
           <h2 className="text-xl font-bold">Módulos do ERP</h2>
           <p className="text-sm text-muted-foreground">
-            Os menus foram recuperados dos executáveis da pasta WORK e estão sendo reimplantados por
-            processo de negócio.
+            Os lançadores foram recuperados da pasta WMENUS e as rotinas internas dos executáveis da
+            pasta WORK. Cada processo é reimplantado sobre a nova base operacional.
           </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

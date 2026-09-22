@@ -3,6 +3,7 @@
 O ERP web substitui gradualmente os executáveis compilados da pasta `WORK`.
 Como não existem fontes `.PRG`, os módulos são reconstruídos pela combinação de:
 
+- lançadores `.MNU` e `.BAT` preservados na pasta `WMENUS`;
 - menus e textos extraídos estaticamente dos executáveis;
 - estruturas e relacionamentos dos DBFs;
 - dados históricos preservados no Supabase;
@@ -19,6 +20,23 @@ Como não existem fontes `.PRG`, os módulos são reconstruídos pela combinaç�
 ## Compras
 
 Primeiro módulo operacional, disponível em `/admin/dukamp/compras`.
+
+### Hierarquia original recuperada
+
+O acesso agora reproduz o fluxo encontrado no sistema instalado, em vez de abrir diretamente um
+painel genérico:
+
+1. `COMPRAS.BAT` inicia o `MenuWin` com `W_COMPRAS.MNU`;
+2. o lançador apresenta Compras, Compras 2, Almoxarifado, NFe Loja, Faturamento, NFe Fábrica,
+   Menu Gerente e Nova Tabela na ordem original;
+3. os executáveis com menu próprio apresentam primeiro **Manutenção/Cadastros**, **Relatórios** e
+   **Consultas**;
+4. os atalhos numéricos e alfabéticos são os mesmos recuperados dos binários Clipper;
+5. ao escolher uma rotina já implantada, o usuário entra na tela operacional ligada à base nova.
+
+O visual do lançador foi reconstruído a partir dos recursos do `MenuWin.exe`: janela vertical,
+botões no estilo Windows clássico, fonte Arial e imagem Dukamp no rodapé. A aplicação não executa
+os binários legados no navegador.
 
 ### Recursos entregues
 

@@ -3,16 +3,19 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
+  AppWindow,
   ArrowLeft,
   BadgeDollarSign,
   Boxes,
   CalendarClock,
   Check,
+  ChevronRight,
   CircleDollarSign,
   ClipboardCheck,
   FileInput,
   PackageCheck,
   Pencil,
+  Play,
   Plus,
   Search,
   ShoppingCart,
@@ -44,6 +47,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  DUKAMP_PROGRAM_MENUS,
+  PURCHASING_LAUNCHER,
+  type DukampMenuAction,
+  type DukampProgramMenu,
+  type DukampWorkspaceTab,
+} from "@/lib/dukamp-menu-catalog";
 
 export const Route = createFileRoute("/admin/dukamp_/compras")({
   component: DukampPurchasingPage,
@@ -1117,9 +1127,17 @@ function SuppliersPanel({ suppliers }: { suppliers: Supplier[] }) {
   );
 }
 
-function ProductsReportsPanel({ products }: { products: ErpProduct[] }) {
+type ProductReport = "margin" | "suggestion" | "negative";
+
+function ProductsReportsPanel({
+  products,
+  initialReport = "margin",
+}: {
+  products: ErpProduct[];
+  initialReport?: ProductReport;
+}) {
   const [query, setQuery] = useState("");
-  const [report, setReport] = useState<"margin" | "suggestion" | "negative">("margin");
+  const [report, setReport] = useState<ProductReport>(initialReport);
   const rows = useMemo(
     () =>
       products
@@ -1328,9 +1346,25 @@ function PayablesPanel({ payables }: { payables: Payable[] }) {
   );
 }
 
-function DukampPurchasingPage() {
+function PurchasingWorkspace({
+  initialTab,
+  program,
+  action,
+  onBack,
+}: {
+  initialTab: DukampWorkspaceTab;
+  program: DukampProgramMenu;
+  action: DukampMenuAction;
+  onBack: () => void;
+}) {
   const data = usePurchasingData();
   const dashboard = data.dashboard.data;
+  const initialReport: ProductReport =
+    action.key === "purchase-suggestion"
+      ? "suggestion"
+      : action.key === "negative-stock"
+        ? "negative"
+        : "margin";
   const loadError = [data.dashboard, data.suppliers, data.products, data.orders].find(
     (query) => query.isError,
   )?.error;
@@ -1338,18 +1372,16 @@ function DukampPurchasingPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-3">
-          <Button asChild variant="outline" size="icon">
-            <Link to="/admin/dukamp">
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
+          <Button variant="outline" size="icon" onClick={onBack} aria-label="Voltar ao menu">
+            <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold">Compras</h1>
+              <h1 className="text-2xl font-bold">{action.label}</h1>
               <Badge>Operacional</Badge>
             </div>
             <p className="mt-1 text-sm text-muted-foreground">
-              Pedidos, recebimentos, fornecedores, estoque, margem e contas a pagar.
+              {program.title} · {program.executable}
             </p>
           </div>
         </div>
@@ -1404,7 +1436,7 @@ function DukampPurchasingPage() {
         />
       </div>
 
-      <Tabs defaultValue="orders" className="space-y-4">
+      <Tabs defaultValue={initialTab} className="space-y-4">
         <div className="overflow-x-auto">
           <TabsList className="h-auto min-w-max flex-wrap justify-start">
             <TabsTrigger value="orders">
@@ -1438,7 +1470,7 @@ function DukampPurchasingPage() {
           <SuppliersPanel suppliers={data.suppliers.data ?? []} />
         </TabsContent>
         <TabsContent value="reports">
-          <ProductsReportsPanel products={data.products.data ?? []} />
+          <ProductsReportsPanel products={data.products.data ?? []} initialReport={initialReport} />
         </TabsContent>
         <TabsContent value="payables">
           <PayablesPanel payables={data.payables.data ?? []} />
@@ -1454,5 +1486,212 @@ function DukampPurchasingPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+function MenuWinLauncher({ onOpen }: { onOpen: (programId: string) => void }) {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-start gap-3">
+        <Button asChild variant="outline" size="icon">
+          <Link to="/admin/dukamp">
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+        </Button>
+        <div>
+          <h1 className="text-2xl font-bold">Sistema de Compras</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Reprodução do menu <strong>W_COMPRAS.MNU</strong> encontrado em WMENUS.
+          </p>
+        </div>
+      </div>
+
+      <div className="grid items-start gap-6 lg:grid-cols-[260px_1fr]">
+        <section className="flex min-h-[578px] w-full max-w-[228px] flex-col overflow-hidden rounded border-2 border-white bg-[#d4d0c8] shadow-[2px_2px_0_#404040,-1px_-1px_0_#808080]">
+          <div className="flex h-8 items-center justify-between bg-gradient-to-r from-[#000080] to-[#1084d0] px-2 text-sm font-bold text-white">
+            <span>COMPRAS</span>
+            <div className="flex gap-1">
+              <span className="grid h-5 w-5 place-items-center bg-[#d4d0c8] text-xs text-black shadow-[inset_1px_1px_#fff,inset_-1px_-1px_#555]">
+                _
+              </span>
+              <span className="grid h-5 w-5 place-items-center bg-[#d4d0c8] text-xs text-black shadow-[inset_1px_1px_#fff,inset_-1px_-1px_#555]">
+                ×
+              </span>
+            </div>
+          </div>
+          <div className="space-y-1 p-2">
+            {PURCHASING_LAUNCHER.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                title={item.executable}
+                onClick={() => onOpen(item.id)}
+                className="flex h-[31px] w-full items-center gap-2 border border-[#808080] bg-[#d4d0c8] px-2 text-left font-[Arial] text-[13px] text-black shadow-[inset_1px_1px_#fff,inset_-1px_-1px_#555] hover:bg-[#e7e5df] active:shadow-[inset_1px_1px_#555,inset_-1px_-1px_#fff]"
+              >
+                <span className="grid h-5 w-5 shrink-0 place-items-center border border-[#777] bg-white text-[10px] font-bold text-[#000080]">
+                  {item.shortcut}
+                </span>
+                <span className="flex-1">{item.label}</span>
+                <Play className="h-3.5 w-3.5" />
+              </button>
+            ))}
+          </div>
+          <div className="mt-auto border-t border-[#888] bg-white p-3">
+            <img
+              src="/dukamp-legacy-logo.jpg"
+              alt="Dukamp Saúde Animal"
+              className="mx-auto h-11 max-w-full object-contain"
+            />
+          </div>
+        </section>
+
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="grid h-11 w-11 place-items-center rounded-xl bg-primary/10 text-primary">
+                  <AppWindow className="h-5 w-5" />
+                </div>
+                <div>
+                  <CardTitle>Menu original recuperado</CardTitle>
+                  <CardDescription>
+                    Os botões e a ordem abaixo vêm diretamente de W_COMPRAS.MNU.
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="grid gap-3 sm:grid-cols-2">
+              {PURCHASING_LAUNCHER.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => onOpen(item.id)}
+                  className="flex items-center gap-3 rounded-lg border p-3 text-left transition-colors hover:border-primary/40 hover:bg-accent"
+                >
+                  <span className="grid h-8 w-8 place-items-center rounded-md bg-muted font-mono text-sm font-bold">
+                    {item.shortcut}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-medium">{item.label}</span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {item.executable}
+                    </span>
+                  </span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                </button>
+              ))}
+            </CardContent>
+          </Card>
+          <div className="rounded-xl border bg-muted/20 p-4 text-sm text-muted-foreground">
+            Escolha primeiro o programa, como acontecia no MenuWin. Na próxima tela aparecem as
+            opções internas recuperadas do executável selecionado.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProgramMenuScreen({
+  program,
+  onBack,
+  onAction,
+}: {
+  program: DukampProgramMenu;
+  onBack: () => void;
+  onAction: (action: DukampMenuAction) => void;
+}) {
+  const [groupIndex, setGroupIndex] = useState<number | null>(null);
+  const activeGroup = groupIndex === null ? null : program.groups[groupIndex];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-start gap-3">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => (activeGroup ? setGroupIndex(null) : onBack())}
+          aria-label={activeGroup ? "Voltar às categorias" : "Voltar ao MenuWin"}
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-2xl font-bold">{program.title}</h1>
+            <Badge variant="outline">{program.executable}</Badge>
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Menu e atalhos recuperados do executável.
+          </p>
+        </div>
+      </div>
+      <div className="max-w-4xl overflow-hidden rounded-md border-4 border-slate-500 bg-[#0000aa] font-mono text-white shadow-xl">
+        <div className="border-b-2 border-white/70 bg-[#aaaaaa] px-4 py-2 text-center font-bold text-black">
+          {activeGroup?.title ?? program.title}
+        </div>
+        <div className="min-h-80 p-4 sm:p-6">
+          {!activeGroup ? (
+            <div className="mx-auto max-w-xl space-y-3">
+              {program.groups.map((group, index) => (
+                <button
+                  key={group.title}
+                  type="button"
+                  onClick={() => setGroupIndex(index)}
+                  className="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-white hover:text-[#0000aa] focus:bg-white focus:text-[#0000aa] focus:outline-none"
+                >
+                  <span className="font-bold text-yellow-300 group-hover:text-inherit">
+                    {index + 1}.
+                  </span>
+                  <span className="flex-1">{group.title}</span>
+                  <span>...</span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="grid gap-x-8 gap-y-1 md:grid-cols-2">
+              {activeGroup.actions.map((action, index) => (
+                <button
+                  key={action.key}
+                  type="button"
+                  onClick={() => onAction(action)}
+                  className="flex min-h-9 w-full items-start gap-2 px-2 py-1.5 text-left text-sm hover:bg-white hover:text-[#0000aa] focus:bg-white focus:text-[#0000aa] focus:outline-none"
+                >
+                  <span className="shrink-0 font-bold text-yellow-300">
+                    {activeGroup.shortcuts?.[index] ?? index + 1}.
+                  </span>
+                  <span className="flex-1">{action.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="border-t border-white/60 bg-[#000080] px-4 py-2 text-xs text-white/80">
+          {activeGroup
+            ? "Selecione a rotina · Voltar retorna às categorias"
+            : program.groups.length === 3
+              ? "1. Manutenção · 2. Relatórios · 3. Consultas"
+              : "Selecione uma categoria para abrir as rotinas"}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DukampPurchasingPage() {
+  const [programId, setProgramId] = useState<string | null>(null);
+  const [action, setAction] = useState<DukampMenuAction | null>(null);
+  if (!programId) return <MenuWinLauncher onOpen={setProgramId} />;
+  const program = DUKAMP_PROGRAM_MENUS[programId];
+  if (!program) return <MenuWinLauncher onOpen={setProgramId} />;
+  if (!action)
+    return (
+      <ProgramMenuScreen program={program} onBack={() => setProgramId(null)} onAction={setAction} />
+    );
+  return (
+    <PurchasingWorkspace
+      initialTab={action.tab}
+      program={program}
+      action={action}
+      onBack={() => setAction(null)}
+    />
   );
 }
