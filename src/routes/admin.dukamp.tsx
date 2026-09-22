@@ -22,6 +22,7 @@ import {
   WalletCards,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { WMENUS_LAUNCHERS } from "@/lib/dukamp-menu-catalog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -513,6 +514,67 @@ function DukampLegacyArchive() {
               <div key={item.label}>{content}</div>
             );
           })}
+        </div>
+      </section>
+
+      <section className="space-y-3 border-t pt-6">
+        <div>
+          <h2 className="text-xl font-bold">Terminais originais (WMENUS)</h2>
+          <p className="text-sm text-muted-foreground">
+            Os 11 lançadores .MNU encontrados em Downloads/WMENUS, com entradas e atalhos originais.
+            O lançador COMPRAS abre a réplica operacional; os demais apontam para os executáveis e
+            DBFs correspondentes no arquivo histórico.
+          </p>
+        </div>
+        <div className="grid gap-4 lg:grid-cols-2">
+          {WMENUS_LAUNCHERS.map((launcher) => (
+            <Card key={launcher.id} className="overflow-hidden">
+              <CardHeader className="bg-slate-900 py-3 text-white">
+                <div className="flex items-center justify-between gap-2">
+                  <CardTitle className="font-mono text-sm tracking-wide">
+                    {launcher.title}
+                  </CardTitle>
+                  <Badge variant="secondary" className="font-mono text-[11px]">
+                    {launcher.source}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                {launcher.entries.map((entry) => {
+                  const isCompras =
+                    launcher.id === "w_compras" &&
+                    ["cmpmenus.exe", "cmpmenu2.exe", "cmpalmox.exe"].some((exe) =>
+                      entry.command.toLowerCase().includes(exe),
+                    );
+                  const row = (
+                    <div className="flex items-center gap-3 border-b px-4 py-2 font-mono text-sm last:border-0">
+                      <span className="grid h-6 w-6 shrink-0 place-items-center rounded bg-muted text-xs font-bold">
+                        {entry.shortcut}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate">{entry.label}</span>
+                      <span className="hidden truncate text-xs text-muted-foreground sm:block">
+                        {entry.command}
+                      </span>
+                      {isCompras ? (
+                        <Badge className="text-[11px]">Réplica</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-[11px]">
+                          Legado
+                        </Badge>
+                      )}
+                    </div>
+                  );
+                  return isCompras ? (
+                    <Link key={`${entry.shortcut}-${entry.label}`} to="/admin/dukamp/compras">
+                      {row}
+                    </Link>
+                  ) : (
+                    <div key={`${entry.shortcut}-${entry.label}`}>{row}</div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </section>
 

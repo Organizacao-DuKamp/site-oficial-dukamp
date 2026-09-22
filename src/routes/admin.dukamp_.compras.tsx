@@ -37,7 +37,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -1359,12 +1358,11 @@ function PurchasingWorkspace({
 }) {
   const data = usePurchasingData();
   const dashboard = data.dashboard.data;
-  const initialReport: ProductReport =
-    action.key === "purchase-suggestion"
-      ? "suggestion"
-      : action.key === "negative-stock"
-        ? "negative"
-        : "margin";
+  const initialReport: ProductReport = action.key.includes("suggestion")
+    ? "suggestion"
+    : action.key.includes("negative")
+      ? "negative"
+      : "margin";
   const loadError = [data.dashboard, data.suppliers, data.products, data.orders].find(
     (query) => query.isError,
   )?.error;
@@ -1378,10 +1376,12 @@ function PurchasingWorkspace({
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-bold">{action.label}</h1>
-              <Badge>Operacional</Badge>
+              <Badge variant={action.operational === false ? "outline" : "default"}>
+                {action.operational === false ? "Consulta legada" : "Operacional"}
+              </Badge>
             </div>
             <p className="mt-1 text-sm text-muted-foreground">
-              {program.title} · {program.executable}
+              {program.title} · {program.executable} · Esc volta ao menu
             </p>
           </div>
         </div>
@@ -1436,53 +1436,71 @@ function PurchasingWorkspace({
         />
       </div>
 
-      <Tabs defaultValue={initialTab} className="space-y-4">
-        <div className="overflow-x-auto">
-          <TabsList className="h-auto min-w-max flex-wrap justify-start">
-            <TabsTrigger value="orders">
-              <ShoppingCart className="mr-1.5 h-4 w-4" /> Pedidos
-            </TabsTrigger>
-            <TabsTrigger value="receipts">
-              <PackageCheck className="mr-1.5 h-4 w-4" /> Entradas
-            </TabsTrigger>
-            <TabsTrigger value="suppliers">
-              <Truck className="mr-1.5 h-4 w-4" /> Fornecedores
-            </TabsTrigger>
-            <TabsTrigger value="reports">
-              <Boxes className="mr-1.5 h-4 w-4" /> Consultas e margem
-            </TabsTrigger>
-            <TabsTrigger value="payables">
-              <BadgeDollarSign className="mr-1.5 h-4 w-4" /> Contas a pagar
-            </TabsTrigger>
-          </TabsList>
+      <ClipperFrame
+        title={action.screen ?? `[ ${action.label.toUpperCase()} ]`}
+        subtitle={program.executable}
+        footer="F2 consulta · PgDn próxima tela · F6 itens · <Esc> volta · <Enter> confirma"
+      >
+        <div className="space-y-1 text-sm">
+          {(action.prompts ?? []).map((prompt) => (
+            <div key={prompt} className="flex gap-2">
+              <span className="text-yellow-300">»</span>
+              <span>{prompt}</span>
+            </div>
+          ))}
+          {!action.prompts?.length ? (
+            <div className="text-white/80">
+              Rotina {action.label} · origem {program.executable}. Os campos abaixo usam os mesmos
+              nomes e validações do terminal Clipper.
+            </div>
+          ) : null}
+          {action.tables?.length ? (
+            <div className="pt-2 text-xs text-white/70">DBFs: {action.tables.join(" · ")}</div>
+          ) : null}
         </div>
-        <TabsContent value="orders">
-          <OrdersPanel
-            orders={data.orders.data ?? []}
-            suppliers={data.suppliers.data ?? []}
-            products={data.products.data ?? []}
-          />
-        </TabsContent>
-        <TabsContent value="receipts">
-          <ReceiptsPanel receipts={data.receipts.data ?? []} />
-        </TabsContent>
-        <TabsContent value="suppliers">
-          <SuppliersPanel suppliers={data.suppliers.data ?? []} />
-        </TabsContent>
-        <TabsContent value="reports">
-          <ProductsReportsPanel products={data.products.data ?? []} initialReport={initialReport} />
-        </TabsContent>
-        <TabsContent value="payables">
-          <PayablesPanel payables={data.payables.data ?? []} />
-        </TabsContent>
-      </Tabs>
+      </ClipperFrame>
+
+      {initialTab === "orders" ? (
+        <OrdersPanel
+          orders={data.orders.data ?? []}
+          suppliers={data.suppliers.data ?? []}
+          products={data.products.data ?? []}
+        />
+      ) : null}
+      {initialTab === "receipts" ? <ReceiptsPanel receipts={data.receipts.data ?? []} /> : null}
+      {initialTab === "suppliers" ? <SuppliersPanel suppliers={data.suppliers.data ?? []} /> : null}
+      {initialTab === "reports" ? (
+        <ProductsReportsPanel products={data.products.data ?? []} initialReport={initialReport} />
+      ) : null}
+      {initialTab === "payables" ? <PayablesPanel payables={data.payables.data ?? []} /> : null}
+      {action.operational === false ? (
+        <div className="space-y-3 rounded-xl border bg-card p-4 text-sm">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="outline">Consulta legada</Badge>
+            {action.tables?.map((t) => (
+              <code key={t} className="rounded bg-muted px-2 py-0.5 text-xs">
+                {t}
+              </code>
+            ))}
+          </div>
+          <p className="text-muted-foreground">
+            Esta rotina ainda opera sobre o arquivo histórico somente leitura. Use{" "}
+            <Link to="/admin/dukamp" className="underline">
+              Arquivo histórico
+            </Link>{" "}
+            para conferir os DBFs originais.
+          </p>
+        </div>
+      ) : null}
 
       <div className="flex items-start gap-3 rounded-xl border bg-card p-4 text-sm text-muted-foreground">
         <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
         <p>
           Antes do corte definitivo dos executáveis, confira saldos iniciais, pedidos pendentes e
-          títulos em aberto. Entradas criadas nesta tela já movimentam a base operacional do ERP
-          web.
+          títulos em aberto.{" "}
+          {action.operational === false
+            ? "Esta rotina ainda não movimenta a base operacional."
+            : "Entradas criadas nesta tela já movimentam a base operacional do ERP web."}
         </p>
       </div>
     </div>
@@ -1591,6 +1609,31 @@ function MenuWinLauncher({ onOpen }: { onOpen: (programId: string) => void }) {
   );
 }
 
+function ClipperFrame({
+  title,
+  subtitle,
+  footer,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  footer: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="overflow-hidden rounded-md border-4 border-slate-500 bg-[#0000aa] font-mono text-white shadow-xl">
+      <div className="border-b-2 border-white/70 bg-[#aaaaaa] px-4 py-2 text-center font-bold text-black">
+        {title}
+        {subtitle ? <span className="ml-2 font-normal">· {subtitle}</span> : null}
+      </div>
+      <div className="min-h-40 p-4 sm:p-5">{children}</div>
+      <div className="border-t border-white/60 bg-[#000080] px-4 py-2 text-xs text-white/85">
+        {footer}
+      </div>
+    </div>
+  );
+}
+
 function ProgramMenuScreen({
   program,
   onBack,
@@ -1603,6 +1646,29 @@ function ProgramMenuScreen({
   const [groupIndex, setGroupIndex] = useState<number | null>(null);
   const activeGroup = groupIndex === null ? null : program.groups[groupIndex];
 
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        if (activeGroup) setGroupIndex(null);
+        else onBack();
+        return;
+      }
+      if (groupIndex === null) {
+        const n = Number(event.key);
+        if (n >= 1 && n <= program.groups.length) setGroupIndex(n - 1);
+        return;
+      }
+      const key = event.key.toUpperCase();
+      const idx = activeGroup?.shortcuts?.findIndex((s) => s.toUpperCase() === key) ?? -1;
+      if (idx >= 0) {
+        const target = activeGroup?.actions[idx];
+        if (target && !target.separator) onAction(target);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [groupIndex, activeGroup, program.groups, onBack, onAction]);
+
   return (
     <div className="space-y-6">
       <div className="flex items-start gap-3">
@@ -1610,7 +1676,7 @@ function ProgramMenuScreen({
           variant="outline"
           size="icon"
           onClick={() => (activeGroup ? setGroupIndex(null) : onBack())}
-          aria-label={activeGroup ? "Voltar às categorias" : "Voltar ao MenuWin"}
+          aria-label={activeGroup ? "Voltar às categorias (Esc)" : "Voltar ao MenuWin (Esc)"}
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
@@ -1620,17 +1686,22 @@ function ProgramMenuScreen({
             <Badge variant="outline">{program.executable}</Badge>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            Menu e atalhos recuperados do executável.
+            Menu e atalhos recuperados do executável · teclado 1-9 0 A-Z · Esc volta.
           </p>
         </div>
       </div>
-      <div className="max-w-4xl overflow-hidden rounded-md border-4 border-slate-500 bg-[#0000aa] font-mono text-white shadow-xl">
-        <div className="border-b-2 border-white/70 bg-[#aaaaaa] px-4 py-2 text-center font-bold text-black">
-          {activeGroup?.title ?? program.title}
-        </div>
-        <div className="min-h-80 p-4 sm:p-6">
+      <div className="max-w-5xl">
+        <ClipperFrame
+          title={activeGroup?.title ?? program.title}
+          subtitle={program.executable}
+          footer={
+            activeGroup
+              ? "Teclas do menu original · F2 consulta · Esc volta · Enter abre a rotina"
+              : "1. Manutenção · 2. Relatórios · 3. Consultas · 4. Operações Especiais · 5. Sair (Esc)"
+          }
+        >
           {!activeGroup ? (
-            <div className="mx-auto max-w-xl space-y-3">
+            <div className="mx-auto max-w-xl space-y-1">
               {program.groups.map((group, index) => (
                 <button
                   key={group.title}
@@ -1638,39 +1709,56 @@ function ProgramMenuScreen({
                   onClick={() => setGroupIndex(index)}
                   className="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-white hover:text-[#0000aa] focus:bg-white focus:text-[#0000aa] focus:outline-none"
                 >
-                  <span className="font-bold text-yellow-300 group-hover:text-inherit">
-                    {index + 1}.
-                  </span>
+                  <span className="font-bold text-yellow-300">{index + 1}.</span>
                   <span className="flex-1">{group.title}</span>
                   <span>...</span>
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={onBack}
+                className="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-white hover:text-[#0000aa] focus:bg-white focus:text-[#0000aa] focus:outline-none"
+              >
+                <span className="font-bold text-yellow-300">5.</span>
+                <span className="flex-1">Sair do Sistema</span>
+              </button>
             </div>
           ) : (
-            <div className="grid gap-x-8 gap-y-1 md:grid-cols-2">
-              {activeGroup.actions.map((action, index) => (
-                <button
-                  key={action.key}
-                  type="button"
-                  onClick={() => onAction(action)}
-                  className="flex min-h-9 w-full items-start gap-2 px-2 py-1.5 text-left text-sm hover:bg-white hover:text-[#0000aa] focus:bg-white focus:text-[#0000aa] focus:outline-none"
-                >
-                  <span className="shrink-0 font-bold text-yellow-300">
-                    {activeGroup.shortcuts?.[index] ?? index + 1}.
-                  </span>
-                  <span className="flex-1">{action.label}</span>
-                </button>
-              ))}
+            <div className="grid gap-x-8 gap-y-0.5 md:grid-cols-2">
+              {activeGroup.actions.map((action, index) => {
+                if (action.separator) {
+                  return (
+                    <div key={action.key} className="px-2 py-1 text-white/60" aria-hidden="true">
+                      ---------------------------
+                    </div>
+                  );
+                }
+                return (
+                  <button
+                    key={action.key}
+                    type="button"
+                    onClick={() => onAction(action)}
+                    className="flex min-h-9 w-full items-start gap-2 px-2 py-1.5 text-left text-sm hover:bg-white hover:text-[#0000aa] focus:bg-white focus:text-[#0000aa] focus:outline-none"
+                  >
+                    <span className="shrink-0 font-bold text-yellow-300">
+                      {activeGroup.shortcuts?.[index] ?? index + 1}.
+                    </span>
+                    <span className="flex-1">
+                      {action.label}
+                      {action.operational === false ? (
+                        <span className="ml-2 text-[11px] text-white/60">[consulta]</span>
+                      ) : null}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           )}
-        </div>
-        <div className="border-t border-white/60 bg-[#000080] px-4 py-2 text-xs text-white/80">
-          {activeGroup
-            ? "Selecione a rotina · Voltar retorna às categorias"
-            : program.groups.length === 3
-              ? "1. Manutenção · 2. Relatórios · 3. Consultas"
-              : "Selecione uma categoria para abrir as rotinas"}
-        </div>
+        </ClipperFrame>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Para encerra tecle &lt;Esc&gt; · rótulos com lacunas numéricas (ex.: sem 4) preservam o
+          comportamento original.
+        </p>
       </div>
     </div>
   );

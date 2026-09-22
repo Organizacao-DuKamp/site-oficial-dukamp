@@ -23,20 +23,36 @@ Primeiro módulo operacional, disponível em `/admin/dukamp/compras`.
 
 ### Hierarquia original recuperada
 
-O acesso agora reproduz o fluxo encontrado no sistema instalado, em vez de abrir diretamente um
-painel genérico:
+O acesso reproduz o fluxo encontrado no sistema instalado, em vez de abrir diretamente um painel
+genérico:
 
 1. `COMPRAS.BAT` inicia o `MenuWin` com `W_COMPRAS.MNU`;
 2. o lançador apresenta Compras, Compras 2, Almoxarifado, NFe Loja, Faturamento, NFe Fábrica,
    Menu Gerente e Nova Tabela na ordem original;
-3. os executáveis com menu próprio apresentam primeiro **Manutenção/Cadastros**, **Relatórios** e
-   **Consultas**;
-4. os atalhos numéricos e alfabéticos são os mesmos recuperados dos binários Clipper;
-5. ao escolher uma rotina já implantada, o usuário entra na tela operacional ligada à base nova.
+3. cada programa apresenta **1. Manutenção**, **2. Relatórios**, **3. Consultas**, **4. Operações
+   Especiais** e **5. Sair**, com Esc voltando um nível;
+4. os atalhos numéricos e alfabéticos preservam as lacunas originais (ex.: sem 4 em Compras);
+5. cada rotina abre sua própria tela Clipper — `[ MANUTENCAO PEDIDO COMPRA ]`, `[ ENTRADA COMPRAS ]`,
+   `[ TABELA PRECO ]`, `[ CONTROLE FRETE A PAGAR ]` etc. — com prompts, F2/PgDn/F6/Esc e DBFs de
+   origem exibidos;
+6. rotinas operacionais usam a base nova com auditoria; rotinas ainda não migradas ficam marcadas
+   como **Consulta legada** e apontam para o arquivo histórico.
 
-O visual do lançador foi reconstruído a partir dos recursos do `MenuWin.exe`: janela vertical,
-botões no estilo Windows clássico, fonte Arial e imagem Dukamp no rodapé. A aplicação não executa
-os binários legados no navegador.
+Evidência usada: 11 arquivos `.MNU` de `WMENUS`, desassemblagem do p-code Harbour
+(`scripts/inspect_clipper.py`, 533 funções em `cmpmenus.exe`, 570 em `cmpmenu2.exe`, 481 em
+`cmpalmox.exe`, zero erro de decodificação), `legacy_menu_strings.txt` e os DBFs preservados. Os
+binários nunca são executados no navegador; a réplica é funcional, não emulação byte-a-byte. Emissão
+fiscal, boletos e integrações bancárias continuam fora do escopo até validação legal/técnica.
+
+### Cobertura WORK × WMENUS
+
+- `W_COMPRAS.MNU`: 8 entradas replicadas na ordem e atalhos originais.
+- `cmpmenus.exe` / `cmpmenu2.exe` / `cmpalmox.exe`: menus de segundo nível conferidos; `cmpalmox.exe`
+  contém os submenus embutidos no próprio `MAIN`, incluindo separadores, `6. Codigo de Barras` e
+  `A. Etiqueta Barra Impr`.
+- `/admin/dukamp`: nova seção **Terminais originais (WMENUS)** lista os 11 lançadores com comandos;
+  entradas de Compras/Almoxarifado ligam para a réplica, as demais ficam como **Legado** até a
+  migração do módulo correspondente.
 
 ### Recursos entregues
 
