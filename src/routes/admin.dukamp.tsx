@@ -1,16 +1,25 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import {
   ArrowLeft,
+  BadgeDollarSign,
   Boxes,
   Building2,
+  Calculator,
+  ClipboardList,
   Database,
   Eye,
   FileArchive,
+  Headphones,
+  PackageCheck,
+  ReceiptText,
   Search,
   ShieldCheck,
+  ShoppingCart,
   TableProperties,
+  Truck,
+  WalletCards,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -51,6 +60,65 @@ type LegacyTable = {
 };
 
 const PAGE_SIZE = 25;
+
+const ERP_MODULES = [
+  {
+    label: "Compras",
+    description: "Pedidos, entradas, fornecedores, margem e contas a pagar",
+    icon: ShoppingCart,
+    to: "/admin/dukamp/compras" as const,
+    status: "Operacional",
+    active: true,
+  },
+  {
+    label: "Almoxarifado",
+    description: "Estoque, transferências, validades e inventário",
+    icon: Boxes,
+    status: "Próxima etapa",
+  },
+  {
+    label: "Contas a pagar",
+    description: "Títulos, baixas, despesas e adiantamentos",
+    icon: WalletCards,
+    status: "Em migração",
+  },
+  {
+    label: "Contas a receber",
+    description: "Carteiras, títulos, boletos e cobranças",
+    icon: BadgeDollarSign,
+    status: "Em migração",
+  },
+  {
+    label: "Faturamento",
+    description: "Pedidos, notas, NFe, fretes e comissões",
+    icon: ReceiptText,
+    status: "Em migração",
+  },
+  {
+    label: "Coordenação de vendas",
+    description: "Metas, preços, margem, curva ABC e vendedores",
+    icon: Calculator,
+    status: "Em migração",
+  },
+  {
+    label: "Televendas",
+    description: "Histórico, contatos, clientes e pedidos",
+    icon: Headphones,
+    status: "Em migração",
+  },
+  {
+    label: "Receitas e fiscal",
+    description: "Receituários, tributação e documentos fiscais",
+    icon: ClipboardList,
+    status: "Em migração",
+  },
+  {
+    label: "Logística",
+    description: "Roteiros, carregamentos, transportadoras e entregas",
+    icon: Truck,
+    status: "Em migração",
+  },
+];
 
 const COMMON_LABELS: Record<string, string> = {
   ccod: "Código",
@@ -375,12 +443,13 @@ function DukampLegacyArchive() {
         <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border bg-background/70 px-3 py-1 text-xs">
-              <ShieldCheck className="h-3.5 w-3.5" /> Arquivo histórico somente leitura
+              <ShieldCheck className="h-3.5 w-3.5" /> ERP administrativo protegido
             </div>
-            <h1 className="mt-4 text-3xl font-bold tracking-tight">Dukamp</h1>
+            <h1 className="mt-4 text-3xl font-bold tracking-tight">ERP Dukamp</h1>
             <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-              Consulta centralizada dos dados preservados do sistema Clipper: faturamento, compras,
-              estoque, financeiro, clientes, fornecedores, vendedores e tabelas auxiliares.
+              Reconstrução web dos sistemas Clipper da Dukamp. O módulo de Compras já utiliza uma
+              base operacional própria; o arquivo original permanece disponível para conferência e
+              auditoria.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -403,6 +472,55 @@ function DukampLegacyArchive() {
             </div>
           </div>
         </div>
+      </div>
+
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-xl font-bold">Módulos do ERP</h2>
+          <p className="text-sm text-muted-foreground">
+            Os menus foram recuperados dos executáveis da pasta WORK e estão sendo reimplantados por
+            processo de negócio.
+          </p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {ERP_MODULES.map((item) => {
+            const content = (
+              <Card
+                className={`h-full transition-colors ${item.active ? "hover:border-primary/50 hover:bg-accent/30" : "opacity-75"}`}
+              >
+                <CardHeader>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="grid h-11 w-11 place-items-center rounded-xl bg-primary/10 text-primary">
+                      <item.icon className="h-5 w-5" />
+                    </div>
+                    <Badge variant={item.active ? "default" : "outline"}>{item.status}</Badge>
+                  </div>
+                  <CardTitle className="pt-2 text-lg">{item.label}</CardTitle>
+                  <CardDescription>{item.description}</CardDescription>
+                </CardHeader>
+                {item.active && (
+                  <CardContent className="flex items-center gap-2 text-sm font-medium text-primary">
+                    <PackageCheck className="h-4 w-4" /> Abrir módulo
+                  </CardContent>
+                )}
+              </Card>
+            );
+            return item.active && item.to ? (
+              <Link key={item.label} to={item.to}>
+                {content}
+              </Link>
+            ) : (
+              <div key={item.label}>{content}</div>
+            );
+          })}
+        </div>
+      </section>
+
+      <div className="border-t pt-6">
+        <h2 className="text-xl font-bold">Arquivo histórico do sistema anterior</h2>
+        <p className="text-sm text-muted-foreground">
+          Consulta somente leitura das 172 tabelas DBF preservadas.
+        </p>
       </div>
 
       {catalog.isError && (
@@ -486,8 +604,8 @@ function DukampLegacyArchive() {
       <div className="flex items-start gap-3 rounded-xl border bg-card p-4 text-sm text-muted-foreground">
         <Building2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
         <p>
-          Esta área preserva o histórico do ERP original. Alterações operacionais continuam nas
-          áreas atuais do painel para evitar divergência com os registros fiscais antigos.
+          O histórico original nunca é alterado. Novas operações são registradas nas tabelas do ERP
+          web com usuário, data, estado do processo e trilha de auditoria.
         </p>
       </div>
     </div>

@@ -85,6 +85,7 @@ import { Route as AdminVendasPainelRouteImport } from './routes/admin.vendas.pai
 import { Route as AdminVendasHistoricoRouteImport } from './routes/admin.vendas.historico'
 import { Route as AdminVendasClientesRouteImport } from './routes/admin.vendas.clientes'
 import { Route as AdminVendasAtualizarValoresRouteImport } from './routes/admin.vendas.atualizar-valores'
+import { Route as AdminDukampComprasRouteImport } from './routes/admin.dukamp.compras'
 import { Route as AdminContasIdRouteImport } from './routes/admin.contas.$id'
 
 const VendedorRoute = VendedorRouteImport.update({
@@ -477,6 +478,11 @@ const AdminVendasAtualizarValoresRoute =
     path: '/vendas/atualizar-valores',
     getParentRoute: () => AdminRoute,
   } as any)
+const AdminDukampComprasRoute = AdminDukampComprasRouteImport.update({
+  id: '/compras',
+  path: '/compras',
+  getParentRoute: () => AdminDukampRoute,
+} as any)
 const AdminContasIdRoute = AdminContasIdRouteImport.update({
   id: '/contas/$id',
   path: '/contas/$id',
@@ -508,7 +514,7 @@ export interface FileRoutesByFullPath {
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/despesas-dukamp': typeof AdminDespesasDukampRoute
-  '/admin/dukamp': typeof AdminDukampRoute
+  '/admin/dukamp': typeof AdminDukampRouteWithChildren
   '/admin/equipe-vendas': typeof AdminEquipeVendasRoute
   '/admin/estoque': typeof AdminEstoqueRoute
   '/admin/footer': typeof AdminFooterRoute
@@ -533,6 +539,7 @@ export interface FileRoutesByFullPath {
   '/produtos/': typeof ProdutosIndexRoute
   '/vendedor/': typeof VendedorIndexRoute
   '/admin/contas/$id': typeof AdminContasIdRoute
+  '/admin/dukamp/compras': typeof AdminDukampComprasRoute
   '/admin/vendas/atualizar-valores': typeof AdminVendasAtualizarValoresRoute
   '/admin/vendas/clientes': typeof AdminVendasClientesRoute
   '/admin/vendas/historico': typeof AdminVendasHistoricoRoute
@@ -583,7 +590,7 @@ export interface FileRoutesByTo {
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/despesas-dukamp': typeof AdminDespesasDukampRoute
-  '/admin/dukamp': typeof AdminDukampRoute
+  '/admin/dukamp': typeof AdminDukampRouteWithChildren
   '/admin/equipe-vendas': typeof AdminEquipeVendasRoute
   '/admin/estoque': typeof AdminEstoqueRoute
   '/admin/footer': typeof AdminFooterRoute
@@ -608,6 +615,7 @@ export interface FileRoutesByTo {
   '/produtos': typeof ProdutosIndexRoute
   '/vendedor': typeof VendedorIndexRoute
   '/admin/contas/$id': typeof AdminContasIdRoute
+  '/admin/dukamp/compras': typeof AdminDukampComprasRoute
   '/admin/vendas/atualizar-valores': typeof AdminVendasAtualizarValoresRoute
   '/admin/vendas/clientes': typeof AdminVendasClientesRoute
   '/admin/vendas/historico': typeof AdminVendasHistoricoRoute
@@ -663,7 +671,7 @@ export interface FileRoutesById {
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/despesas-dukamp': typeof AdminDespesasDukampRoute
-  '/admin/dukamp': typeof AdminDukampRoute
+  '/admin/dukamp': typeof AdminDukampRouteWithChildren
   '/admin/equipe-vendas': typeof AdminEquipeVendasRoute
   '/admin/estoque': typeof AdminEstoqueRoute
   '/admin/footer': typeof AdminFooterRoute
@@ -688,6 +696,7 @@ export interface FileRoutesById {
   '/produtos/': typeof ProdutosIndexRoute
   '/vendedor/': typeof VendedorIndexRoute
   '/admin/contas/$id': typeof AdminContasIdRoute
+  '/admin/dukamp/compras': typeof AdminDukampComprasRoute
   '/admin/vendas/atualizar-valores': typeof AdminVendasAtualizarValoresRoute
   '/admin/vendas/clientes': typeof AdminVendasClientesRoute
   '/admin/vendas/historico': typeof AdminVendasHistoricoRoute
@@ -769,6 +778,7 @@ export interface FileRouteTypes {
     | '/produtos/'
     | '/vendedor/'
     | '/admin/contas/$id'
+    | '/admin/dukamp/compras'
     | '/admin/vendas/atualizar-valores'
     | '/admin/vendas/clientes'
     | '/admin/vendas/historico'
@@ -844,6 +854,7 @@ export interface FileRouteTypes {
     | '/produtos'
     | '/vendedor'
     | '/admin/contas/$id'
+    | '/admin/dukamp/compras'
     | '/admin/vendas/atualizar-valores'
     | '/admin/vendas/clientes'
     | '/admin/vendas/historico'
@@ -923,6 +934,7 @@ export interface FileRouteTypes {
     | '/produtos/'
     | '/vendedor/'
     | '/admin/contas/$id'
+    | '/admin/dukamp/compras'
     | '/admin/vendas/atualizar-valores'
     | '/admin/vendas/clientes'
     | '/admin/vendas/historico'
@@ -1532,6 +1544,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminVendasAtualizarValoresRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/dukamp/compras': {
+      id: '/admin/dukamp/compras'
+      path: '/compras'
+      fullPath: '/admin/dukamp/compras'
+      preLoaderRoute: typeof AdminDukampComprasRouteImport
+      parentRoute: typeof AdminDukampRoute
+    }
     '/admin/contas/$id': {
       id: '/admin/contas/$id'
       path: '/contas/$id'
@@ -1542,6 +1561,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminDukampRouteChildren {
+  AdminDukampComprasRoute: typeof AdminDukampComprasRoute
+}
+
+const AdminDukampRouteChildren: AdminDukampRouteChildren = {
+  AdminDukampComprasRoute: AdminDukampComprasRoute,
+}
+
+const AdminDukampRouteWithChildren = AdminDukampRoute._addFileChildren(
+  AdminDukampRouteChildren,
+)
+
 interface AdminRouteChildren {
   AdminAnunciosRoute: typeof AdminAnunciosRoute
   AdminAtendimentosRoute: typeof AdminAtendimentosRoute
@@ -1551,7 +1582,7 @@ interface AdminRouteChildren {
   AdminCategoriasRoute: typeof AdminCategoriasRoute
   AdminConfiguracoesRoute: typeof AdminConfiguracoesRoute
   AdminDespesasDukampRoute: typeof AdminDespesasDukampRoute
-  AdminDukampRoute: typeof AdminDukampRoute
+  AdminDukampRoute: typeof AdminDukampRouteWithChildren
   AdminEquipeVendasRoute: typeof AdminEquipeVendasRoute
   AdminEstoqueRoute: typeof AdminEstoqueRoute
   AdminFooterRoute: typeof AdminFooterRoute
@@ -1577,7 +1608,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCategoriasRoute: AdminCategoriasRoute,
   AdminConfiguracoesRoute: AdminConfiguracoesRoute,
   AdminDespesasDukampRoute: AdminDespesasDukampRoute,
-  AdminDukampRoute: AdminDukampRoute,
+  AdminDukampRoute: AdminDukampRouteWithChildren,
   AdminEquipeVendasRoute: AdminEquipeVendasRoute,
   AdminEstoqueRoute: AdminEstoqueRoute,
   AdminFooterRoute: AdminFooterRoute,

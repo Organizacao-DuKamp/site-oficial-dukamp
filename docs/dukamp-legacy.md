@@ -1,7 +1,7 @@
 # Arquivo histórico Dukamp
 
-A rota `/admin/dukamp` disponibiliza aos administradores uma consulta somente
-leitura dos dados preservados do ERP Clipper/DBF.
+A rota `/admin/dukamp` disponibiliza aos administradores os módulos do novo ERP
+e uma consulta somente leitura dos dados preservados do sistema Clipper/DBF.
 
 ## Escopo
 
@@ -22,6 +22,8 @@ dados ativos.
   catálogo, permissões e políticas RLS;
 - `scripts/legacy_dbf_to_supabase.py`: inspeção, geração da migration e carga
   direta por PostgreSQL `COPY`.
+
+A reconstrução operacional está documentada em `docs/dukamp-erp.md`.
 
 Cada tabela física usa o prefixo `dukamp_legacy_`. O catálogo
 `dukamp_legacy_tables` contém rótulos, módulos, campos e contagens de importação.
