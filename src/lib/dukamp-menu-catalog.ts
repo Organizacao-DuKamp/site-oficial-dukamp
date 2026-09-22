@@ -1092,7 +1092,252 @@ DUKAMP_PROGRAM_MENUS.gerente = {
   ],
 };
 DUKAMP_PROGRAM_MENUS["nova-tabela"] = simpleProgram("nova-tabela", "NOVA TABELA", "b_TABELA.bat", [
-  { key: "price-table", label: "Tabela Preço / Produto", tab: "reports" },
-  { key: "cost-sale", label: "Custo / Venda / Margem", tab: "reports" },
-  { key: "changed-prices", label: "Histórico Alteração de Preços", tab: "reports" },
+  {
+    key: "price-table",
+    label: "Tabela Preço / Produto",
+    tab: "reports",
+    screen: "[ TABELA PRECO ]",
+    operational: true,
+  },
+  {
+    key: "cost-sale",
+    label: "Custo / Venda / Margem",
+    tab: "reports",
+    screen: ">>> CUSTO PRODUTO <<<",
+    operational: true,
+  },
+  {
+    key: "changed-prices",
+    label: "Histórico Alteração de Preços",
+    tab: "reports",
+    screen: "LOG CORRECAO PRECO",
+    tables: ["dukamp_legacy_efalogpr"],
+    operational: false,
+  },
 ]);
+
+function legacyProgram(
+  id: string,
+  title: string,
+  executable: string,
+  maintenance: Array<[string, string, string[]]>,
+  reports: Array<[string, string, string[]]>,
+  consultations: Array<[string, string, string[]]>,
+): void {
+  const toAction = ([shortcut, label, tables]: [string, string, string[]]): DukampMenuAction => ({
+    key: `${id}-${shortcut.toLowerCase()}`,
+    label,
+    tab: tables.some((t) => t.includes("cpa") || t.includes("cra") || t.includes("rra"))
+      ? "payables"
+      : tables.some((t) => t.includes("faaclien") || t.includes("cpaforne"))
+        ? "suppliers"
+        : tables.some((t) => t.includes("cma") || t.includes("faanota"))
+          ? "receipts"
+          : "reports",
+    screen: `[ ${label.toUpperCase()} ]`,
+    tables,
+    operational: false,
+  });
+  DUKAMP_PROGRAM_MENUS[id] = {
+    id,
+    title,
+    executable,
+    groups: [
+      {
+        title: "MANUTENÇÕES",
+        shortcuts: maintenance.map(([s]) => s),
+        actions: maintenance.map((m) => toAction(m)),
+      },
+      {
+        title: "RELATÓRIOS",
+        shortcuts: reports.map(([s]) => s),
+        actions: reports.map((m) => toAction(m)),
+      },
+      {
+        title: "CONSULTAS",
+        shortcuts: consultations.map(([s]) => s),
+        actions: consultations.map((m) => toAction(m)),
+      },
+      {
+        title: "OPERAÇÕES ESPECIAIS",
+        shortcuts: ["1", "2", "3", "4"],
+        actions: [
+          {
+            key: `${id}-special`,
+            label: "(rotina especial sob senha)",
+            tab: "reports",
+            operational: false,
+          },
+        ],
+      },
+    ],
+  };
+}
+
+legacyProgram(
+  "contas-pagar",
+  "MENU CONTAS A PAGAR",
+  "cppmenus.exe",
+  [
+    ["3", "Fornecedores", ["dukamp_legacy_cpaforne"]],
+    ["D", "Metas Grupo Despesas", ["dukamp_legacy_cpametas"]],
+    ["E", "Agenda/Contas", ["dukamp_legacy_cpagenda"]],
+    ["F", "Adiantamentos Fornecedor", ["dukamp_legacy_cpaadfor"]],
+  ],
+  [
+    ["2", "Fornecedores", ["dukamp_legacy_cpaforne"]],
+    ["3", "Titulos", ["dukamp_legacy_cpatitup"]],
+    ["8", "Titulos Aberto por Vencimento", ["dukamp_legacy_cpatitup"]],
+    ["0", "Titulos Por Grupo Despesas", ["dukamp_legacy_cpatitup"]],
+    ["C", "Etiqueta de Fornecedores", ["dukamp_legacy_cpaforne"]],
+    ["D", "Ficha de Fornecedores", ["dukamp_legacy_cpaforne"]],
+    ["E", "Resumo Metas/Despesas", ["dukamp_legacy_cpametas"]],
+    ["F", "ABC Fornecedores", ["dukamp_legacy_cpaforne"]],
+    ["G", "Adiantamentos Fornecedores", ["dukamp_legacy_cpaadfor"]],
+  ],
+  [["1", "Fornecedores/Titulos", ["dukamp_legacy_cpaforne", "dukamp_legacy_cpatitup"]]],
+);
+
+legacyProgram(
+  "contas-receber",
+  "MENU CONTAS RECEBER",
+  "crpmenus.exe",
+  [
+    ["9", "Bxa/Retor Titulos", ["dukamp_legacy_cratitul"]],
+    ["0", "Despesas Titulos", ["dukamp_legacy_cratitul"]],
+    ["B", "Adian/Cred Client", ["dukamp_legacy_cratitul"]],
+  ],
+  [
+    ["2", "Titulos", ["dukamp_legacy_cratitul"]],
+    ["4", "Saldo Carteiras", ["dukamp_legacy_cracabcp"]],
+    ["7", "Historico Cliente", ["dukamp_legacy_rratitul"]],
+    ["8", "Titulos Bco/Agencia Cob", ["dukamp_legacy_cratitul"]],
+    ["A", "Titulos por Cidade", ["dukamp_legacy_cratitul"]],
+    ["B", "Boleto Cobranca", ["dukamp_legacy_cratitul"]],
+    ["D", "Ficha de Clientes", ["dukamp_legacy_faaclien"]],
+    ["F", "Adiant/Credito Clientes", ["dukamp_legacy_cratitul"]],
+  ],
+  [
+    ["1", "Clientes/Titulos", ["dukamp_legacy_faaclien", "dukamp_legacy_cratitul"]],
+    ["2", "Titulo/Numero", ["dukamp_legacy_cratitul"]],
+    ["3", "Log/Instr Titulos", ["dukamp_legacy_cralogti"]],
+  ],
+);
+
+legacyProgram(
+  "valores-receber",
+  "MENU VALORES RECEBER",
+  "rrpmenus.exe",
+  [
+    ["9", "Bxa/Retor Titulos", ["dukamp_legacy_rratitul"]],
+    ["0", "Despesas Titulos", ["dukamp_legacy_rratitul"]],
+  ],
+  [
+    ["2", "Titulos", ["dukamp_legacy_rratitul"]],
+    ["4", "Saldo Carteiras", ["dukamp_legacy_cracabcp"]],
+    ["7", "Historico Cliente", ["dukamp_legacy_rratitul"]],
+    ["8", "Titulos Cart/Agencia Cob", ["dukamp_legacy_rratitul"]],
+    ["A", "Titulos por Cidade", ["dukamp_legacy_rratitul"]],
+    ["B", "Boleto Cobranca", ["dukamp_legacy_rratitul"]],
+  ],
+  [
+    ["1", "Clientes/Titulos", ["dukamp_legacy_faaclien", "dukamp_legacy_rratitul"]],
+    ["2", "Titulo/Numero", ["dukamp_legacy_rratitul"]],
+    ["3", "Log Titulos", ["dukamp_legacy_cralogti"]],
+  ],
+);
+
+legacyProgram(
+  "televendas",
+  "MENU TELEVENDAS",
+  "tepmenus.exe",
+  [
+    ["1", "Historico Cliente", ["dukamp_legacy_faaclien"]],
+    ["2", "Cliente por Cidade", ["dukamp_legacy_faacidad"]],
+  ],
+  [["2", "Contatos de Clientes", ["dukamp_legacy_faaclien"]]],
+  [
+    ["1", "Nota Fiscal", ["dukamp_legacy_faanotas"]],
+    ["2", "Clientes/Titulos", ["dukamp_legacy_faaclien", "dukamp_legacy_cratitul"]],
+    ["3", "Log Produtos", ["dukamp_legacy_efalogpr"]],
+    ["4", "Pedidos", ["dukamp_legacy_faapedid"]],
+  ],
+);
+
+legacyProgram(
+  "receitas",
+  "MENU RECEITAS",
+  "repmenus.exe",
+  [
+    ["1", "Produtos com Receitas", ["dukamp_legacy_efaprodu"]],
+    ["2", "Cultura", ["dukamp_legacy_efaprodu"]],
+    ["3", "Recomendacoes Tecnicas", ["dukamp_legacy_efaprodu"]],
+    ["4", "ARTs", ["dukamp_legacy_efaprodu"]],
+    ["5", "Profissional Responsavel", ["dukamp_legacy_faarepre"]],
+  ],
+  [
+    ["1", "Produtos com Receita", ["dukamp_legacy_efaprodu"]],
+    ["2", "Reemissao Receitas", ["dukamp_legacy_efaprodu"]],
+    ["3", "Venda Produtos Arts_Sequenc", ["dukamp_legacy_faanotai"]],
+  ],
+  [],
+);
+
+legacyProgram(
+  "autorizacao-pagamento",
+  "AUTORIZACAO PAGAMENTO",
+  "aupmenus.exe",
+  [
+    ["1", "Manutencao Fornecedores", ["dukamp_legacy_cpaforne"]],
+    ["2", "Manutencao Autorizacao Pagto", ["dukamp_legacy_cpaautpg"]],
+    ["3", "Emissao Autorizacao Pagto", ["dukamp_legacy_cpaautpg"]],
+  ],
+  [],
+  [],
+);
+
+legacyProgram(
+  "compras-setor",
+  "MENU COMPRAS_SETOR",
+  "cmpsetor.exe",
+  [
+    ["1", "Tabela Preco/Produto", ["dukamp_legacy_efaprodu"]],
+    ["2", "Transferencia Produtos", ["dukamp_legacy_faaentit"]],
+    ["3", "Pedidos Compra", ["dukamp_legacy_cmapedid", "dukamp_legacy_cmaitped"]],
+  ],
+  [
+    ["1", "Produtos/Sugestao Compras", ["dukamp_legacy_efaprodu"]],
+    ["2", "Curva ABC Fornec/Prod/Grupo", ["dukamp_legacy_efaprodu"]],
+    ["3", "Agendamento Vendas", ["dukamp_legacy_faarepre"]],
+    ["4", "Validade Produtos", ["dukamp_legacy_efavalid"]],
+    ["5", "Margem de Venda", ["dukamp_legacy_efaprodu"]],
+    ["6", "Tabela de Preco", ["dukamp_legacy_efaprodu"]],
+  ],
+  [
+    ["1", "Notas Fiscal Venda", ["dukamp_legacy_faanotas"]],
+    ["2", "Clientes/Titulos", ["dukamp_legacy_faaclien", "dukamp_legacy_cratitul"]],
+    ["3", "Log Produtos", ["dukamp_legacy_efalogpr"]],
+  ],
+);
+
+legacyProgram(
+  "cadastros",
+  "MENU CADASTROS",
+  "fapmencd.exe",
+  [
+    ["1", "Clientes", ["dukamp_legacy_faaclien"]],
+    ["2", "Fornecedores", ["dukamp_legacy_cpaforne"]],
+    ["3", "Produtos", ["dukamp_legacy_efaprodu"]],
+    ["4", "Vendedores", ["dukamp_legacy_faarepre"]],
+    ["5", "Transportadoras", ["dukamp_legacy_faatrans"]],
+  ],
+  [
+    ["1", "Clientes por Cidade", ["dukamp_legacy_faaclien"]],
+    ["2", "Produtos por Grupo", ["dukamp_legacy_efaprodu"]],
+  ],
+  [
+    ["1", "Clientes/Titulos", ["dukamp_legacy_faaclien"]],
+    ["2", "Fornecedor/Titulos", ["dukamp_legacy_cpaforne"]],
+    ["3", "Log Produtos", ["dukamp_legacy_efalogpr"]],
+  ],
+);

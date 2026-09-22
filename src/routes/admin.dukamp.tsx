@@ -22,7 +22,7 @@ import {
   WalletCards,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { WMENUS_LAUNCHERS } from "@/lib/dukamp-menu-catalog";
+import { DUKAMP_PROGRAM_MENUS, WMENUS_LAUNCHERS } from "@/lib/dukamp-menu-catalog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -408,6 +408,195 @@ function LegacyTableViewer({ table, onBack }: { table: LegacyTable; onBack: () =
   );
 }
 
+function commandToProgramId(command: string): string | null {
+  const c = command.toLowerCase();
+  if (c.includes("cmpmenus.exe")) return "compras";
+  if (c.includes("cmpmenu2.exe")) return "compras-2";
+  if (c.includes("cmpalmox.exe")) return "almoxarifado";
+  if (c.includes("fmpntnfe.exe ex")) return "nfe-loja";
+  if (c.includes("fmpntnfe.exe fb")) return "nfe-fabrica";
+  if (c.includes("fmpmnfat.exe")) return "faturamento";
+  if (c.includes("grpmenus.exe")) return "gerente";
+  if (c.includes("b_tabela.bat") || c.includes("xb_tabela")) return "nova-tabela";
+  if (c.includes("cppmenus.exe")) return "contas-pagar";
+  if (c.includes("crpmenus.exe")) return "contas-receber";
+  if (c.includes("rrpmenus.exe")) return "valores-receber";
+  if (c.includes("fapmencd.exe")) return "cadastros";
+  if (c.includes("tepmenus.exe")) return "televendas";
+  if (c.includes("repmenus.exe")) return "receitas";
+  if (c.includes("aupmenus.exe")) return "autorizacao-pagamento";
+  if (c.includes("cmpsetor.exe")) return "compras-setor";
+  return null;
+}
+
+function DukampTerminalExplorer() {
+  const [launcherId, setLauncherId] = useState<string | null>(null);
+  const [programId, setProgramId] = useState<string | null>(null);
+  const [groupIndex, setGroupIndex] = useState<number | null>(null);
+  const launcher = WMENUS_LAUNCHERS.find((l) => l.id === launcherId) ?? null;
+  const program = programId ? DUKAMP_PROGRAM_MENUS[programId] : null;
+  const group = program && groupIndex !== null ? program.groups[groupIndex] : null;
+
+  const openEntry = (command: string) => {
+    const pid = commandToProgramId(command);
+    if (pid && DUKAMP_PROGRAM_MENUS[pid]) {
+      setProgramId(pid);
+      setGroupIndex(null);
+    }
+  };
+
+  return (
+    <section className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <h2 className="text-xl font-bold">Terminais Clipper — navegação completa</h2>
+        {(launcher || program) && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setLauncherId(null);
+              setProgramId(null);
+              setGroupIndex(null);
+            }}
+          >
+            Voltar aos lançadores
+          </Button>
+        )}
+      </div>
+      {!launcher && !program && (
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {WMENUS_LAUNCHERS.map((l) => (
+            <button key={l.id} onClick={() => setLauncherId(l.id)} className="text-left">
+              <Card className="h-full hover:border-primary/50">
+                <CardHeader>
+                  <CardTitle className="font-mono text-sm">{l.title}</CardTitle>
+                  <CardDescription className="font-mono text-xs">
+                    {l.source} · {l.entries.length} entradas
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            </button>
+          ))}
+        </div>
+      )}
+      {launcher && !program && (
+        <Card className="overflow-hidden">
+          <CardHeader className="bg-slate-900 py-3 text-white">
+            <CardTitle className="font-mono text-sm">
+              {launcher.title} · {launcher.source}
+            </CardTitle>
+            <CardDescription className="text-white/70">
+              Escolha o programa como no MenuWin. Esc volta.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            {launcher.entries.map((e) => {
+              const pid = commandToProgramId(e.command);
+              return (
+                <button
+                  key={`${e.shortcut}-${e.label}`}
+                  onClick={() => openEntry(e.command)}
+                  disabled={!pid}
+                  className="flex w-full items-center gap-3 border-b px-4 py-2 text-left font-mono text-sm last:border-0 hover:bg-accent disabled:opacity-60"
+                >
+                  <span className="grid h-6 w-6 place-items-center rounded bg-muted text-xs font-bold">
+                    {e.shortcut}
+                  </span>
+                  <span className="flex-1">{e.label}</span>
+                  <span className="hidden text-xs text-muted-foreground sm:block">{e.command}</span>
+                  <Badge variant={pid ? "default" : "outline"}>{pid ? "Abrir" : "Legado"}</Badge>
+                </button>
+              );
+            })}
+            <div className="p-3">
+              <Button variant="outline" size="sm" onClick={() => setLauncherId(null)}>
+                Voltar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      {program && (
+        <Card className="overflow-hidden">
+          <CardHeader className="bg-[#0000aa] py-3 font-mono text-white">
+            <CardTitle className="text-sm">
+              {program.title} · {program.executable}
+            </CardTitle>
+            <CardDescription className="text-white/80">
+              {group ? group.title : "1. Manutenção · 2. Relatórios · 3. Consultas · 4. Especiais"}{" "}
+              · Esc volta
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2 p-4 font-mono text-sm">
+            {!group &&
+              program.groups.map((g, i) => (
+                <button
+                  key={g.title}
+                  onClick={() => setGroupIndex(i)}
+                  className="flex w-full gap-2 px-2 py-1.5 text-left hover:bg-accent"
+                >
+                  <span className="font-bold text-primary">{i + 1}.</span>
+                  <span>{g.title} ...</span>
+                </button>
+              ))}
+            {group &&
+              group.actions.map((a, i) => (
+                <div key={a.key} className="rounded border px-3 py-2">
+                  <div className="flex gap-2">
+                    <span className="font-bold text-primary">{group.shortcuts?.[i] ?? i + 1}.</span>
+                    <span className="flex-1 font-semibold">{a.label}</span>
+                    <Badge variant={a.operational ? "default" : "outline"}>
+                      {a.operational ? "Operacional" : "Legado"}
+                    </Badge>
+                  </div>
+                  {a.screen && <div className="mt-1 text-xs text-muted-foreground">{a.screen}</div>}
+                  {!!a.prompts?.length && (
+                    <ul className="mt-1 list-disc pl-5 text-xs text-muted-foreground">
+                      {a.prompts.slice(0, 6).map((p) => (
+                        <li key={p}>{p}</li>
+                      ))}
+                    </ul>
+                  )}
+                  {!!a.tables?.length && (
+                    <div className="mt-1 text-[11px] text-muted-foreground">
+                      DBFs: {a.tables.join(" · ")}
+                    </div>
+                  )}
+                  {programId &&
+                  ["compras", "compras-2", "almoxarifado"].includes(programId) &&
+                  a.operational ? (
+                    <div className="mt-2">
+                      <Button asChild size="sm">
+                        <Link to="/admin/dukamp/compras">Abrir rotina operacional</Link>
+                      </Button>
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            <div className="flex gap-2 pt-2">
+              {group ? (
+                <Button variant="outline" size="sm" onClick={() => setGroupIndex(null)}>
+                  Voltar às categorias
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setProgramId(null);
+                  }}
+                >
+                  Voltar ao lançador
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </section>
+  );
+}
+
 function DukampLegacyArchive() {
   const catalog = useLegacyCatalog();
   const [selected, setSelected] = useState<LegacyTable | null>(null);
@@ -474,6 +663,8 @@ function DukampLegacyArchive() {
           </div>
         </div>
       </div>
+
+      <DukampTerminalExplorer />
 
       <section className="space-y-3">
         <div>
