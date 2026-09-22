@@ -45,7 +45,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 
-export const Route = createFileRoute("/admin/dukamp/compras")({
+export const Route = createFileRoute("/admin/dukamp_/compras")({
   component: DukampPurchasingPage,
 });
 
