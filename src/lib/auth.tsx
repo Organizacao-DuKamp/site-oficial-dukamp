@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { PROTECTED_ADMIN_EMAIL } from "@/lib/constants";
+import { isMasterAdminUserId } from "@/lib/constants";
 export { regularPriceForAccount, priceForAccount, isOnSaleForAccount, pixPriceForAccount } from "@/lib/pricing";
 
 export type AccountType = "cliente" | "revendedor" | "produtor" | "empresa" | "vendedor" | "admin";
@@ -159,8 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         session,
         isAdmin,
-        isMasterAdmin:
-          (user?.email ?? "").toLowerCase() === PROTECTED_ADMIN_EMAIL.toLowerCase(),
+        isMasterAdmin: isMasterAdminUserId(user?.id),
         accountType,
         approvalNotice,
         dismissApprovalNotice,
