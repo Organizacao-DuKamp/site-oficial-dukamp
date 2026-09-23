@@ -17,7 +17,7 @@ export const Route = createFileRoute("/admin")({
   component: AdminLayout,
 });
 
-type NavLeaf = { to: string; label: string; icon: any; exact?: boolean; masterOnly?: boolean };
+type NavLeaf = { to: string; label: string; icon: any; exact?: boolean; masterOnly?: boolean; search?: Record<string, string> };
 type NavGroup = { label: string; icon: any; basePath: string; children: NavLeaf[] };
 type NavEntry = NavLeaf | NavGroup;
 
@@ -27,6 +27,7 @@ const NAV: NavEntry[] = [
     label: "Estoque", icon: Boxes, basePath: "/admin/estoque",
     children: [
       { to: "/admin/estoque", label: "Painel", icon: BarChart3 },
+      { to: "/admin/estoque", label: "Estoque DuKamp", icon: Boxes, search: { aba: "dukamp" } },
       { to: "/admin/produtos", label: "Produtos", icon: Package },
       { to: "/admin/atualizar-valores", label: "Atualizar Valores", icon: RefreshCw },
       { to: "/admin/catalogos", label: "Catálogos", icon: FolderTree },
@@ -81,8 +82,9 @@ async function countPendingRequests() {
   return (passwordRecoveries.count ?? 0) + (accountRequests.count ?? 0) + (saleRequests.count ?? 0);
 }
 
-function SidebarContent({ pathname, onNavigate, signOut, isMaster, pendingRequests }: {
+function SidebarContent({ pathname, currentSearch, onNavigate, signOut, isMaster, pendingRequests }: {
   pathname: string;
+  currentSearch: Record<string, unknown>;
   onNavigate?: () => void;
   signOut: () => void;
   isMaster: boolean;
@@ -113,11 +115,16 @@ function SidebarContent({ pathname, onNavigate, signOut, isMaster, pendingReques
                 </summary>
                 <div className="mt-1 ml-3 pl-3 border-l space-y-1">
                   {n.children.map((c) => {
-                    const active = pathname === c.to || pathname.startsWith(c.to + "/");
+                    const pathActive = pathname === c.to || pathname.startsWith(c.to + "/");
+                    const isDukampTab = c.search?.aba === "dukamp";
+                    const active = pathActive && (isDukampTab
+                      ? currentSearch.aba === "dukamp"
+                      : !(c.to === "/admin/estoque" && currentSearch.aba === "dukamp"));
                     return (
                       <Link
-                        key={c.to}
+                        key={`${c.to}-${c.label}`}
                         to={c.to}
+                        search={c.search as any}
                         onClick={onNavigate}
                         className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm ${active ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}
                       >
@@ -170,6 +177,7 @@ function AdminLayout() {
   const { user, isAdmin, isMasterAdmin, loading, signOut } = useAuth();
   const nav = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const currentSearch = useRouterState({ select: (s) => s.location.search as Record<string, unknown> });
   const [mobileOpen, setMobileOpen] = useState(false);
   const pendingRequests = useQuery({
     queryKey: ["admin", "pending-requests-count"],
@@ -218,7 +226,7 @@ function AdminLayout() {
   return (
     <div className="min-h-screen flex bg-muted/30">
       <aside className="hidden lg:flex w-60 bg-sidebar border-r flex-col shrink-0">
-        <SidebarContent pathname={pathname} signOut={signOut} isMaster={isMasterAdmin} pendingRequests={pendingRequestCount} />
+        <SidebarContent pathname={pathname} currentSearch={currentSearch} signOut={signOut} isMaster={isMasterAdmin} pendingRequests={pendingRequestCount} />
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -232,6 +240,7 @@ function AdminLayout() {
             <SheetContent side="left" className="p-0 w-64 flex flex-col">
               <SidebarContent
                 pathname={pathname}
+                currentSearch={currentSearch}
                 onNavigate={() => setMobileOpen(false)}
                 signOut={signOut}
                 isMaster={isMasterAdmin}
