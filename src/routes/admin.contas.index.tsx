@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Search, Eye, UserCircle, ShieldAlert } from "lucide-react";
-import { PROTECTED_ADMIN_EMAIL } from "@/lib/constants";
+import { isMasterAdminUserId } from "@/lib/constants";
 import { accountTypeLabel, type AccountType, useAuth } from "@/lib/auth";
 import { getManagedSellerIds } from "@/lib/admin-account-type";
 
@@ -44,7 +44,7 @@ function ContasPage() {
         (rolesR.data ?? []).filter((r) => r.role === "admin").map((r) => r.user_id),
       );
       return (profilesR.data ?? [])
-        .filter((p: any) => p.email !== PROTECTED_ADMIN_EMAIL)
+        .filter((p: any) => !isMasterAdminUserId(p.id))
         .map((p: any) => ({
           ...p,
           isAdmin: adminSet.has(p.id),
