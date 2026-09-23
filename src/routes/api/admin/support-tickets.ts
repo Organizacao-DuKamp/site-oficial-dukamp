@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PROTECTED_ADMIN_EMAIL } from "@/lib/constants";
+import { isMasterAdminUserId } from "@/lib/constants";
 
 export const Route = createFileRoute("/api/admin/support-tickets")({
   server: {
@@ -19,8 +19,7 @@ export const Route = createFileRoute("/api/admin/support-tickets")({
           .maybeSingle();
         if (roleError) return errorResponse("Não foi possível validar o administrador.", 500);
 
-        const isMaster =
-          (user.email ?? "").toLowerCase() === PROTECTED_ADMIN_EMAIL.toLowerCase();
+        const isMaster = isMasterAdminUserId(user.id);
         if (!role && !isMaster) return errorResponse("Acesso negado.", 403);
 
         try {
