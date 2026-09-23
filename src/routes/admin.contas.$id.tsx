@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, UserCircle, ShieldCheck, ShieldOff, KeyRound, Lock, Link2 } from "lucide-react";
 import { toast } from "sonner";
-import { PROTECTED_ADMIN_EMAIL } from "@/lib/constants";
+import { isMasterAdminUserId } from "@/lib/constants";
 import { SellerMarginReportDialog } from "@/components/admin/SellerMarginReportDialog";
 import { useEffect, useState } from "react";
 
@@ -50,7 +50,7 @@ function ContaDetalhe() {
   });
 
   useEffect(() => {
-    if (data?.profile && (data.profile as any).email === PROTECTED_ADMIN_EMAIL) {
+    if (data?.profile && isMasterAdminUserId(id)) {
       toast.error("Conta indisponível.");
       nav({ to: "/admin/contas" });
     }
@@ -134,9 +134,9 @@ function ContaDetalhe() {
   }
 
   const p: any = data.profile;
-  if (p.email === PROTECTED_ADMIN_EMAIL) return null;
+  if (isMasterAdminUserId(id)) return null;
 
-  const canDemote = me?.email === PROTECTED_ADMIN_EMAIL && data.isAdmin;
+  const canDemote = isMasterAdminUserId(me?.id) && data.isAdmin;
   const normalizedSellerCode = sellerCode.trim();
   const savedSellerCode = data.sellerCode ?? "";
 
