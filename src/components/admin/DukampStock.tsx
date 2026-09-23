@@ -107,14 +107,14 @@ export function DukampStock() {
       return alphabeticalOrder === "az" ? comparison : -comparison;
     });
   }, [rows, search, alphabeticalOrder, numericField, numericOperator, numericValue]);
-  const summary = useMemo(() => rows.reduce(
+  const summary = useMemo(() => filtered.reduce(
     (totals, row) => ({
       totalCost: totals.totalCost + (row.total_cost ?? 0),
       totalSale: totals.totalSale + (row.total_sale ?? 0),
       totalAverage: totals.totalAverage + (row.avg_total ?? 0),
     }),
     { totalCost: 0, totalSale: 0, totalAverage: 0 },
-  ), [rows]);
+  ), [filtered]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageRows = filtered.slice((Math.min(page, pageCount) - 1) * PAGE_SIZE, Math.min(page, pageCount) * PAGE_SIZE);
@@ -205,22 +205,22 @@ export function DukampStock() {
         <div className="rounded-lg border bg-card p-4">
           <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">TT custo</div>
           <div className="mt-1 text-2xl font-bold tabular-nums">{money.format(summary.totalCost)}</div>
-          <div className="mt-1 text-xs text-muted-foreground">Soma do total de custo dos produtos listados</div>
+          <div className="mt-1 text-xs text-muted-foreground">Soma do TT custo dos produtos exibidos pelo filtro</div>
         </div>
         <div className="rounded-lg border bg-card p-4">
           <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">TT venda</div>
           <div className="mt-1 text-2xl font-bold tabular-nums">{money.format(summary.totalSale)}</div>
-          <div className="mt-1 text-xs text-muted-foreground">Soma do total de venda dos produtos listados</div>
+          <div className="mt-1 text-xs text-muted-foreground">Soma do TT venda dos produtos exibidos pelo filtro</div>
         </div>
         <div className="rounded-lg border bg-card p-4">
           <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">TT média</div>
           <div className="mt-1 text-2xl font-bold tabular-nums">{money.format(summary.totalAverage)}</div>
-          <div className="mt-1 text-xs text-muted-foreground">Soma do total médio dos produtos listados</div>
+          <div className="mt-1 text-xs text-muted-foreground">Soma do TT média dos produtos exibidos pelo filtro</div>
         </div>
       </div>
 
       <p className="-mt-2 text-xs text-muted-foreground">
-        Resumo calculado automaticamente com os produtos do Estoque DuKamp. Itens com XX ou ZZ permanecem fora destes totais.
+        Resumo dinâmico dos produtos exibidos: pesquisa e filtros atualizam estes totais automaticamente. Itens com XX ou ZZ permanecem fora.
       </p>
 
       <div className="rounded-lg border bg-card p-4 space-y-4">
