@@ -1,13 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Package, FolderTree, Tag, RefreshCw } from "lucide-react";
+import { Package, FolderTree, Tag, RefreshCw, Boxes, ArrowLeft } from "lucide-react";
+import { DukampStock } from "@/components/admin/DukampStock";
 
 export const Route = createFileRoute("/admin/estoque")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    aba: search.aba === "dukamp" ? "dukamp" as const : "painel" as const,
+  }),
   component: EstoquePainel,
 });
 
 function EstoquePainel() {
+  const { aba } = Route.useSearch();
   const counts = useQuery({
     queryKey: ["admin", "estoque", "counts"],
     queryFn: async () => {
@@ -31,12 +36,30 @@ function EstoquePainel() {
     { label: "Atualizar valores", value: "→", icon: RefreshCw, to: "/admin/atualizar-valores" },
   ];
 
+  if (aba === "dukamp") {
+    return (
+      <div className="space-y-5">
+        <Link to="/admin/estoque" search={{ aba: "painel" }} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-4 w-4" /> Voltar ao painel do estoque
+        </Link>
+        <DukampStock />
+      </div>
+    );
+  }
+
   return (
     <div>
       <h1 className="text-2xl font-bold">Painel do Estoque</h1>
       <p className="text-sm text-muted-foreground">Visão geral do inventário e catálogos.</p>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mt-6">
+        <Link to="/admin/estoque" search={{ aba: "dukamp" }} className="rounded-lg border bg-card p-4 hover:bg-accent transition-colors">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">Estoque DuKamp</div>
+            <Boxes className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <div className="text-3xl font-bold mt-2">Abrir</div>
+        </Link>
         {cards.map((c) => (
           <Link key={c.label} to={c.to} className="rounded-lg border bg-card p-4 hover:bg-accent transition-colors">
             <div className="flex items-center justify-between">
