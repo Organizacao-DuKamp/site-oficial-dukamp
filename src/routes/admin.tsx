@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard, Package, Tag, FolderTree, Image as ImageIcon,
   Megaphone, Users, Settings, LogOut, ExternalLink, MessageSquare, Menu, ClipboardList, FileText, RefreshCw, Navigation,
-  ShoppingBag, ChevronDown, BarChart3, History, ListOrdered, Boxes, UserSquare2, Bell, WalletCards, Database,
+  ShoppingBag, ChevronDown, BarChart3, History, ListOrdered, Boxes, UserSquare2, Bell, WalletCards,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -23,7 +23,6 @@ type NavEntry = NavLeaf | NavGroup;
 
 const NAV: NavEntry[] = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { to: "/admin/dukamp", label: "Dukamp", icon: Database },
   {
     label: "Estoque", icon: Boxes, basePath: "/admin/estoque",
     children: [
