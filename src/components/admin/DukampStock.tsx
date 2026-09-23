@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, FileDown, FileUp, Search } from "lucide-react";
+import { Download, FileDown, FileUp, Search, SlidersHorizontal, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,37 @@ const db = supabase as any;
 const PAGE_SIZE = 50;
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 const number = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+type NumericField =
+  | "stock"
+  | "cost"
+  | "total_cost"
+  | "sale_price"
+  | "total_sale"
+  | "avg_sales"
+  | "avg_total"
+  | "minimum";
+
+const NUMERIC_FILTERS: Array<{ value: NumericField; label: string }> = [
+  { value: "stock", label: "Saldo" },
+  { value: "cost", label: "Custo" },
+  { value: "total_cost", label: "TT custo" },
+  { value: "sale_price", label: "Preço venda" },
+  { value: "total_sale", label: "TT venda" },
+  { value: "avg_sales", label: "Média VD" },
+  { value: "avg_total", label: "TT média" },
+  { value: "minimum", label: "Mínimo" },
+];
+
+function parseFilterNumber(value: string): number | null {
+  const clean = value.trim().replace(/\s/g, "");
+  if (!clean) return null;
+  const normalized = clean.includes(",")
+    ? clean.replace(/\./g, "").replace(",", ".")
+    : clean;
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+}
 
 async function loadStock(): Promise<StockItem[]> {
   const all: StockItem[] = [];
@@ -43,14 +74,39 @@ export function DukampStock() {
   const [importRows, setImportRows] = useState<StockItem[] | null>(null);
   const [importFile, setImportFile] = useState("");
   const [importing, setImporting] = useState(false);
+  const [alphabeticalOrder, setAlphabeticalOrder] = useState<"az" | "za">("az");
+  const [numericField, setNumericField] = useState<NumericField>("stock");
+  const [numericOperator, setNumericOperator] = useState<"gt" | "lt">("gt");
+  const [numericValue, setNumericValue] = useState("");
 
   const rows = stock.data ?? [];
   const filtered = useMemo(() => {
     const term = searchKey(search.trim());
-    return term
-      ? rows.filter((row) => searchKey(`${row.code} ${row.name} ${row.brand ?? ""}`).includes(term))
-      : rows;
-  }, [rows, search]);
+    const threshold = parseFilterNumber(numericValue);
+
+    const result = rows.filter((row) => {
+      if (term && !searchKey(`${row.code} ${row.name} ${row.brand ?? ""}`).includes(term)) {
+        return false;
+      }
+
+      if (threshold !== null) {
+        const current = row[numericField];
+        if (current == null) return false;
+        if (numericOperator === "gt" && !(current > threshold)) return false;
+        if (numericOperator === "lt" && !(current < threshold)) return false;
+      }
+
+      return true;
+    });
+
+    return [...result].sort((a, b) => {
+      const comparison = a.name.localeCompare(b.name, "pt-BR", {
+        sensitivity: "base",
+        numeric: true,
+      });
+      return alphabeticalOrder === "az" ? comparison : -comparison;
+    });
+  }, [rows, search, alphabeticalOrder, numericField, numericOperator, numericValue]);
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageRows = filtered.slice((Math.min(page, pageCount) - 1) * PAGE_SIZE, Math.min(page, pageCount) * PAGE_SIZE);
   const chosen = rows.filter((row) => selected.has(row.code));
@@ -158,6 +214,95 @@ export function DukampStock() {
             <FileDown className="mr-2 h-4 w-4" /> Baixar PDF
           </Button>
         </div>
+        <div className="rounded-md border bg-muted/20 p-3 space-y-3">
+          <div className="flex items-center gap-2 text-sm font-semibold">
+            <SlidersHorizontal className="h-4 w-4" />
+            Filtros e ordenação
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <label className="space-y-1">
+              <span className="text-xs text-muted-foreground">Ordem alfabética</span>
+              <select
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                value={alphabeticalOrder}
+                onChange={(event) => {
+                  setAlphabeticalOrder(event.target.value as "az" | "za");
+                  setPage(1);
+                }}
+              >
+                <option value="az">A → Z</option>
+                <option value="za">Z → A</option>
+              </select>
+            </label>
+
+            <label className="space-y-1">
+              <span className="text-xs text-muted-foreground">Filtrar campo</span>
+              <select
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                value={numericField}
+                onChange={(event) => {
+                  setNumericField(event.target.value as NumericField);
+                  setPage(1);
+                }}
+              >
+                {NUMERIC_FILTERS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="space-y-1">
+              <span className="text-xs text-muted-foreground">Condição</span>
+              <select
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                value={numericOperator}
+                onChange={(event) => {
+                  setNumericOperator(event.target.value as "gt" | "lt");
+                  setPage(1);
+                }}
+              >
+                <option value="gt">Maior que</option>
+                <option value="lt">Menor que</option>
+              </select>
+            </label>
+
+            <label className="space-y-1">
+              <span className="text-xs text-muted-foreground">Valor</span>
+              <Input
+                inputMode="decimal"
+                placeholder="Ex.: 100 ou 100,50"
+                value={numericValue}
+                onChange={(event) => {
+                  setNumericValue(event.target.value);
+                  setPage(1);
+                }}
+              />
+            </label>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={!numericValue && alphabeticalOrder === "az" && !search}
+              onClick={() => {
+                setSearch("");
+                setAlphabeticalOrder("az");
+                setNumericField("stock");
+                setNumericOperator("gt");
+                setNumericValue("");
+                setPage(1);
+              }}
+            >
+              <X className="mr-2 h-4 w-4" /> Limpar filtros
+            </Button>
+            {numericValue && parseFilterNumber(numericValue) === null && (
+              <span className="text-xs text-destructive">Digite um valor numérico válido.</span>
+            )}
+          </div>
+        </div>
+
         <div className="flex flex-wrap gap-2">
           <Button variant="secondary" size="sm" disabled={!filtered.length} onClick={() => setSelected((prev) => new Set([...prev, ...filtered.map((item) => item.code)]))}>
             Selecionar todos os resultados
