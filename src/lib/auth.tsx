@@ -33,6 +33,22 @@ type AuthCtx = {
 
 const Ctx = createContext<AuthCtx | null>(null);
 
+async function readAdminRole(userId: string): Promise<boolean> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const { data, error } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    if (!error) return Boolean(data);
+    if (attempt === 2) throw error;
+    await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
+  }
+  return false;
+}
+
 async function hasProtectedSellerRole(accessToken?: string): Promise<boolean> {
   if (!accessToken) return false;
   try {
@@ -65,9 +81,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (nextSession?.user) {
         setLoading(true);
         setTimeout(() => {
-          void loadProfile(nextSession.user, nextSession.access_token).finally(() => {
-            setLoading(false);
-          });
+          void loadProfile(nextSession.user, nextSession.access_token)
+            .catch((error) => console.error("[auth] Falha ao carregar permissões:", error))
+            .finally(() => setLoading(false));
         }, 0);
       } else {
         setIsAdmin(false);
@@ -83,20 +99,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (data.session?.user) {
         await loadProfile(data.session.user, data.session.access_token);
       }
-      setLoading(false);
-    });
+    }).catch((error) => {
+      console.error("[auth] Falha ao carregar sessão:", error);
+    }).finally(() => setLoading(false));
 
     return () => subscription.subscription.unsubscribe();
   }, []);
 
   async function loadProfile(authUser: User, accessToken?: string) {
-    const [rolesResult, profileResult, sellerRole] = await Promise.all([
-      supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", authUser.id)
-        .eq("role", "admin")
-        .maybeSingle(),
+    const [admin, profileResult, sellerRole] = await Promise.all([
+      readAdminRole(authUser.id),
       (supabase as any)
         .from("profiles")
         .select("account_type, approval_notified")
@@ -105,12 +117,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       hasProtectedSellerRole(accessToken),
     ]);
 
-    const admin = Boolean(rolesResult.data);
     setIsAdmin(admin);
 
     const profile: any = profileResult.data ?? {};
     const profileType = (profile.account_type ?? "cliente") as AccountType;
-    const effectiveType: AccountType = !admin && sellerRole ? "vendedor" : profileType;
+    const effectiveType: AccountType = admin ? "admin" : sellerRole ? "vendedor" : profileType;
 
     setAccountType(effectiveType);
     if (
