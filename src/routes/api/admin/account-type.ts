@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PROTECTED_ADMIN_EMAIL } from "@/lib/constants";
+import { isMasterAdminUserId } from "@/lib/constants";
 
 type AccountType = "cliente" | "revendedor" | "produtor" | "empresa" | "vendedor" | "admin";
 
@@ -51,10 +51,8 @@ async function authorizeMasterAdmin(request: Request) {
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin.auth.getUser(token);
-  const email = data.user?.email?.toLowerCase();
-
   if (error || !data.user) return { response: errorResponse("Sessão inválida.", 401) } as const;
-  if (email !== PROTECTED_ADMIN_EMAIL.toLowerCase()) {
+  if (!isMasterAdminUserId(data.user.id)) {
     return {
       response: errorResponse("Apenas o Administrador Mestre pode gerenciar contas.", 403),
     } as const;
@@ -161,8 +159,7 @@ export const Route = createFileRoute("/api/admin/account-type")({
             return errorResponse("Conta não encontrada.", 404);
           }
 
-          const targetEmail = (targetResult.data.user.email ?? "").toLowerCase();
-          if (targetEmail === PROTECTED_ADMIN_EMAIL.toLowerCase()) {
+          if (isMasterAdminUserId(targetResult.data.user.id)) {
             return errorResponse("Esta conta é protegida.", 403);
           }
 
@@ -213,12 +210,7 @@ export const Route = createFileRoute("/api/admin/account-type")({
         if (profileResult.error) return errorResponse(profileResult.error.message, 500);
         if (!profileResult.data) return errorResponse("Conta não encontrada.", 404);
 
-        const targetEmail = (
-          targetResult.data.user.email ??
-          profileResult.data.email ??
-          ""
-        ).toLowerCase();
-        if (targetEmail === PROTECTED_ADMIN_EMAIL.toLowerCase()) {
+        if (isMasterAdminUserId(targetResult.data.user.id)) {
           return errorResponse("Esta conta é protegida.", 403);
         }
 
