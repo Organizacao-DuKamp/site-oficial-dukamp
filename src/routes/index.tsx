@@ -142,25 +142,27 @@ function Home() {
   const featured = useQuery({
     queryKey: ["products", "featured"],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("products")
         .select(PRODUCT_COLS)
         .eq("active", true)
         .eq("featured", true)
         .gt("stock", 0)
         .limit(20);
+      if (error) throw error;
       return data ?? [];
     },
   });
   const categories = useQuery({
     queryKey: ["catalogs", "active"],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("catalogs")
         .select("id,name,slug,active,sort_order")
         .eq("active", true)
         .order("sort_order", { ascending: true })
         .order("name", { ascending: true });
+      if (error) throw error;
       return data ?? [];
     },
   });
@@ -171,13 +173,14 @@ function Home() {
     queryFn: async () => {
       const ids = (categories.data ?? []).map((c) => c.id);
       if (ids.length === 0) return [];
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("products")
         .select(PRODUCT_COLS)
         .eq("active", true)
         .gt("stock", 0)
         .in("catalog_id", ids)
         .order("created_at", { ascending: false });
+      if (error) throw error;
       return data ?? [];
     },
   });
@@ -254,7 +257,28 @@ function Home() {
             showMobileQuotes={showMobileQuotes}
           />
         )}
+        {featured.isError && (
+          <div role="alert" className="rounded border p-4 text-sm">
+            Não foi possível carregar os produtos em destaque.{" "}
+            <button type="button" className="underline" onClick={() => void featured.refetch()}>
+              Tentar novamente
+            </button>
+          </div>
+        )}
       </section>
+
+      {(categories.isError || allProducts.isError) && (
+        <div role="alert" className="rounded border p-4 text-sm">
+          Não foi possível carregar o catálogo.{" "}
+          <button
+            type="button"
+            className="underline"
+            onClick={() => void (categories.isError ? categories.refetch() : allProducts.refetch())}
+          >
+            Tentar novamente
+          </button>
+        </div>
+      )}
 
       {visibleSections.map((s, idx) => {
         const content = (
