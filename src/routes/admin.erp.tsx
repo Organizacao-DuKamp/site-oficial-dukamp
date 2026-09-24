@@ -2,12 +2,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { ArrowLeft, ChevronRight, ClipboardList, Database, FileText, Search, Settings2, ShoppingCart } from "lucide-react";
 import { ErpProductMaintenance } from "@/components/admin/ErpProductMaintenance";
+import { ErpSupplierMaintenance } from "@/components/admin/ErpSupplierMaintenance";
 
 export const Route = createFileRoute("/admin/erp")({
   component: ErpPage,
 });
 
-type Section = "inicio" | "compras" | "cadastros" | "preco-produto" | "relatorios" | "consultas" | "operacoes";
+type Section = "inicio" | "compras" | "cadastros" | "preco-produto" | "fornecedores" | "relatorios" | "consultas" | "operacoes";
 
 const purchaseEntries: Record<"cadastros" | "relatorios" | "consultas", string[]> = {
   cadastros: [
@@ -61,7 +62,7 @@ function ErpPage() {
     { label: "Operações Especiais", icon: ClipboardList, section: "operacoes" },
   ] as const;
   const currentOption = options.find((option) => option.section === section);
-  const sectionLabel = section === "preco-produto" ? "Tabela Preço/Produto" : currentOption?.label;
+  const sectionLabel = section === "preco-produto" ? "Tabela Preço/Produto" : section === "fornecedores" ? "Fornecedores" : currentOption?.label;
 
   function menuButton(label: string, icon: typeof Database, onClick: () => void) {
     const Icon = icon;
@@ -90,13 +91,13 @@ function ErpPage() {
         </p>
       </div>
 
-      <div className={`${section === "preco-produto" ? "max-w-6xl" : "max-w-2xl"} space-y-3`}>
+      <div className={`${section === "preco-produto" || section === "fornecedores" ? "max-w-6xl" : "max-w-2xl"} space-y-3`}>
         <div className="mb-4">
           <h2 className="text-lg font-semibold">
             {section === "inicio" ? "Módulos" : section === "compras" ? "Compras" : sectionLabel}
           </h2>
           {section !== "inicio" && (
-            <p className="text-sm text-muted-foreground">ERP / Compras{section !== "compras" ? ` / ${section === "preco-produto" ? "Manutenção Cadastros / " : ""}${sectionLabel}` : ""}</p>
+            <p className="text-sm text-muted-foreground">ERP / Compras{section !== "compras" ? ` / ${section === "preco-produto" || section === "fornecedores" ? "Manutenção Cadastros / " : ""}${sectionLabel}` : ""}</p>
           )}
         </div>
 
@@ -113,7 +114,11 @@ function ErpPage() {
           <ErpProductMaintenance onBack={() => setSection("cadastros")} />
         )}
 
-        {section !== "inicio" && section !== "compras" && section !== "preco-produto" && (
+        {section === "fornecedores" && (
+          <ErpSupplierMaintenance onBack={() => setSection("cadastros")} />
+        )}
+
+        {section !== "inicio" && section !== "compras" && section !== "preco-produto" && section !== "fornecedores" && (
           <>
             {section === "operacoes" ? (
               <div className="rounded-lg border bg-card p-6 text-sm text-muted-foreground">
@@ -128,8 +133,8 @@ function ErpPage() {
                       <span className="w-6 shrink-0 font-mono text-muted-foreground">
                         {index === 9 ? "0" : index === 10 ? "A" : index + 1}.
                       </span>
-                      {section === "cadastros" && index === 0 ? (
-                        <button type="button" onClick={() => setSection("preco-produto")} className="flex flex-1 items-center justify-between text-left font-medium text-primary hover:underline">
+                      {section === "cadastros" && index < 2 ? (
+                        <button type="button" onClick={() => setSection(index === 0 ? "preco-produto" : "fornecedores")} className="flex flex-1 items-center justify-between text-left font-medium text-primary hover:underline">
                           {entry}<ChevronRight className="h-4 w-4" aria-hidden="true" />
                         </button>
                       ) : (
