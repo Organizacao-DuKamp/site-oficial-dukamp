@@ -6,8 +6,51 @@ export const Route = createFileRoute("/admin/erp")({
   component: ErpPage,
 });
 
+type Section = "inicio" | "compras" | "cadastros" | "relatorios" | "consultas" | "operacoes";
+
+const purchaseEntries: Record<"cadastros" | "relatorios" | "consultas", string[]> = {
+  cadastros: [
+    "Tabela Preço/Produto",
+    "Fornecedores",
+    "Pedidos Compra",
+    "Falta/Novas Mercadorias",
+    "Agenda Vendedores",
+    "Índices Preço/Vlrs Compras",
+    "Metas Vendas Produtos",
+    "Unidades Medidas Produtos",
+    "Metas Pagamentos Compras",
+    "Áreas Produtos/Responsável",
+    "Roteiro de Entrega",
+  ],
+  relatorios: [
+    "Tabela Preço",
+    "Produtos/Sugestão Compras",
+    "Vendas/Premiação Clie/Prod",
+    "Curva ABC Fornec/Prod/Grupo",
+    "Prod Custo/Venda",
+    "Curva ABC Vendedor/Clientes",
+    "Vendas/Premiação Pedidos",
+    "Compras Produtos PIS/COFINS",
+    "Produtos em Promoção",
+    "Curva ABC Compras",
+    "Roteiro de Entrega",
+  ],
+  consultas: [
+    "Margem Venda",
+    "Fluxo Vencimentos",
+    "Notas Fiscal Venda",
+    "Clientes/Títulos",
+    "Fornecedor/Títulos",
+    "Pedidos Venda",
+    "Comissão Venda",
+    "Comissão <Teste>",
+    "Prêmio Metas Venda Prod",
+    "Meta Venda por Vendedor",
+    "Log Produtos",
+  ],
+};
+
 function ErpPage() {
-  type Section = "inicio" | "compras" | "cadastros" | "relatorios" | "consultas" | "operacoes";
   const [section, setSection] = useState<Section>("inicio");
 
   const options = [
@@ -64,22 +107,27 @@ function ErpPage() {
           </>
         )}
 
-        {section === "cadastros" && (
-          <div className="flex items-center gap-4 rounded-lg border bg-muted/40 p-4 text-muted-foreground" aria-disabled="true">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-              <Database className="h-5 w-5" aria-hidden="true" />
-            </span>
-            <span className="flex-1 font-medium">Tabela preço/produto</span>
-            <span className="text-xs">Em breve</span>
-          </div>
-        )}
-
         {section !== "inicio" && section !== "compras" && (
           <>
-            {section !== "cadastros" && (
+            {section === "operacoes" ? (
               <div className="rounded-lg border bg-card p-6 text-sm text-muted-foreground">
                 Funcionalidades em preparação.
               </div>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground">Estas opções serão implementadas gradualmente.</p>
+                <ol className="overflow-hidden rounded-lg border bg-card divide-y">
+                  {purchaseEntries[section].map((entry, index) => (
+                    <li key={entry} className="flex items-center gap-4 px-4 py-3 text-sm">
+                      <span className="w-6 shrink-0 font-mono text-muted-foreground">
+                        {index === 9 ? "0" : index === 10 ? "A" : index + 1}.
+                      </span>
+                      <span className="flex-1">{entry}</span>
+                      <span className="text-xs text-muted-foreground">Em breve</span>
+                    </li>
+                  ))}
+                </ol>
+              </>
             )}
             {menuButton("Voltar", ArrowLeft, () => setSection("compras"))}
           </>
