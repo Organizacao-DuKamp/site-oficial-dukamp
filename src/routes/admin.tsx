@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard, Package, Tag, FolderTree, Image as ImageIcon,
   Megaphone, Users, Settings, LogOut, ExternalLink, MessageSquare, Menu, ClipboardList, FileText, RefreshCw, Navigation,
-  ShoppingBag, ChevronDown, BarChart3, History, ListOrdered, Boxes, UserSquare2, Bell, WalletCards,
+  ShoppingBag, ChevronDown, BarChart3, History, ListOrdered, Boxes, UserSquare2, Bell, WalletCards, Database,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -44,6 +44,7 @@ const NAV: NavEntry[] = [
       { to: "/admin/vendas/atualizar-valores", label: "Atualizar valores", icon: RefreshCw },
     ],
   },
+  { to: "/admin/erp", label: "ERP", icon: Database },
   { to: "/admin/despesas-dukamp", label: "Despesas DuKamp", icon: WalletCards, masterOnly: true },
   { to: "/admin/equipe-vendas", label: "Equipe de Vendas", icon: UserSquare2 },
   { to: "/admin/banners", label: "Banners", icon: ImageIcon },
