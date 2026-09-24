@@ -35,6 +35,7 @@ import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
 import { Route as AdminConfiguracoesRouteImport } from './routes/admin.configuracoes'
 import { Route as AdminDespesasDukampRouteImport } from './routes/admin.despesas-dukamp'
 import { Route as AdminEquipeVendasRouteImport } from './routes/admin.equipe-vendas'
+import { Route as AdminErpRouteImport } from './routes/admin.erp'
 import { Route as AdminEstoqueRouteImport } from './routes/admin.estoque'
 import { Route as AdminFooterRouteImport } from './routes/admin.footer'
 import { Route as AdminNavbarRouteImport } from './routes/admin.navbar'
@@ -214,6 +215,11 @@ const AdminDespesasDukampRoute = AdminDespesasDukampRouteImport.update({
 const AdminEquipeVendasRoute = AdminEquipeVendasRouteImport.update({
   id: '/equipe-vendas',
   path: '/equipe-vendas',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminErpRoute = AdminErpRouteImport.update({
+  id: '/erp',
+  path: '/erp',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminEstoqueRoute = AdminEstoqueRouteImport.update({
@@ -503,6 +509,7 @@ export interface FileRoutesByFullPath {
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/despesas-dukamp': typeof AdminDespesasDukampRoute
   '/admin/equipe-vendas': typeof AdminEquipeVendasRoute
+  '/admin/erp': typeof AdminErpRoute
   '/admin/estoque': typeof AdminEstoqueRoute
   '/admin/footer': typeof AdminFooterRoute
   '/admin/navbar': typeof AdminNavbarRoute
@@ -577,6 +584,7 @@ export interface FileRoutesByTo {
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/despesas-dukamp': typeof AdminDespesasDukampRoute
   '/admin/equipe-vendas': typeof AdminEquipeVendasRoute
+  '/admin/erp': typeof AdminErpRoute
   '/admin/estoque': typeof AdminEstoqueRoute
   '/admin/footer': typeof AdminFooterRoute
   '/admin/navbar': typeof AdminNavbarRoute
@@ -656,6 +664,7 @@ export interface FileRoutesById {
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/despesas-dukamp': typeof AdminDespesasDukampRoute
   '/admin/equipe-vendas': typeof AdminEquipeVendasRoute
+  '/admin/erp': typeof AdminErpRoute
   '/admin/estoque': typeof AdminEstoqueRoute
   '/admin/footer': typeof AdminFooterRoute
   '/admin/navbar': typeof AdminNavbarRoute
@@ -736,6 +745,7 @@ export interface FileRouteTypes {
     | '/admin/configuracoes'
     | '/admin/despesas-dukamp'
     | '/admin/equipe-vendas'
+    | '/admin/erp'
     | '/admin/estoque'
     | '/admin/footer'
     | '/admin/navbar'
@@ -810,6 +820,7 @@ export interface FileRouteTypes {
     | '/admin/configuracoes'
     | '/admin/despesas-dukamp'
     | '/admin/equipe-vendas'
+    | '/admin/erp'
     | '/admin/estoque'
     | '/admin/footer'
     | '/admin/navbar'
@@ -888,6 +899,7 @@ export interface FileRouteTypes {
     | '/admin/configuracoes'
     | '/admin/despesas-dukamp'
     | '/admin/equipe-vendas'
+    | '/admin/erp'
     | '/admin/estoque'
     | '/admin/footer'
     | '/admin/navbar'
@@ -1168,6 +1180,13 @@ declare module '@tanstack/react-router' {
       path: '/equipe-vendas'
       fullPath: '/admin/equipe-vendas'
       preLoaderRoute: typeof AdminEquipeVendasRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/erp': {
+      id: '/admin/erp'
+      path: '/erp'
+      fullPath: '/admin/erp'
+      preLoaderRoute: typeof AdminErpRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/estoque': {
@@ -1533,6 +1552,7 @@ interface AdminRouteChildren {
   AdminConfiguracoesRoute: typeof AdminConfiguracoesRoute
   AdminDespesasDukampRoute: typeof AdminDespesasDukampRoute
   AdminEquipeVendasRoute: typeof AdminEquipeVendasRoute
+  AdminErpRoute: typeof AdminErpRoute
   AdminEstoqueRoute: typeof AdminEstoqueRoute
   AdminFooterRoute: typeof AdminFooterRoute
   AdminNavbarRoute: typeof AdminNavbarRoute
@@ -1558,6 +1578,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminConfiguracoesRoute: AdminConfiguracoesRoute,
   AdminDespesasDukampRoute: AdminDespesasDukampRoute,
   AdminEquipeVendasRoute: AdminEquipeVendasRoute,
+  AdminErpRoute: AdminErpRoute,
   AdminEstoqueRoute: AdminEstoqueRoute,
   AdminFooterRoute: AdminFooterRoute,
   AdminNavbarRoute: AdminNavbarRoute,
