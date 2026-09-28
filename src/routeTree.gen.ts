@@ -69,6 +69,7 @@ import { Route as ApiAccountQuotesRouteImport } from './routes/api/account/quote
 import { Route as ApiAccountSellerChatRouteImport } from './routes/api/account/seller-chat'
 import { Route as ApiAccountSellerLinkRouteImport } from './routes/api/account/seller-link'
 import { Route as ApiAdminAccountTypeRouteImport } from './routes/api/admin/account-type'
+import { Route as ApiAdminErpMarginVendaRouteImport } from './routes/api/admin/erp-margin-venda'
 import { Route as ApiAdminPasswordRecoveryRouteImport } from './routes/api/admin/password-recovery'
 import { Route as ApiAdminSellerMarginReportRouteImport } from './routes/api/admin/seller-margin-report'
 import { Route as ApiAdminSellerMarginReportsRouteImport } from './routes/api/admin/seller-margin-reports'
@@ -390,6 +391,11 @@ const ApiAdminAccountTypeRoute = ApiAdminAccountTypeRouteImport.update({
   path: '/api/admin/account-type',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminErpMarginVendaRoute = ApiAdminErpMarginVendaRouteImport.update({
+  id: '/api/admin/erp-margin-venda',
+  path: '/api/admin/erp-margin-venda',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminPasswordRecoveryRoute =
   ApiAdminPasswordRecoveryRouteImport.update({
     id: '/api/admin/password-recovery',
@@ -543,6 +549,7 @@ export interface FileRoutesByFullPath {
   '/api/account/seller-chat': typeof ApiAccountSellerChatRoute
   '/api/account/seller-link': typeof ApiAccountSellerLinkRoute
   '/api/admin/account-type': typeof ApiAdminAccountTypeRoute
+  '/api/admin/erp-margin-venda': typeof ApiAdminErpMarginVendaRoute
   '/api/admin/password-recovery': typeof ApiAdminPasswordRecoveryRoute
   '/api/admin/seller-margin-report': typeof ApiAdminSellerMarginReportRoute
   '/api/admin/seller-margin-reports': typeof ApiAdminSellerMarginReportsRoute
@@ -618,6 +625,7 @@ export interface FileRoutesByTo {
   '/api/account/seller-chat': typeof ApiAccountSellerChatRoute
   '/api/account/seller-link': typeof ApiAccountSellerLinkRoute
   '/api/admin/account-type': typeof ApiAdminAccountTypeRoute
+  '/api/admin/erp-margin-venda': typeof ApiAdminErpMarginVendaRoute
   '/api/admin/password-recovery': typeof ApiAdminPasswordRecoveryRoute
   '/api/admin/seller-margin-report': typeof ApiAdminSellerMarginReportRoute
   '/api/admin/seller-margin-reports': typeof ApiAdminSellerMarginReportsRoute
@@ -698,6 +706,7 @@ export interface FileRoutesById {
   '/api/account/seller-chat': typeof ApiAccountSellerChatRoute
   '/api/account/seller-link': typeof ApiAccountSellerLinkRoute
   '/api/admin/account-type': typeof ApiAdminAccountTypeRoute
+  '/api/admin/erp-margin-venda': typeof ApiAdminErpMarginVendaRoute
   '/api/admin/password-recovery': typeof ApiAdminPasswordRecoveryRoute
   '/api/admin/seller-margin-report': typeof ApiAdminSellerMarginReportRoute
   '/api/admin/seller-margin-reports': typeof ApiAdminSellerMarginReportsRoute
@@ -779,6 +788,7 @@ export interface FileRouteTypes {
     | '/api/account/seller-chat'
     | '/api/account/seller-link'
     | '/api/admin/account-type'
+    | '/api/admin/erp-margin-venda'
     | '/api/admin/password-recovery'
     | '/api/admin/seller-margin-report'
     | '/api/admin/seller-margin-reports'
@@ -854,6 +864,7 @@ export interface FileRouteTypes {
     | '/api/account/seller-chat'
     | '/api/account/seller-link'
     | '/api/admin/account-type'
+    | '/api/admin/erp-margin-venda'
     | '/api/admin/password-recovery'
     | '/api/admin/seller-margin-report'
     | '/api/admin/seller-margin-reports'
@@ -933,6 +944,7 @@ export interface FileRouteTypes {
     | '/api/account/seller-chat'
     | '/api/account/seller-link'
     | '/api/admin/account-type'
+    | '/api/admin/erp-margin-venda'
     | '/api/admin/password-recovery'
     | '/api/admin/seller-margin-report'
     | '/api/admin/seller-margin-reports'
@@ -982,6 +994,7 @@ export interface RootRouteChildren {
   ApiAccountSellerChatRoute: typeof ApiAccountSellerChatRoute
   ApiAccountSellerLinkRoute: typeof ApiAccountSellerLinkRoute
   ApiAdminAccountTypeRoute: typeof ApiAdminAccountTypeRoute
+  ApiAdminErpMarginVendaRoute: typeof ApiAdminErpMarginVendaRoute
   ApiAdminPasswordRecoveryRoute: typeof ApiAdminPasswordRecoveryRoute
   ApiAdminSellerMarginReportRoute: typeof ApiAdminSellerMarginReportRoute
   ApiAdminSellerMarginReportsRoute: typeof ApiAdminSellerMarginReportsRoute
@@ -1420,6 +1433,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminAccountTypeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/erp-margin-venda': {
+      id: '/api/admin/erp-margin-venda'
+      path: '/api/admin/erp-margin-venda'
+      fullPath: '/api/admin/erp-margin-venda'
+      preLoaderRoute: typeof ApiAdminErpMarginVendaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/password-recovery': {
       id: '/api/admin/password-recovery'
       path: '/api/admin/password-recovery'
@@ -1679,6 +1699,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAccountSellerChatRoute: ApiAccountSellerChatRoute,
   ApiAccountSellerLinkRoute: ApiAccountSellerLinkRoute,
   ApiAdminAccountTypeRoute: ApiAdminAccountTypeRoute,
+  ApiAdminErpMarginVendaRoute: ApiAdminErpMarginVendaRoute,
   ApiAdminPasswordRecoveryRoute: ApiAdminPasswordRecoveryRoute,
   ApiAdminSellerMarginReportRoute: ApiAdminSellerMarginReportRoute,
   ApiAdminSellerMarginReportsRoute: ApiAdminSellerMarginReportsRoute,
