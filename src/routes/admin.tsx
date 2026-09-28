@@ -7,14 +7,26 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard, Package, Tag, FolderTree, Image as ImageIcon,
   Megaphone, Users, Settings, LogOut, ExternalLink, MessageSquare, Menu, ClipboardList, FileText, RefreshCw, Navigation,
-  ShoppingBag, ChevronDown, BarChart3, History, ListOrdered, Boxes, UserSquare2, Bell, WalletCards, Database,
+  ShoppingBag, ChevronDown, BarChart3, History, ListOrdered, Boxes, UserSquare2, Bell, WalletCards, Database, Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { AdminInstallProvider } from "@/lib/admin-install";
 
 export const Route = createFileRoute("/admin")({
   ssr: false,
-  component: AdminLayout,
+  head: () => ({
+    links: [
+      { rel: "manifest", href: "/admin-app.webmanifest" },
+      { rel: "apple-touch-icon", href: "/admin-icon-180.png" },
+    ],
+    meta: [
+      { name: "theme-color", content: "#103e32" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-title", content: "DuKamp Admin" },
+    ],
+  }),
+  component: () => <AdminInstallProvider><AdminLayout /></AdminInstallProvider>,
 });
 
 type NavLeaf = { to: string; label: string; icon: any; exact?: boolean; masterOnly?: boolean; search?: Record<string, string> };
@@ -163,6 +175,9 @@ function SidebarContent({ pathname, currentSearch, onNavigate, signOut, isMaster
         })}
       </nav>
       <div className="p-2 border-t space-y-1">
+        <Link to="/admin/baixar-app" onClick={onNavigate} className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm ${pathname === "/admin/baixar-app" ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}>
+          <Download className="h-4 w-4" /> Baixar aplicativo
+        </Link>
         <Link to="/" onClick={onNavigate} className="flex items-center gap-2 px-3 py-2 rounded-md text-sm hover:bg-accent">
           <ExternalLink className="h-4 w-4" /> Ver site
         </Link>

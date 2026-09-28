@@ -29,6 +29,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAnunciosRouteImport } from './routes/admin.anuncios'
 import { Route as AdminAtendimentosRouteImport } from './routes/admin.atendimentos'
 import { Route as AdminAtualizarValoresRouteImport } from './routes/admin.atualizar-valores'
+import { Route as AdminBaixarAppRouteImport } from './routes/admin.baixar-app'
 import { Route as AdminBannersRouteImport } from './routes/admin.banners'
 import { Route as AdminCatalogosRouteImport } from './routes/admin.catalogos'
 import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
@@ -186,6 +187,11 @@ const AdminAtendimentosRoute = AdminAtendimentosRouteImport.update({
 const AdminAtualizarValoresRoute = AdminAtualizarValoresRouteImport.update({
   id: '/atualizar-valores',
   path: '/atualizar-valores',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBaixarAppRoute = AdminBaixarAppRouteImport.update({
+  id: '/baixar-app',
+  path: '/baixar-app',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminBannersRoute = AdminBannersRouteImport.update({
@@ -509,6 +515,7 @@ export interface FileRoutesByFullPath {
   '/admin/anuncios': typeof AdminAnunciosRoute
   '/admin/atendimentos': typeof AdminAtendimentosRoute
   '/admin/atualizar-valores': typeof AdminAtualizarValoresRoute
+  '/admin/baixar-app': typeof AdminBaixarAppRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/catalogos': typeof AdminCatalogosRoute
   '/admin/categorias': typeof AdminCategoriasRoute
@@ -585,6 +592,7 @@ export interface FileRoutesByTo {
   '/admin/anuncios': typeof AdminAnunciosRoute
   '/admin/atendimentos': typeof AdminAtendimentosRoute
   '/admin/atualizar-valores': typeof AdminAtualizarValoresRoute
+  '/admin/baixar-app': typeof AdminBaixarAppRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/catalogos': typeof AdminCatalogosRoute
   '/admin/categorias': typeof AdminCategoriasRoute
@@ -666,6 +674,7 @@ export interface FileRoutesById {
   '/admin/anuncios': typeof AdminAnunciosRoute
   '/admin/atendimentos': typeof AdminAtendimentosRoute
   '/admin/atualizar-valores': typeof AdminAtualizarValoresRoute
+  '/admin/baixar-app': typeof AdminBaixarAppRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/catalogos': typeof AdminCatalogosRoute
   '/admin/categorias': typeof AdminCategoriasRoute
@@ -748,6 +757,7 @@ export interface FileRouteTypes {
     | '/admin/anuncios'
     | '/admin/atendimentos'
     | '/admin/atualizar-valores'
+    | '/admin/baixar-app'
     | '/admin/banners'
     | '/admin/catalogos'
     | '/admin/categorias'
@@ -824,6 +834,7 @@ export interface FileRouteTypes {
     | '/admin/anuncios'
     | '/admin/atendimentos'
     | '/admin/atualizar-valores'
+    | '/admin/baixar-app'
     | '/admin/banners'
     | '/admin/catalogos'
     | '/admin/categorias'
@@ -904,6 +915,7 @@ export interface FileRouteTypes {
     | '/admin/anuncios'
     | '/admin/atendimentos'
     | '/admin/atualizar-valores'
+    | '/admin/baixar-app'
     | '/admin/banners'
     | '/admin/catalogos'
     | '/admin/categorias'
@@ -1151,6 +1163,13 @@ declare module '@tanstack/react-router' {
       path: '/atualizar-valores'
       fullPath: '/admin/atualizar-valores'
       preLoaderRoute: typeof AdminAtualizarValoresRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/baixar-app': {
+      id: '/admin/baixar-app'
+      path: '/baixar-app'
+      fullPath: '/admin/baixar-app'
+      preLoaderRoute: typeof AdminBaixarAppRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/banners': {
@@ -1566,6 +1585,7 @@ interface AdminRouteChildren {
   AdminAnunciosRoute: typeof AdminAnunciosRoute
   AdminAtendimentosRoute: typeof AdminAtendimentosRoute
   AdminAtualizarValoresRoute: typeof AdminAtualizarValoresRoute
+  AdminBaixarAppRoute: typeof AdminBaixarAppRoute
   AdminBannersRoute: typeof AdminBannersRoute
   AdminCatalogosRoute: typeof AdminCatalogosRoute
   AdminCategoriasRoute: typeof AdminCategoriasRoute
@@ -1592,6 +1612,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAnunciosRoute: AdminAnunciosRoute,
   AdminAtendimentosRoute: AdminAtendimentosRoute,
   AdminAtualizarValoresRoute: AdminAtualizarValoresRoute,
+  AdminBaixarAppRoute: AdminBaixarAppRoute,
   AdminBannersRoute: AdminBannersRoute,
   AdminCatalogosRoute: AdminCatalogosRoute,
   AdminCategoriasRoute: AdminCategoriasRoute,
