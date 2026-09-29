@@ -279,7 +279,7 @@ export function ErpProductMaintenance({ onBack }: { onBack: () => void }) {
             <Button type="submit"><Search className="mr-2 h-4 w-4" /> Pesquisar</Button>
           </form>
           <div className="rounded-lg border bg-card">
-            <p className="border-b px-4 py-2 text-xs text-muted-foreground">{submitted ? "Resultado da pesquisa" : "Produtos disponíveis"}{results.data && ` · ${results.data.total.toLocaleString("pt-BR")} resultado(s)`}</p>
+            <p className="border-b px-4 py-2 text-xs text-muted-foreground">{submitted ? "Resultado da pesquisa" : "Produtos disponíveis"}{results.data && ` · ${results.data.total.toLocaleString("pt-BR")} resultado(s) · ${PAGE_SIZE} por página`}</p>
             {results.isPending ? <p className="p-4 text-sm">Carregando produtos...</p> : results.isError ? (
               <p role="alert" className="p-4 text-sm text-destructive">Erro ao consultar produtos: {results.error instanceof Error ? results.error.message : "tente novamente"}</p>
             ) : results.data?.items.length ? (
@@ -298,10 +298,24 @@ export function ErpProductMaintenance({ onBack }: { onBack: () => void }) {
           {results.data && results.data.total > PAGE_SIZE && (
             <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
               <span className="text-muted-foreground">Exibindo {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, results.data.total)} de {results.data.total.toLocaleString("pt-BR")}</span>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Button type="button" variant="outline" size="sm" disabled={page === 0 || results.isFetching} onClick={() => { setSelectedCode(null); setPage(0); }}>Primeira</Button>
                 <Button type="button" variant="outline" size="sm" disabled={page === 0 || results.isFetching} onClick={() => { setSelectedCode(null); setPage((current) => current - 1); }}>Anterior</Button>
-                <span>Página {page + 1} de {Math.ceil(results.data.total / PAGE_SIZE)}</span>
+                <form className="flex items-center gap-2" onSubmit={(event) => {
+                  event.preventDefault();
+                  const input = event.currentTarget.elements.namedItem("erp-product-page") as HTMLInputElement;
+                  const requested = Number(input.value);
+                  if (!Number.isInteger(requested)) return;
+                  setSelectedCode(null);
+                  setPage(Math.max(0, Math.min(requested - 1, Math.ceil(results.data.total / PAGE_SIZE) - 1)));
+                }}>
+                  <label htmlFor="erp-product-page">Página</label>
+                  <Input key={page} id="erp-product-page" name="erp-product-page" type="number" min={1} max={Math.ceil(results.data.total / PAGE_SIZE)} defaultValue={page + 1} className="h-8 w-20" />
+                  <span>de {Math.ceil(results.data.total / PAGE_SIZE)}</span>
+                  <Button type="submit" variant="outline" size="sm" disabled={results.isFetching}>Ir</Button>
+                </form>
                 <Button type="button" variant="outline" size="sm" disabled={(page + 1) * PAGE_SIZE >= results.data.total || results.isFetching} onClick={() => { setSelectedCode(null); setPage((current) => current + 1); }}>Próxima</Button>
+                <Button type="button" variant="outline" size="sm" disabled={(page + 1) * PAGE_SIZE >= results.data.total || results.isFetching} onClick={() => { setSelectedCode(null); setPage(Math.ceil(results.data.total / PAGE_SIZE) - 1); }}>Última</Button>
               </div>
             </div>
           )}
