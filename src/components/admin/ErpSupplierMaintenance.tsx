@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 
 type Values = Record<string, string>;
 type Supplier = { code: string; name: string; details: Values };
+type SupplierPage = { items: Supplier[]; total: number };
+const PAGE_SIZE = 50;
 type Mode = "menu" | "inclusao" | "alteracao" | "exclusao" | "consulta";
 
 const fields: [string, string][] = [
@@ -25,8 +27,8 @@ const fields: [string, string][] = [
 
 const db = supabase as any;
 
-async function listSuppliers(term: string): Promise<Supplier[]> {
-  let query = db.from("erp_suppliers").select("code,name,details").order("code", { ascending: true }).limit(50);
+async function listSuppliers(term: string, page: number): Promise<SupplierPage> {
+  let query = db.from("erp_suppliers").select("code,name,details", { count: "exact" }).order("code", { ascending: true });
   if (term) {
     const digits = term.replace(/\D/g, "");
     if (digits.length === term.length && digits.length <= 5) {
@@ -35,9 +37,9 @@ async function listSuppliers(term: string): Promise<Supplier[]> {
       query = query.ilike("name", "%" + term.replace(/[\\%_]/g, "\\$&") + "%");
     }
   }
-  const { data, error } = await query;
+  const { data, count, error } = await query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
   if (error) throw error;
-  return (data ?? []) as Supplier[];
+  return { items: (data ?? []) as Supplier[], total: count ?? 0 };
 }
 
 function SupplierDetails({ supplier }: { supplier: Supplier }) {
@@ -101,9 +103,10 @@ export function ErpSupplierMaintenance({ onBack }: { onBack: () => void }) {
   const [mode, setMode] = useState<Mode>("menu");
   const [search, setSearch] = useState("");
   const [submitted, setSubmitted] = useState("");
+  const [page, setPage] = useState(0);
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
-  const results = useQuery({ queryKey: ["erp-suppliers", submitted], queryFn: () => listSuppliers(submitted) });
-  const selected = results.data?.find((item) => item.code === selectedCode) ?? null;
+  const results = useQuery({ queryKey: ["erp-suppliers", submitted, page], queryFn: () => listSuppliers(submitted, page) });
+  const selected = results.data?.items.find((item) => item.code === selectedCode) ?? null;
 
   const save = useMutation({
     mutationFn: async ({ name, details }: { name: string; details: Values }) => {
@@ -122,6 +125,7 @@ export function ErpSupplierMaintenance({ onBack }: { onBack: () => void }) {
       await queryClient.invalidateQueries({ queryKey: ["erp-suppliers"] });
       setSearch(code);
       setSubmitted(code);
+      setPage(0);
       setSelectedCode(code);
       setMode("consulta");
     },
@@ -138,6 +142,7 @@ export function ErpSupplierMaintenance({ onBack }: { onBack: () => void }) {
       setSelectedCode(null);
       setSearch("");
       setSubmitted("");
+      setPage(0);
       await queryClient.invalidateQueries({ queryKey: ["erp-suppliers"] });
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : "Não foi possível excluir o fornecedor."),
@@ -148,6 +153,7 @@ export function ErpSupplierMaintenance({ onBack }: { onBack: () => void }) {
     setSelectedCode(null);
     setSearch("");
     setSubmitted("");
+    setPage(0);
   }
 
   const titles: Record<Mode, string> = {
@@ -189,7 +195,7 @@ export function ErpSupplierMaintenance({ onBack }: { onBack: () => void }) {
 
       {mode !== "inclusao" && (
         <>
-          <form className="flex flex-col gap-2 sm:flex-row" onSubmit={(event) => { event.preventDefault(); setSelectedCode(null); setSubmitted(search.trim()); }}>
+          <form className="flex flex-col gap-2 sm:flex-row" onSubmit={(event) => { event.preventDefault(); setSelectedCode(null); setPage(0); setSubmitted(search.trim()); }}>
             <label htmlFor="erp-supplier-search" className="sr-only">Código ou nome do fornecedor</label>
             <Input id="erp-supplier-search" inputMode="search" className="sm:max-w-md" value={search}
               onChange={(event) => setSearch(event.target.value)} placeholder="Digite o código ou nome do fornecedor" />
@@ -197,15 +203,16 @@ export function ErpSupplierMaintenance({ onBack }: { onBack: () => void }) {
           </form>
           <div className="rounded-lg border bg-card">
             <p className="border-b px-4 py-2 text-xs text-muted-foreground">
-              {submitted ? "Resultado da pesquisa" : "Fornecedores cadastrados (até 50)"}
+              {submitted ? "Resultado da pesquisa" : "Fornecedores cadastrados"}
+              {results.data && ` · ${results.data.total.toLocaleString("pt-BR")} resultado(s)`}
             </p>
             {results.isPending ? <p className="p-4 text-sm">Carregando fornecedores...</p> : results.isError ? (
               <p role="alert" className="p-4 text-sm text-destructive">
                 Erro ao consultar fornecedores: {results.error instanceof Error ? results.error.message : "tente novamente"}
               </p>
-            ) : results.data?.length ? (
+            ) : results.data?.items.length ? (
               <ul className="max-h-64 divide-y overflow-y-auto">
-                {results.data.map((supplier) => (
+                {results.data.items.map((supplier) => (
                   <li key={supplier.code}>
                     <button type="button" onClick={() => { setSelectedCode(supplier.code); if (mode === "menu") setMode("consulta"); }}
                       className={"flex w-full gap-3 px-4 py-2 text-left text-sm hover:bg-accent " + (selectedCode === supplier.code ? "bg-primary/10" : "")}>
@@ -217,6 +224,20 @@ export function ErpSupplierMaintenance({ onBack }: { onBack: () => void }) {
               </ul>
             ) : <p className="p-4 text-sm text-muted-foreground">Nenhum fornecedor encontrado. Use Inclusão para cadastrar o primeiro.</p>}
           </div>
+          {results.data && results.data.total > PAGE_SIZE && (
+            <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+              <span className="text-muted-foreground">
+                Exibindo {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, results.data.total)} de {results.data.total.toLocaleString("pt-BR")}
+              </span>
+              <div className="flex items-center gap-2">
+                <Button type="button" variant="outline" size="sm" disabled={page === 0 || results.isFetching}
+                  onClick={() => { setSelectedCode(null); setPage((current) => current - 1); }}>Anterior</Button>
+                <span>Página {page + 1} de {Math.ceil(results.data.total / PAGE_SIZE)}</span>
+                <Button type="button" variant="outline" size="sm" disabled={(page + 1) * PAGE_SIZE >= results.data.total || results.isFetching}
+                  onClick={() => { setSelectedCode(null); setPage((current) => current + 1); }}>Próxima</Button>
+              </div>
+            </div>
+          )}
           {selected && mode === "alteracao" && (
             <SupplierForm key={selected.code} initial={selected} saving={save.isPending}
               onSave={(name, details) => save.mutate({ name, details })} onCancel={() => setSelectedCode(null)} />
