@@ -11,15 +11,16 @@ type Supplier = { code: string; name: string; details: Values };
 type Mode = "menu" | "inclusao" | "alteracao" | "exclusao" | "consulta";
 
 const fields: [string, string][] = [
-  ["endereco", "Endereço"], ["cidade", "Cidade"], ["bairro", "Bairro"], ["cep", "CEP"],
+  ["endereco", "Endereço"], ["cidade", "Cidade"], ["uf", "UF"], ["codigo_cidade", "Código da cidade"], ["bairro", "Bairro"], ["cep", "CEP"],
   ["fone", "Fone"], ["fone_fax", "Fone/Fax"], ["cnpj", "CNPJ"], ["inscricao_estadual", "Inscrição Estadual"],
-  ["grupo_despesas", "Grupo Despesas"], ["data_cadastro", "Data Cadastro"],
+  ["grupo_despesas", "Grupo Despesas"], ["codigo_grupo_despesas", "Código do grupo"], ["data_cadastro", "Data Cadastro"],
   ["conta_contabil", "Conta Contábil"], ["email", "Email"], ["nome_fantasia", "Nome Fantasia"],
   ["contato", "Contato"], ["observacoes", "Observações"],
   ["data_ultima_compra", "Data Última Compra"], ["valor_ultima_compra", "Valor Última Compra"],
   ["data_maior_compra", "Data Maior Compra"], ["valor_maior_compra", "Valor Maior Compra"],
   ["compra_ano", "Compra Ano"], ["compra_ano_anterior", "Compra Ano Anterior"],
-  ["ultimo", "Último"],
+  ["indice_preco_venda", "Índice de preço de venda"], ["saldo_adicional", "Saldo adicional"],
+  ["vcgc_original", "CGC original"],
 ];
 
 const db = supabase as any;
