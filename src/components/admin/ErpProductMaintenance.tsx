@@ -7,11 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 type Values = Record<string, string>;
+type PriceRow = { prazo_dias?: number; tabela?: { preco?: string; comissao_percentual?: string }; produtor?: { preco?: string; comissao_percentual?: string }; revenda?: { preco?: string; comissao_percentual?: string }; tabela_endereco?: { preco?: string }; preco_web?: { preco?: string } };
+type ProductPage = { items: ErpProduct[]; total: number };
+const PAGE_SIZE = 50;
 type ErpProduct = {
   code: string;
   name: string;
   product_data: Values;
-  pricing_data: Values;
+  pricing_data: Values & { faixas?: PriceRow[] };
 };
 type Action = "tabela" | "alteracao" | "inclusao" | "exclusao" | "consulta";
 type Screen = "escolha" | "produto" | Action;
@@ -58,11 +61,10 @@ const priceFields: [string, string][] = [
 
 const db = supabase as any;
 
-async function listProducts(term: string): Promise<ErpProduct[]> {
+async function listProducts(term: string, page: number): Promise<ProductPage> {
   let query = db.from("erp_products")
-    .select("code,name,product_data,pricing_data")
-    .order("code", { ascending: true })
-    .limit(50);
+    .select("code,name,product_data,pricing_data", { count: "exact" })
+    .order("code", { ascending: true });
   if (term) {
     const code = term.replace(/\D/g, "");
     if (code && code.length === term.length && code.length <= 6) {
@@ -72,9 +74,9 @@ async function listProducts(term: string): Promise<ErpProduct[]> {
       query = query.ilike("name", `%${term.replace(/[\\%_]/g, "\\$&")}%`);
     }
   }
-  const { data, error } = await query;
+  const { data, count, error } = await query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
   if (error) throw error;
-  return (data ?? []) as ErpProduct[];
+  return { items: (data ?? []) as ErpProduct[], total: count ?? 0 };
 }
 
 function FieldGrid({ fields, values }: { fields: [string, string][]; values: Values }) {
@@ -96,6 +98,7 @@ function ProductDetails({ product, showPricing }: { product: ErpProduct; showPri
       <div className="rounded-lg border bg-card p-4">
         <p className="text-xs text-muted-foreground">Produto · {product.code}</p>
         <p className="mt-1 font-semibold">{product.name}</p>
+        {product.product_data?.status && <p className="mt-1 text-xs text-muted-foreground">Status na origem: {product.product_data.status}</p>}
       </div>
       {showPricing ? (
         <>
@@ -108,7 +111,21 @@ function ProductDetails({ product, showPricing }: { product: ErpProduct; showPri
                   <th key={title} className="px-3 py-2 font-medium">{title}</th>
                 ))}
               </tr></thead>
-              <tbody><tr><td colSpan={9} className="px-3 py-6 text-center text-muted-foreground">Nenhuma faixa de preço cadastrada.</td></tr></tbody>
+              <tbody>
+                {product.pricing_data?.faixas?.length ? product.pricing_data.faixas.map((row, index) => (
+                  <tr key={`${row.prazo_dias}-${index}`} className="border-t">
+                    <td className="px-3 py-2">{row.prazo_dias ?? "—"}</td>
+                    <td className="px-3 py-2">{row.tabela?.preco ?? "—"}</td>
+                    <td className="px-3 py-2">{row.tabela?.comissao_percentual ?? "—"}</td>
+                    <td className="px-3 py-2">{row.produtor?.preco ?? "—"}</td>
+                    <td className="px-3 py-2">{row.produtor?.comissao_percentual ?? "—"}</td>
+                    <td className="px-3 py-2">{row.revenda?.preco ?? "—"}</td>
+                    <td className="px-3 py-2">{row.revenda?.comissao_percentual ?? "—"}</td>
+                    <td className="px-3 py-2">{row.tabela_endereco?.preco ?? "—"}</td>
+                    <td className="px-3 py-2">{row.preco_web?.preco ?? "—"}</td>
+                  </tr>
+                )) : <tr><td colSpan={9} className="px-3 py-6 text-center text-muted-foreground">Nenhuma faixa de preço cadastrada.</td></tr>}
+              </tbody>
             </table>
           </div>
         </>
@@ -163,9 +180,10 @@ export function ErpProductMaintenance({ onBack }: { onBack: () => void }) {
   const [screen, setScreen] = useState<Screen>("escolha");
   const [search, setSearch] = useState("");
   const [submitted, setSubmitted] = useState("");
+  const [page, setPage] = useState(0);
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
-  const results = useQuery({ queryKey: ["erp-products", submitted], queryFn: () => listProducts(submitted) });
-  const selected = results.data?.find((product) => product.code === selectedCode) ?? null;
+  const results = useQuery({ queryKey: ["erp-products", submitted, page], queryFn: () => listProducts(submitted, page) });
+  const selected = results.data?.items.find((product) => product.code === selectedCode) ?? null;
   const save = useMutation({
     mutationFn: async ({ name, values }: { name: string; values: Values }) => {
       if (screen === "inclusao") {
@@ -185,6 +203,7 @@ export function ErpProductMaintenance({ onBack }: { onBack: () => void }) {
       toast.success(screen === "inclusao" ? `Produto cadastrado com código ${code}.` : "Produto atualizado.");
       await queryClient.invalidateQueries({ queryKey: ["erp-products"] });
       setSubmitted(code);
+      setPage(0);
       setSearch(code);
       setSelectedCode(code);
       setScreen("consulta");
@@ -201,6 +220,7 @@ export function ErpProductMaintenance({ onBack }: { onBack: () => void }) {
       setSelectedCode(null);
       setSearch("");
       setSubmitted("");
+      setPage(0);
       await queryClient.invalidateQueries({ queryKey: ["erp-products"] });
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : "Não foi possível excluir o produto."),
@@ -211,6 +231,7 @@ export function ErpProductMaintenance({ onBack }: { onBack: () => void }) {
     setSelectedCode(null);
     setSearch("");
     setSubmitted("");
+    setPage(0);
   }
 
   if (screen === "escolha") {
@@ -252,18 +273,18 @@ export function ErpProductMaintenance({ onBack }: { onBack: () => void }) {
         <ProductForm saving={save.isPending} onSave={(name, values) => save.mutate({ name, values })} onCancel={() => choose("produto")} />
       ) : (
         <>
-          <form className="flex flex-col gap-2 sm:flex-row" onSubmit={(event) => { event.preventDefault(); setSelectedCode(null); setSubmitted(search.trim()); }}>
+          <form className="flex flex-col gap-2 sm:flex-row" onSubmit={(event) => { event.preventDefault(); setSelectedCode(null); setPage(0); setSubmitted(search.trim()); }}>
             <label htmlFor="erp-product-search" className="sr-only">Código ou nome do produto</label>
             <Input id="erp-product-search" inputMode="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Digite o código ou nome do produto" className="sm:max-w-md" />
             <Button type="submit"><Search className="mr-2 h-4 w-4" /> Pesquisar</Button>
           </form>
           <div className="rounded-lg border bg-card">
-            <p className="border-b px-4 py-2 text-xs text-muted-foreground">{submitted ? "Resultado da pesquisa" : "Produtos disponíveis (até 50)"}</p>
+            <p className="border-b px-4 py-2 text-xs text-muted-foreground">{submitted ? "Resultado da pesquisa" : "Produtos disponíveis"}{results.data && ` · ${results.data.total.toLocaleString("pt-BR")} resultado(s)`}</p>
             {results.isPending ? <p className="p-4 text-sm">Carregando produtos...</p> : results.isError ? (
               <p role="alert" className="p-4 text-sm text-destructive">Erro ao consultar produtos: {results.error instanceof Error ? results.error.message : "tente novamente"}</p>
-            ) : results.data?.length ? (
+            ) : results.data?.items.length ? (
               <ul className="max-h-56 divide-y overflow-y-auto">
-                {results.data.map((product) => (
+                {results.data.items.map((product) => (
                   <li key={product.code}>
                     <button type="button" onClick={() => setSelectedCode(product.code)} className={`flex w-full gap-3 px-4 py-2 text-left text-sm hover:bg-accent ${selectedCode === product.code ? "bg-primary/10" : ""}`}>
                       <span className="font-mono text-muted-foreground">{product.code}</span><span>{product.name}</span>
@@ -274,6 +295,16 @@ export function ErpProductMaintenance({ onBack }: { onBack: () => void }) {
             ) : <p className="p-4 text-sm text-muted-foreground">Nenhum produto encontrado.</p>}
           </div>
 
+          {results.data && results.data.total > PAGE_SIZE && (
+            <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+              <span className="text-muted-foreground">Exibindo {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, results.data.total)} de {results.data.total.toLocaleString("pt-BR")}</span>
+              <div className="flex items-center gap-2">
+                <Button type="button" variant="outline" size="sm" disabled={page === 0 || results.isFetching} onClick={() => { setSelectedCode(null); setPage((current) => current - 1); }}>Anterior</Button>
+                <span>Página {page + 1} de {Math.ceil(results.data.total / PAGE_SIZE)}</span>
+                <Button type="button" variant="outline" size="sm" disabled={(page + 1) * PAGE_SIZE >= results.data.total || results.isFetching} onClick={() => { setSelectedCode(null); setPage((current) => current + 1); }}>Próxima</Button>
+              </div>
+            </div>
+          )}
           {selected && screen === "alteracao" && (
             <ProductForm key={selected.code} initial={selected} saving={save.isPending} onSave={(name, values) => save.mutate({ name, values })} onCancel={() => setSelectedCode(null)} />
           )}
