@@ -224,7 +224,7 @@ function ProductForm({
 }
 
 
-const derivedFields = new Set(["custo_final", "custo_ajustado", "percentual_minimo", "valor_minimo", "desconto_produto", "desconto_revenda"]);
+const derivedFields = new Set(["custo_final", "custo_ajustado", "valor_minimo", "desconto_produto", "desconto_revenda"]);
 
 function PricingForm({ initial, saving, onSave, onCancel }: {
   initial: ErpProduct;
@@ -237,7 +237,7 @@ function PricingForm({ initial, saving, onSave, onCancel }: {
   const bands = values.percentual_margens ?? [];
   return (
     <form onSubmit={(event) => { event.preventDefault(); if (!error) onSave(values); }} className="space-y-5">
-      <p className="text-sm text-muted-foreground">Edite a margem de cada tabela. A primeira margem ajusta as demais na mesma proporção. Preços por prazo, margens brutas, descontos e valor mínimo são recalculados antes de salvar.</p>
+      <p className="text-sm text-muted-foreground">Edite a margem de cada tabela. A primeira margem ajusta as demais na mesma proporção. Preços por prazo, margens brutas, descontos e valor mínimo são recalculados antes de salvar. Confira o percentual mínimo e as comissões por prazo com o COMPRAS.</p>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {priceFields.map(([key, label]) => (
           <label key={key} className="space-y-1 text-sm font-medium">
