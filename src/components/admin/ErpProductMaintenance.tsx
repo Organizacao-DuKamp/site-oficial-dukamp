@@ -175,6 +175,173 @@ function ProductForm({
   );
 }
 
+
+const recalculatedFields = new Set(["custo_real", "frete", "carga_descarga", "percentual_ajuste", "margem", "financiamento_mensal", "prazo_venda"]);
+const derivedFields = new Set(["custo_final", "custo_ajustado"]);
+
+function numberFrom(value: string | number | undefined): number | null {
+  if (value === undefined || value === "") return 0;
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  const text = value.trim().replace(/\\s/g, "");
+  if (!text) return 0;
+  const comma = text.lastIndexOf(",");
+  const dot = text.lastIndexOf(".");
+  const normalized = comma > dot ? text.replace(/\\./g, "").replace(",", ".") : text.replace(/,/g, "");
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function money(value: number, digits = 2): string {
+  return value.toFixed(digits);
+}
+
+function financingFactor(rate: number, days: number): number {
+  return 1 - (rate / 100) * days / 30;
+}
+
+function adjustedCost(values: Values): number | null {
+  const real = numberFrom(values.custo_real);
+  const freight = numberFrom(values.frete);
+  const handling = numberFrom(values.carga_descarga);
+  const adjustment = numberFrom(values.percentual_ajuste);
+  if (real === null || freight === null || handling === null || adjustment === null) return null;
+  return (real + freight + handling) * (1 + adjustment / 100);
+}
+
+function basePrice(rows: PriceRow[], channel: "tabela" | "produtor" | "revenda", rate: number): number | null {
+  for (const row of [...rows].sort((a, b) => (a.prazo_dias ?? 0) - (b.prazo_dias ?? 0))) {
+    const price = numberFrom(row[channel]?.preco);
+    const days = Number(row.prazo_dias ?? 0);
+    const factor = financingFactor(rate, days);
+    if (price !== null && price > 0 && factor > 0) return price * factor;
+  }
+  return null;
+}
+
+function recalculatePricing(previous: ErpProduct["pricing_data"], key: string, value: string): ErpProduct["pricing_data"] {
+  const next = { ...previous, [key]: value };
+  if (!recalculatedFields.has(key)) return next;
+  const oldCost = adjustedCost(previous);
+  const newCost = adjustedCost(next);
+  const oldRate = numberFrom(previous.financiamento_mensal);
+  const newRate = numberFrom(next.financiamento_mensal);
+  const desiredMargin = numberFrom(next.margem);
+  if (oldCost === null || newCost === null || oldRate === null || newRate === null || desiredMargin === null) return next;
+
+  const real = numberFrom(next.custo_real) ?? 0;
+  const freight = numberFrom(next.frete) ?? 0;
+  const handling = numberFrom(next.carga_descarga) ?? 0;
+  next.custo_final = money(real + freight + handling, 3);
+  next.custo_ajustado = money(newCost, 3);
+
+  const previousRows = previous.faixas ?? [];
+  const requestedDays = numberFrom(next.prazo_venda) ?? 56;
+  const lastDay = Number.isFinite(requestedDays) && requestedDays > 0 ? Math.round(requestedDays) : 56;
+  const rows = previousRows.length ? previousRows : key === "margem"
+    ? [0, Math.round(lastDay / 2), lastDay].map((prazo_dias) => ({ prazo_dias } as PriceRow))
+    : [];
+  const oldBases = {
+    tabela: basePrice(previousRows, "tabela", oldRate),
+    produtor: basePrice(previousRows, "produtor", oldRate),
+    revenda: basePrice(previousRows, "revenda", oldRate),
+  };
+  let tableBase = oldBases.tabela;
+  if (key === "margem") {
+    tableBase = newCost * (1 + desiredMargin / 100);
+  } else if (tableBase !== null && oldCost > 0) {
+    tableBase *= newCost / oldCost;
+  } else if (newCost > 0 && desiredMargin > -100) {
+    tableBase = newCost * (1 + desiredMargin / 100);
+  }
+  if (tableBase === null || tableBase < 0 || rows.some((row) => financingFactor(newRate, Number(row.prazo_dias ?? 0)) <= 0)) return next;
+
+  if (newCost > 0) next.margem = money((tableBase / newCost - 1) * 100);
+  next.faixas = rows.map((row) => {
+    const days = Number(row.prazo_dias ?? 0);
+    const factor = financingFactor(newRate, days);
+    const updated: PriceRow = { ...row };
+    for (const channel of ["tabela", "produtor", "revenda"] as const) {
+      const oldBase = oldBases[channel];
+      if (channel !== "tabela" && oldBase === null) continue;
+      const channelBase = channel === "tabela" ? tableBase! : oldBases.tabela && oldBase
+        ? tableBase! * oldBase / oldBases.tabela
+        : oldBase! * (oldCost > 0 ? newCost / oldCost : 1);
+      updated[channel] = { ...row[channel], preco: money(channelBase / factor) };
+    }
+    return updated;
+  });
+  return next;
+}
+
+function pricingError(values: ErpProduct["pricing_data"]): string | null {
+  for (const key of recalculatedFields) {
+    if (numberFrom(values[key]) === null) return "Informe números válidos nos campos de cálculo.";
+  }
+  const cost = adjustedCost(values);
+  if (cost === null || cost < 0) return "O custo ajustado precisa ser válido e não negativo.";
+  if ((numberFrom(values.margem) ?? 0) <= -100) return "A margem deve ser maior que -100%.";
+  if ((values.faixas ?? []).some((row) => financingFactor(numberFrom(values.financiamento_mensal) ?? 0, Number(row.prazo_dias ?? 0)) <= 0)) {
+    return "A taxa de financiamento é alta demais para um dos prazos.";
+  }
+  return null;
+}
+
+function pricingForEdit(values: ErpProduct["pricing_data"]): ErpProduct["pricing_data"] {
+  const cost = adjustedCost(values);
+  const rate = numberFrom(values.financiamento_mensal);
+  const base = rate === null ? null : basePrice(values.faixas ?? [], "tabela", rate);
+  return cost && cost > 0 && base !== null
+    ? { ...values, margem: money((base / cost - 1) * 100) }
+    : values;
+}
+
+function PricingForm({ initial, saving, onSave, onCancel }: {
+  initial: ErpProduct;
+  saving: boolean;
+  onSave: (values: ErpProduct["pricing_data"]) => void;
+  onCancel: () => void;
+}) {
+  const [values, setValues] = useState<ErpProduct["pricing_data"]>(() => pricingForEdit(initial.pricing_data ?? {}));
+  const error = pricingError(values);
+  return (
+    <form onSubmit={(event) => { event.preventDefault(); if (!error) onSave(values); }} className="space-y-5">
+      <p className="text-sm text-muted-foreground">Custo, ajuste, margem e financiamento recalculam os preços por prazo enquanto você edita.</p>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {priceFields.map(([key, label]) => (
+          <label key={key} className="space-y-1 text-sm font-medium">
+            {label}
+            <Input value={values[key] ?? ""} readOnly={derivedFields.has(key)}
+              className={derivedFields.has(key) ? "bg-muted/40" : undefined}
+              onChange={(event) => setValues((previous) => recalculatePricing(previous, key, event.target.value))} />
+          </label>
+        ))}
+      </div>
+      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+      <div className="overflow-x-auto rounded-lg border bg-card">
+        <table className="min-w-[600px] w-full text-left text-sm">
+          <thead className="bg-muted/50 text-muted-foreground"><tr>
+            {["Prazo", "Tabela", "Produtor", "Revenda"].map((label) => <th key={label} className="px-3 py-2 font-medium">{label}</th>)}
+          </tr></thead>
+          <tbody>
+            {values.faixas?.length ? values.faixas.map((row, index) => (
+              <tr key={index} className="border-t">
+                <td className="px-3 py-2">{row.prazo_dias ?? "—"} dias</td>
+                <td className="px-3 py-2">{row.tabela?.preco ?? "—"}</td>
+                <td className="px-3 py-2">{row.produtor?.preco ?? "—"}</td>
+                <td className="px-3 py-2">{row.revenda?.preco ?? "—"}</td>
+              </tr>
+            )) : <tr><td colSpan={4} className="px-3 py-4 text-muted-foreground">Informe a margem para criar as faixas de preço.</td></tr>}
+          </tbody>
+        </table>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <Button type="submit" disabled={saving || Boolean(error)}>{saving ? "Salvando..." : "Salvar tabela de preços"}</Button>
+        <Button type="button" variant="outline" onClick={onCancel}>Cancelar</Button>
+      </div>
+    </form>
+  );
+}
+
 export function ErpProductMaintenance() {
   const queryClient = useQueryClient();
   const [screen, setScreen] = useState<Screen>("consulta");
@@ -212,6 +379,22 @@ export function ErpProductMaintenance() {
       setScreen("consulta");
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : "Não foi possível salvar o produto."),
+  });
+  const savePricing = useMutation({
+    mutationFn: async (values: ErpProduct["pricing_data"]) => {
+      if (!selectedCode) throw new Error("Selecione um produto para alterar.");
+      const validation = pricingError(values);
+      if (validation) throw new Error(validation);
+      const { error } = await db.from("erp_products")
+        .update({ pricing_data: values }).eq("code", selectedCode).select("code").single();
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      toast.success("Tabela de preços atualizada.");
+      await queryClient.invalidateQueries({ queryKey: ["erp-products"] });
+      setDialogView("visualizar");
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Não foi possível salvar a tabela de preços."),
   });
   const remove = useMutation({
     mutationFn: async (code: string) => {
@@ -310,8 +493,13 @@ export function ErpProductMaintenance() {
         onClose={() => { setDialogOpen(false); setSelectedCode(null); }}
         details={selected ? <ProductDetails product={selected} showPricing={screen === "tabela"} /> : null}
         editForm={selected ? (
+          screen === "tabela" ? (
+          <PricingForm key={selected.code} initial={selected} saving={savePricing.isPending}
+            onSave={(values) => savePricing.mutate(values)} onCancel={() => setDialogView("visualizar")} />
+        ) : (
           <ProductForm key={selected.code} initial={selected} saving={save.isPending}
             onSave={(name, values) => save.mutate({ name, values })} onCancel={() => setDialogView("visualizar")} />
+        )
         ) : null}
         deleteLabel="Excluir produto"
         deleteDescription="Este produto será excluído definitivamente."
