@@ -182,11 +182,11 @@ const derivedFields = new Set(["custo_final", "custo_ajustado"]);
 function numberFrom(value: string | number | undefined): number | null {
   if (value === undefined || value === "") return 0;
   if (typeof value === "number") return Number.isFinite(value) ? value : null;
-  const text = value.trim().replace(/\\s/g, "");
+  const text = value.trim().replace(/\s/g, "");
   if (!text) return 0;
   const comma = text.lastIndexOf(",");
   const dot = text.lastIndexOf(".");
-  const normalized = comma > dot ? text.replace(/\\./g, "").replace(",", ".") : text.replace(/,/g, "");
+  const normalized = comma > dot ? text.replace(/\./g, "").replace(",", ".") : text.replace(/,/g, "");
   const parsed = Number(normalized);
   return Number.isFinite(parsed) ? parsed : null;
 }
