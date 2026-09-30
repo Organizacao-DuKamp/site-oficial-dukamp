@@ -37,6 +37,9 @@ export function numberFrom(value: string | number | null | undefined): number | 
 }
 
 const format = (value: number, digits = 2) => value.toFixed(digits);
+// The DBF program keeps two decimal places by truncation, including prices and gross margins.
+const truncate = (value: number, digits = 2) => Math.trunc(value * 10 ** digits + Number.EPSILON * 100) / 10 ** digits;
+const dbfFormat = (value: number, digits = 2) => truncate(value, digits).toFixed(digits);
 const factor = (monthly: number, days: number) => 1 - monthly * days / 3000;
 const channelBase = (rows: PriceRow[], channel: typeof channels[number], monthly: number) => {
   for (const row of [...rows].sort((a, b) => Number(a.prazo_dias ?? 0) - Number(b.prazo_dias ?? 0))) {
@@ -80,56 +83,68 @@ export function pricingError(values: PricingData): string | null {
 
 function recalculate(previous: PricingData, next: PricingData): PricingData {
   if (pricingError(next)) return next;
-  const oldCost = sourceCost(previous);
-  const newCost = next.custo_ajustado !== previous.custo_ajustado ? numberFrom(next.custo_ajustado) : sourceCost(previous);
-  const oldMonthly = numberFrom(previous.financiamento_mensal);
-  const newMonthly = numberFrom(next.financiamento_mensal);
-  if (oldCost === null || newCost === null || oldMonthly === null || newMonthly === null) return next;
-  const costChanged = Math.abs(oldCost - newCost) > 0.000001;
-  const financingChanged = oldMonthly !== newMonthly;
+  const cost = sourceCost(next);
+  const monthly = numberFrom(next.financiamento_mensal);
+  if (cost === null || cost <= 0 || monthly === null) return next;
+
+  const bands = (next.percentual_margens ?? []).map((band) => ({ ...band }));
   const oldBands = previous.percentual_margens ?? [];
-  const newBands = (next.percentual_margens ?? []).map((band) => ({ ...band }));
-  const originalRows = previous.faixas ?? [];
-  const rows: PriceRow[] = originalRows.length ? originalRows : [0, 28, 56].map((prazo_dias) => ({ prazo_dias }));
-  const newRows: PriceRow[] = rows.map((row) => ({ ...row }));
+  const oldFirst = numberFrom(oldBands[0]?.margem_configurada) ?? 0;
+  const first = numberFrom(bands[0]?.margem_configurada) ?? 0;
+  const firstChanged = first !== oldFirst;
+  const firstCommission = numberFrom(bands[0]?.comissao_interna) ?? 0;
 
-  for (let index = 0; index < 4; index++) {
-    const channel = channels[index];
-    const oldMargin = numberFrom(oldBands[index]?.margem_configurada) ?? 0;
-    const newMargin = numberFrom(newBands[index]?.margem_configurada) ?? 0;
-    const oldCommission = numberFrom(oldBands[index]?.comissao_interna) ?? 0;
-    const newCommission = numberFrom(newBands[index]?.comissao_interna) ?? 0;
-    const rateChanged = oldMargin !== newMargin || oldCommission !== newCommission;
-    if (!costChanged && !financingChanged && !rateChanged) continue;
-    const oldDenominator = (1 - oldMargin / 100) * (1 - oldCommission / 100);
-    const newDenominator = (1 - newMargin / 100) * (1 - newCommission / 100);
-    const oldBase = channelBase(originalRows, channel, oldMonthly);
-    if (!newBands[index] && oldBase === null) continue;
-    const newBase = oldBase !== null && oldCost > 0
-      ? oldBase * newCost / oldCost * oldDenominator / newDenominator
-      : newCost / newDenominator;
-
-    for (const row of newRows) {
-      const days = Number(row.prazo_dias ?? 0);
-      const previousChannel = row[channel];
-      const previousRowCommission = numberFrom(previousChannel?.comissao_percentual) ?? oldCommission;
-      const rowCommission = oldCommission > 0
-        ? previousRowCommission * newCommission / oldCommission
-        : newCommission;
-      row[channel] = {
-        ...previousChannel,
-        preco: format(newBase / factor(newMonthly, days)),
-        comissao_percentual: format(rowCommission),
-      };
-    }
-    if (newCost > 0 && newBands[index]) {
-      const zeroDay = newRows.find((row) => Number(row.prazo_dias ?? 0) === 0);
-      const price = numberFrom(zeroDay?.[channel]?.preco) ?? newBase;
-      newBands[index] = { ...newBands[index], margem_bruta: format((price / newCost - 1) * 100) };
-    }
+  if (firstChanged) {
+    // In COMPRAS, these two discounts track the first margin at 5% and 10%.
+    next.desconto_produto = dbfFormat(first * 0.05);
+    next.desconto_revenda = dbfFormat(first * 0.10);
+    // Preserve the product-specific minimum offset recorded in its DBF row.
+    // COMPRAS changes the minimum by the movement in margin after commission.
+    const oldMinimum = numberFrom(previous.percentual_minimo) ?? 0;
+    const oldCommission = numberFrom(oldBands[0]?.comissao_interna) ?? 0;
+    const delta = (first - oldFirst) - (firstCommission - oldCommission);
+    next.percentual_minimo = format(oldMinimum + delta + Math.sign(delta) * 0.01);
   }
-  next.faixas = newRows;
-  next.percentual_margens = newBands;
+
+  const minimum = numberFrom(next.percentual_minimo);
+  if (minimum !== null && minimum < 100) {
+    next.valor_minimo = dbfFormat(cost / (1 - minimum / 100));
+  }
+
+  const sourceRows = previous.faixas?.length ? previous.faixas : [0, 28, 56].map((prazo_dias) => ({ prazo_dias }));
+  next.faixas = sourceRows.map((sourceRow) => {
+    const days = Number(sourceRow.prazo_dias ?? 0);
+    const term = factor(monthly, days);
+    const row: PriceRow = { ...sourceRow, preco_minimo: next.valor_minimo };
+    if (sourceRow.calculo && typeof sourceRow.calculo === "object") {
+      row.calculo = { ...sourceRow.calculo as Record<string, unknown>, percentual_minimo: next.percentual_minimo };
+    }
+    channels.forEach((channel, index) => {
+      const band = bands[index];
+      if (!band) return;
+      const margin = numberFrom(band.margem_configurada) ?? 0;
+      const commission = numberFrom(band.comissao_interna) ?? 0;
+      const divisor = (1 - margin / 100) * (1 - commission / 100) * term;
+      if (divisor <= 0) return;
+      const price = truncate(cost / divisor);
+      // Term commissions in the original are lower than the zero-day rate.
+      // The DBF keeps only the zero-day rate; the displayed term rate is
+      // reconstructed from its monthly financing factor.
+      const termReduction = 0.0188 + 0.00433 * monthly;
+      const termCommission = days === 0 ? commission : commission * (1 - termReduction) ** (days / 28);
+      row[channel] = {
+        ...sourceRow[channel],
+        preco: dbfFormat(price),
+        comissao_percentual: format(termCommission),
+      };
+      if (days === 0) {
+        band.margem_bruta = dbfFormat((price / cost - 1) * 100);
+      }
+    });
+    return row;
+  });
+  next.percentual_margens = bands;
+  next.margem = bands[0]?.margem_bruta ?? next.margem;
   return next;
 }
 
