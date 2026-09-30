@@ -103,7 +103,7 @@ function ProductDetails({ product, showPricing }: { product: ErpProduct; showPri
       {showPricing ? (
         <>
           <h4 className="font-semibold">Tabela de preço</h4>
-          <FieldGrid fields={priceFields} values={product.pricing_data ?? {}} />
+          <FieldGrid fields={priceFields} values={pricingForEdit(product.pricing_data ?? {})} />
           <div className="overflow-x-auto rounded-lg border bg-card">
             <table className="min-w-[760px] w-full text-left text-sm">
               <thead className="bg-muted/50 text-muted-foreground"><tr>
@@ -220,7 +220,7 @@ function basePrice(rows: PriceRow[], channel: "tabela" | "produtor" | "revenda",
 
 function recalculatePricing(previous: ErpProduct["pricing_data"], key: string, value: string): ErpProduct["pricing_data"] {
   const next = { ...previous, [key]: value };
-  if (!recalculatedFields.has(key)) return next;
+  if (!recalculatedFields.has(key) || value.trim() === "") return next;
   const oldCost = adjustedCost(previous);
   const newCost = adjustedCost(next);
   const oldRate = numberFrom(previous.financiamento_mensal);
