@@ -176,7 +176,7 @@ function ProductForm({
 }
 
 
-const recalculatedFields = new Set(["custo_real", "frete", "carga_descarga", "percentual_ajuste", "margem", "financiamento_mensal", "prazo_venda"]);
+const recalculatedFields = new Set(["custo_real", "frete", "carga_descarga", "percentual_ajuste", "margem", "financiamento_mensal"]);
 const derivedFields = new Set(["custo_final", "custo_ajustado"]);
 
 function numberFrom(value: string | number | undefined): number | null {
