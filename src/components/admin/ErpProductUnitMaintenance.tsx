@@ -1,13 +1,14 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { ErpRecordDialog, type ErpRecordView } from "@/components/admin/ErpRecordDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 type ProductUnit = { code: string; description: string; decimal_places: number };
-type Mode = "inclusao" | "alteracao" | "exclusao" | "consulta";
+type Mode = "inclusao" | "consulta";
 
 // A tabela é criada pela migração do ERP e ainda não consta nos tipos gerados do Supabase.
 const db = supabase as any;
@@ -77,6 +78,8 @@ export function ErpProductUnitMaintenance() {
   const [mode, setMode] = useState<Mode>("consulta");
   const [search, setSearch] = useState("");
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogView, setDialogView] = useState<ErpRecordView>("visualizar");
   const results = useQuery({ queryKey: ["erp-product-units"], queryFn: listUnits });
   const filtered = results.data?.filter((unit) => {
     const term = search.trim().toLocaleUpperCase("pt-BR");
@@ -101,7 +104,8 @@ export function ErpProductUnitMaintenance() {
     onSuccess: async (code) => {
       await queryClient.invalidateQueries({ queryKey: ["erp-product-units"] });
       setSearch(code);
-      setSelectedCode(code);
+      setSelectedCode(null);
+      setDialogOpen(false);
       setMode("consulta");
       toast.success("Unidade salva.");
     },
@@ -115,6 +119,7 @@ export function ErpProductUnitMaintenance() {
     },
     onSuccess: async () => {
       setSelectedCode(null);
+      setDialogOpen(false);
       setSearch("");
       await queryClient.invalidateQueries({ queryKey: ["erp-product-units"] });
       toast.success("Unidade excluída.");
@@ -125,12 +130,12 @@ export function ErpProductUnitMaintenance() {
   function choose(next: Mode) {
     setMode(next);
     setSelectedCode(null);
+    setDialogOpen(false);
     setSearch("");
   }
 
   const titles: Record<Mode, string> = {
-    inclusao: "Nova unidade", alteracao: "Editar unidade",
-    exclusao: "Excluir unidade", consulta: "Unidades de medida",
+    inclusao: "Nova unidade", consulta: "Unidades de medida",
   };
 
   return (
@@ -154,7 +159,7 @@ export function ErpProductUnitMaintenance() {
         <>
           <label className="block max-w-md space-y-1 text-sm font-medium">
             Pesquisar unidade
-            <Input type="search" value={search} onChange={(event) => { setSearch(event.target.value); setSelectedCode(null); }}
+            <Input type="search" value={search} onChange={(event) => { setSearch(event.target.value); setSelectedCode(null); setDialogOpen(false); }}
               placeholder="Código ou descrição" />
           </label>
           <div className="overflow-hidden rounded-lg border bg-card">
@@ -169,7 +174,7 @@ export function ErpProductUnitMaintenance() {
               <ul className="max-h-80 divide-y overflow-y-auto">
                 {filtered.map((unit) => (
                   <li key={unit.code}>
-                    <button type="button" onClick={() => setSelectedCode(unit.code)}
+                    <button type="button" onClick={() => { setSelectedCode(unit.code); setDialogView("visualizar"); setDialogOpen(true); }}
                       className={"grid w-full grid-cols-[5rem_1fr_7rem] gap-3 px-4 py-2 text-left text-sm hover:bg-accent sm:grid-cols-[7rem_1fr_10rem] " + (selectedCode === unit.code ? "bg-primary/10" : "")}>
                       <span className="font-mono">{unit.code}</span><span>{unit.description}</span><span>{unit.decimal_places}</span>
                     </button>
@@ -178,30 +183,30 @@ export function ErpProductUnitMaintenance() {
               </ul>
             ) : <p className="p-4 text-sm text-muted-foreground">Nenhuma unidade encontrada.</p>}
           </div>
-          {selected && mode === "alteracao" && (
-            <UnitForm key={selected.code} initial={selected} saving={save.isPending}
-              onSave={(unit) => save.mutate(unit)} onCancel={() => setMode("consulta")} />
-          )}
-          {selected && (mode === "consulta" || mode === "exclusao") && (
-            <div className="space-y-3 rounded-lg border bg-card p-4">
-              <p className="text-sm"><strong>Unidade:</strong> {selected.code}</p>
-              <p className="text-sm"><strong>Descrição:</strong> {selected.description}</p>
-              <p className="text-sm"><strong>Casas decimais:</strong> {selected.decimal_places}</p>
-              {mode === "consulta" && (
-                <div className="flex flex-wrap gap-2">
-                  <Button variant="outline" onClick={() => setMode("alteracao")}><Pencil className="mr-2 h-4 w-4" /> Editar unidade</Button>
-                  <Button variant="outline" onClick={() => setMode("exclusao")}><Trash2 className="mr-2 h-4 w-4" /> Excluir unidade</Button>
-                </div>
-              )}
-              {mode === "exclusao" && (
-                <Button variant="destructive" disabled={remove.isPending} onClick={() => {
-                  if (window.confirm("Excluir definitivamente a unidade " + selected.code + "?")) remove.mutate(selected.code);
-                }}><Trash2 className="mr-2 h-4 w-4" /> {remove.isPending ? "Excluindo..." : "Excluir unidade"}</Button>
-              )}
-            </div>
-          )}
         </>
       )}
+      <ErpRecordDialog
+        open={dialogOpen && Boolean(selected)}
+        title={selected ? selected.code + " · " + selected.description : "Unidade"}
+        view={dialogView}
+        onViewChange={setDialogView}
+        onClose={() => { setDialogOpen(false); setSelectedCode(null); }}
+        details={selected ? (
+          <div className="space-y-3">
+            <p className="text-sm"><strong>Unidade:</strong> {selected.code}</p>
+            <p className="text-sm"><strong>Descrição:</strong> {selected.description}</p>
+            <p className="text-sm"><strong>Casas decimais:</strong> {selected.decimal_places}</p>
+          </div>
+        ) : null}
+        editForm={selected ? (
+          <UnitForm key={selected.code} initial={selected} saving={save.isPending}
+            onSave={(unit) => save.mutate(unit)} onCancel={() => setDialogView("visualizar")} />
+        ) : null}
+        deleteLabel="Excluir unidade"
+        deleteDescription="Esta unidade de medida será excluída definitivamente."
+        onDelete={() => { if (selected) remove.mutate(selected.code); }}
+        deleting={remove.isPending}
+      />
     </div>
   );
 }

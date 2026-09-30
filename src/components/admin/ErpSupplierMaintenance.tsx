@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { ErpRecordDialog, type ErpRecordView } from "@/components/admin/ErpRecordDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -10,7 +11,7 @@ type Values = Record<string, string>;
 type Supplier = { code: string; name: string; details: Values };
 type SupplierPage = { items: Supplier[]; total: number };
 const PAGE_SIZE = 50;
-type Mode = "inclusao" | "alteracao" | "exclusao" | "consulta";
+type Mode = "inclusao" | "consulta";
 
 const fields: [string, string][] = [
   ["endereco", "Endereço"], ["cidade", "Cidade"], ["uf", "UF"], ["codigo_cidade", "Código da cidade"], ["bairro", "Bairro"], ["cep", "CEP"],
@@ -105,6 +106,8 @@ export function ErpSupplierMaintenance() {
   const [submitted, setSubmitted] = useState("");
   const [page, setPage] = useState(0);
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogView, setDialogView] = useState<ErpRecordView>("visualizar");
   const results = useQuery({ queryKey: ["erp-suppliers", submitted, page], queryFn: () => listSuppliers(submitted, page) });
   const selected = results.data?.items.find((item) => item.code === selectedCode) ?? null;
 
@@ -126,7 +129,8 @@ export function ErpSupplierMaintenance() {
       setSearch(code);
       setSubmitted(code);
       setPage(0);
-      setSelectedCode(code);
+      setSelectedCode(null);
+      setDialogOpen(false);
       setMode("consulta");
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : "Não foi possível salvar o fornecedor."),
@@ -140,6 +144,7 @@ export function ErpSupplierMaintenance() {
     onSuccess: async () => {
       toast.success("Fornecedor excluído.");
       setSelectedCode(null);
+      setDialogOpen(false);
       setSearch("");
       setSubmitted("");
       setPage(0);
@@ -151,14 +156,14 @@ export function ErpSupplierMaintenance() {
   function choose(next: Mode) {
     setMode(next);
     setSelectedCode(null);
+    setDialogOpen(false);
     setSearch("");
     setSubmitted("");
     setPage(0);
   }
 
   const titles: Record<Mode, string> = {
-    inclusao: "Novo fornecedor", alteracao: "Editar fornecedor",
-    exclusao: "Excluir fornecedor", consulta: "Fornecedores",
+    inclusao: "Novo fornecedor", consulta: "Fornecedores",
   };
 
   return (
@@ -180,7 +185,7 @@ export function ErpSupplierMaintenance() {
 
       {mode !== "inclusao" && (
         <>
-          <form className="flex flex-col gap-2 sm:flex-row" onSubmit={(event) => { event.preventDefault(); setSelectedCode(null); setPage(0); setSubmitted(search.trim()); }}>
+          <form className="flex flex-col gap-2 sm:flex-row" onSubmit={(event) => { event.preventDefault(); setSelectedCode(null); setDialogOpen(false); setPage(0); setSubmitted(search.trim()); }}>
             <label htmlFor="erp-supplier-search" className="sr-only">Código ou nome do fornecedor</label>
             <Input id="erp-supplier-search" inputMode="search" className="sm:max-w-md" value={search}
               onChange={(event) => setSearch(event.target.value)} placeholder="Digite o código ou nome do fornecedor" />
@@ -199,7 +204,7 @@ export function ErpSupplierMaintenance() {
               <ul className="max-h-64 divide-y overflow-y-auto">
                 {results.data.items.map((supplier) => (
                   <li key={supplier.code}>
-                    <button type="button" onClick={() => setSelectedCode(supplier.code)}
+                    <button type="button" onClick={() => { setSelectedCode(supplier.code); setDialogView("visualizar"); setDialogOpen(true); }}
                       className={"flex w-full gap-3 px-4 py-2 text-left text-sm hover:bg-accent " + (selectedCode === supplier.code ? "bg-primary/10" : "")}>
                       <span className="font-mono text-muted-foreground">{supplier.code}</span>
                       <span>{supplier.name}</span>
@@ -223,32 +228,24 @@ export function ErpSupplierMaintenance() {
               </div>
             </div>
           )}
-          {selected && mode === "alteracao" && (
-            <SupplierForm key={selected.code} initial={selected} saving={save.isPending}
-              onSave={(name, details) => save.mutate({ name, details })} onCancel={() => setMode("consulta")} />
-          )}
-          {selected && (mode === "consulta" || mode === "exclusao") && (
-            <>
-              <SupplierDetails supplier={selected} />
-              {mode === "consulta" && (
-                <div className="flex flex-wrap gap-2">
-                  <Button variant="outline" onClick={() => setMode("alteracao")}><Pencil className="mr-2 h-4 w-4" /> Editar fornecedor</Button>
-                  <Button variant="outline" onClick={() => setMode("exclusao")}><Trash2 className="mr-2 h-4 w-4" /> Excluir fornecedor</Button>
-                </div>
-              )}
-              {mode === "exclusao" && (
-                <Button variant="destructive" disabled={remove.isPending} onClick={() => {
-                  if (window.confirm("Excluir definitivamente o fornecedor " + selected.code + " — " + selected.name + "?")) {
-                    remove.mutate(selected.code);
-                  }
-                }}>
-                  <Trash2 className="mr-2 h-4 w-4" /> {remove.isPending ? "Excluindo..." : "Excluir fornecedor"}
-                </Button>
-              )}
-            </>
-          )}
         </>
       )}
+      <ErpRecordDialog
+        open={dialogOpen && Boolean(selected)}
+        title={selected ? `${selected.code} · ${selected.name}` : "Fornecedor"}
+        view={dialogView}
+        onViewChange={setDialogView}
+        onClose={() => { setDialogOpen(false); setSelectedCode(null); }}
+        details={selected ? <SupplierDetails supplier={selected} /> : null}
+        editForm={selected ? (
+          <SupplierForm key={selected.code} initial={selected} saving={save.isPending}
+            onSave={(name, details) => save.mutate({ name, details })} onCancel={() => setDialogView("visualizar")} />
+        ) : null}
+        deleteLabel="Excluir fornecedor"
+        deleteDescription="Este fornecedor será excluído definitivamente."
+        onDelete={() => { if (selected) remove.mutate(selected.code); }}
+        deleting={remove.isPending}
+      />
     </div>
   );
 }

@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { ErpRecordDialog, type ErpRecordView } from "@/components/admin/ErpRecordDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -18,7 +19,7 @@ type PurchaseOrder = {
 type SupplierOption = { code: string; name: string };
 type ProductOption = { code: string; name: string };
 type OrderPage = { items: PurchaseOrder[]; total: number };
-type Mode = "inclusao" | "alteracao" | "exclusao" | "consulta";
+type Mode = "inclusao" | "consulta";
 const PAGE_SIZE = 50;
 
 const fields: [string, string][] = [
@@ -221,9 +222,11 @@ export function ErpPurchaseOrderMaintenance() {
   const [submitted, setSubmitted] = useState("");
   const [page, setPage] = useState(0);
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogView, setDialogView] = useState<ErpRecordView>("visualizar");
   const results = useQuery({ queryKey: ["erp-purchase-orders", submitted, page], queryFn: () => listOrders(submitted, page) });
-  const supplierOptions = useQuery({ queryKey: ["erp-suppliers-options"], queryFn: listSuppliers, enabled: mode === "inclusao" || mode === "alteracao" });
-  const productOptions = useQuery({ queryKey: ["erp-products-options"], queryFn: listProducts, enabled: mode === "inclusao" || mode === "alteracao" });
+  const supplierOptions = useQuery({ queryKey: ["erp-suppliers-options"], queryFn: listSuppliers, enabled: mode === "inclusao" || (dialogOpen && dialogView === "editar") });
+  const productOptions = useQuery({ queryKey: ["erp-products-options"], queryFn: listProducts, enabled: mode === "inclusao" || (dialogOpen && dialogView === "editar") });
   const selected = results.data?.items.find((order) => order.code === selectedCode) ?? null;
 
   const save = useMutation({
@@ -244,7 +247,8 @@ export function ErpPurchaseOrderMaintenance() {
       setSearch(code);
       setSubmitted(code);
       setPage(0);
-      setSelectedCode(code);
+      setSelectedCode(null);
+      setDialogOpen(false);
       setMode("consulta");
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : "Não foi possível salvar o pedido."),
@@ -257,6 +261,7 @@ export function ErpPurchaseOrderMaintenance() {
     onSuccess: async () => {
       toast.success("Pedido excluído.");
       setSelectedCode(null);
+      setDialogOpen(false);
       setSearch("");
       setSubmitted("");
       setPage(0);
@@ -271,11 +276,11 @@ export function ErpPurchaseOrderMaintenance() {
     setSubmitted("");
     setPage(0);
     setSelectedCode(null);
+    setDialogOpen(false);
   }
 
   const titles: Record<Mode, string> = {
-    inclusao: "Novo pedido", alteracao: "Editar pedido",
-    exclusao: "Excluir pedido", consulta: "Pedidos de compra",
+    inclusao: "Novo pedido", consulta: "Pedidos de compra",
   };
 
   return (
@@ -298,7 +303,7 @@ export function ErpPurchaseOrderMaintenance() {
 
       {mode !== "inclusao" && (
         <>
-          <form className="flex flex-col gap-2 sm:flex-row" onSubmit={(event) => { event.preventDefault(); setSelectedCode(null); setPage(0); setSubmitted(search.trim()); }}>
+          <form className="flex flex-col gap-2 sm:flex-row" onSubmit={(event) => { event.preventDefault(); setSelectedCode(null); setDialogOpen(false); setPage(0); setSubmitted(search.trim()); }}>
             <label htmlFor="erp-purchase-order-search" className="sr-only">Número do pedido ou fornecedor</label>
             <Input id="erp-purchase-order-search" inputMode="search" className="sm:max-w-md" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Número do pedido ou nome do fornecedor" />
             <Button type="submit"><Search className="mr-2 h-4 w-4" /> Pesquisar</Button>
@@ -314,7 +319,7 @@ export function ErpPurchaseOrderMaintenance() {
               <ul className="max-h-64 divide-y overflow-y-auto">
                 {results.data.items.map((order) => (
                   <li key={order.code}>
-                    <button type="button" onClick={() => setSelectedCode(order.code)}
+                    <button type="button" onClick={() => { setSelectedCode(order.code); setDialogView("visualizar"); setDialogOpen(true); }}
                       className={"flex w-full flex-wrap gap-3 px-4 py-2 text-left text-sm hover:bg-accent " + (selectedCode === order.code ? "bg-primary/10" : "")}>
                       <span className="font-mono text-muted-foreground">{order.code}</span><span>{order.supplier_name}</span>
                       <span className="ml-auto text-muted-foreground">{order.details?.data_emissao || "Sem data"}</span>
@@ -338,29 +343,25 @@ export function ErpPurchaseOrderMaintenance() {
               </div>
             </div>
           )}
-          {selected && mode === "alteracao" && (
-            <OrderForm key={selected.code} initial={selected} saving={save.isPending}
-              suppliers={supplierOptions.data ?? []} products={productOptions.data ?? []}
-              onSave={(order) => save.mutate(order)} onCancel={() => setMode("consulta")} />
-          )}
-          {selected && (mode === "consulta" || mode === "exclusao") && (
-            <>
-              <OrderDetails order={selected} />
-              {mode === "consulta" && (
-                <div className="flex flex-wrap gap-2">
-                  <Button variant="outline" onClick={() => setMode("alteracao")}><Pencil className="mr-2 h-4 w-4" /> Editar pedido</Button>
-                  <Button variant="outline" onClick={() => setMode("exclusao")}><Trash2 className="mr-2 h-4 w-4" /> Excluir pedido</Button>
-                </div>
-              )}
-              {mode === "exclusao" && (
-                <Button variant="destructive" disabled={remove.isPending} onClick={() => {
-                  if (window.confirm("Excluir definitivamente o pedido " + selected.code + " de " + selected.supplier_name + "?")) remove.mutate(selected.code);
-                }}><Trash2 className="mr-2 h-4 w-4" /> {remove.isPending ? "Excluindo..." : "Excluir pedido"}</Button>
-              )}
-            </>
-          )}
         </>
       )}
+      <ErpRecordDialog
+        open={dialogOpen && Boolean(selected)}
+        title={selected ? `${selected.code} · ${selected.supplier_name}` : "Pedido de compra"}
+        view={dialogView}
+        onViewChange={setDialogView}
+        onClose={() => { setDialogOpen(false); setSelectedCode(null); }}
+        details={selected ? <OrderDetails order={selected} /> : null}
+        editForm={selected ? (
+          <OrderForm key={selected.code} initial={selected} saving={save.isPending}
+            suppliers={supplierOptions.data ?? []} products={productOptions.data ?? []}
+            onSave={(order) => save.mutate(order)} onCancel={() => setDialogView("visualizar")} />
+        ) : null}
+        deleteLabel="Excluir pedido"
+        deleteDescription="Este pedido de compra será excluído definitivamente."
+        onDelete={() => { if (selected) remove.mutate(selected.code); }}
+        deleting={remove.isPending}
+      />
     </div>
   );
 }

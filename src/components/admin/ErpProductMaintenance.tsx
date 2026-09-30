@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { ErpRecordDialog, type ErpRecordView } from "@/components/admin/ErpRecordDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -16,8 +17,7 @@ type ErpProduct = {
   product_data: Values;
   pricing_data: Values & { faixas?: PriceRow[] };
 };
-type Action = "tabela" | "alteracao" | "inclusao" | "exclusao" | "consulta";
-type Screen = Action;
+type Screen = "tabela" | "inclusao" | "consulta";
 
 // Campos exibidos no cadastro do Clipper. As abreviações foram mantidas quando são parte do nome original.
 const productFields: [string, string][] = [
@@ -182,6 +182,8 @@ export function ErpProductMaintenance() {
   const [submitted, setSubmitted] = useState("");
   const [page, setPage] = useState(0);
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogView, setDialogView] = useState<ErpRecordView>("visualizar");
   const results = useQuery({ queryKey: ["erp-products", submitted, page], queryFn: () => listProducts(submitted, page) });
   const selected = results.data?.items.find((product) => product.code === selectedCode) ?? null;
   const save = useMutation({
@@ -205,7 +207,8 @@ export function ErpProductMaintenance() {
       setSubmitted(code);
       setPage(0);
       setSearch(code);
-      setSelectedCode(code);
+      setSelectedCode(null);
+      setDialogOpen(false);
       setScreen("consulta");
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : "Não foi possível salvar o produto."),
@@ -218,6 +221,7 @@ export function ErpProductMaintenance() {
     onSuccess: async () => {
       toast.success("Produto excluído.");
       setSelectedCode(null);
+      setDialogOpen(false);
       setSearch("");
       setSubmitted("");
       setPage(0);
@@ -229,6 +233,7 @@ export function ErpProductMaintenance() {
   function choose(next: Screen) {
     setScreen(next);
     setSelectedCode(null);
+    setDialogOpen(false);
     setSearch("");
     setSubmitted("");
     setPage(0);
@@ -243,22 +248,13 @@ export function ErpProductMaintenance() {
         </div>
         <Button size="sm" onClick={() => choose("inclusao")}><Plus className="mr-2 h-4 w-4" /> Novo produto</Button>
       </div>
-      {(screen === "inclusao" || screen === "alteracao" || screen === "exclusao") && (
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-lg font-semibold">
-            {{ inclusao: "Novo produto", alteracao: "Editar produto", exclusao: "Excluir produto" }[screen]}
-          </h3>
-          <Button variant="ghost" size="sm" onClick={() => setScreen("consulta")}>
-            <ArrowLeft className="mr-2 h-4 w-4" /> Voltar aos produtos
-          </Button>
-        </div>
-      )}
+      {screen === "inclusao" && <h3 className="text-lg font-semibold">Novo produto</h3>}
 
       {screen === "inclusao" ? (
         <ProductForm saving={save.isPending} onSave={(name, values) => save.mutate({ name, values })} onCancel={() => setScreen("consulta")} />
       ) : (
         <>
-          <form className="flex flex-col gap-2 sm:flex-row" onSubmit={(event) => { event.preventDefault(); setSelectedCode(null); setPage(0); setSubmitted(search.trim()); }}>
+          <form className="flex flex-col gap-2 sm:flex-row" onSubmit={(event) => { event.preventDefault(); setSelectedCode(null); setDialogOpen(false); setPage(0); setSubmitted(search.trim()); }}>
             <label htmlFor="erp-product-search" className="sr-only">Código ou nome do produto</label>
             <Input id="erp-product-search" inputMode="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Digite o código ou nome do produto" className="sm:max-w-md" />
             <Button type="submit"><Search className="mr-2 h-4 w-4" /> Pesquisar</Button>
@@ -271,7 +267,7 @@ export function ErpProductMaintenance() {
               <ul className="max-h-56 divide-y overflow-y-auto">
                 {results.data.items.map((product) => (
                   <li key={product.code}>
-                    <button type="button" onClick={() => setSelectedCode(product.code)} className={`flex w-full gap-3 px-4 py-2 text-left text-sm hover:bg-accent ${selectedCode === product.code ? "bg-primary/10" : ""}`}>
+                    <button type="button" onClick={() => { setSelectedCode(product.code); setDialogView("visualizar"); setDialogOpen(true); }} className={`flex w-full gap-3 px-4 py-2 text-left text-sm hover:bg-accent ${selectedCode === product.code ? "bg-primary/10" : ""}`}>
                       <span className="font-mono text-muted-foreground">{product.code}</span><span>{product.name}</span>
                     </button>
                   </li>
@@ -304,29 +300,24 @@ export function ErpProductMaintenance() {
               </div>
             </div>
           )}
-          {selected && screen === "alteracao" && (
-            <ProductForm key={selected.code} initial={selected} saving={save.isPending} onSave={(name, values) => save.mutate({ name, values })} onCancel={() => setSelectedCode(null)} />
-          )}
-          {selected && (screen === "tabela" || screen === "consulta" || screen === "exclusao") && (
-            <>
-              <ProductDetails product={selected} showPricing={screen === "tabela"} />
-              {screen === "consulta" && (
-                <div className="flex flex-wrap gap-2">
-                  <Button variant="outline" onClick={() => setScreen("alteracao")}><Pencil className="mr-2 h-4 w-4" /> Editar produto</Button>
-                  <Button variant="outline" onClick={() => setScreen("exclusao")}><Trash2 className="mr-2 h-4 w-4" /> Excluir produto</Button>
-                </div>
-              )}
-              {screen === "exclusao" && (
-                <Button variant="destructive" disabled={remove.isPending} onClick={() => {
-                  if (window.confirm(`Excluir definitivamente o produto ${selected.code} — ${selected.name}?`)) remove.mutate(selected.code);
-                }}>
-                  <Trash2 className="mr-2 h-4 w-4" />{remove.isPending ? "Excluindo..." : "Excluir produto"}
-                </Button>
-              )}
-            </>
-          )}
         </>
       )}
+      <ErpRecordDialog
+        open={dialogOpen && Boolean(selected)}
+        title={selected ? `${selected.code} · ${selected.name}` : "Produto"}
+        view={dialogView}
+        onViewChange={setDialogView}
+        onClose={() => { setDialogOpen(false); setSelectedCode(null); }}
+        details={selected ? <ProductDetails product={selected} showPricing={screen === "tabela"} /> : null}
+        editForm={selected ? (
+          <ProductForm key={selected.code} initial={selected} saving={save.isPending}
+            onSave={(name, values) => save.mutate({ name, values })} onCancel={() => setDialogView("visualizar")} />
+        ) : null}
+        deleteLabel="Excluir produto"
+        deleteDescription="Este produto será excluído definitivamente."
+        onDelete={() => { if (selected) remove.mutate(selected.code); }}
+        deleting={remove.isPending}
+      />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Search } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { ErpRecordDialog, type ErpRecordView } from "@/components/admin/ErpRecordDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -49,6 +50,7 @@ export function ErpDeliveryRouteMaintenance() {
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<CustomerRoute | null>(null);
   const [draft, setDraft] = useState("");
+  const [dialogView, setDialogView] = useState<ErpRecordView>("visualizar");
 
   const customers = useQuery({
     queryKey: ["erp-delivery-routes", term, filter, page],
@@ -65,8 +67,10 @@ export function ErpDeliveryRouteMaintenance() {
     },
     onSuccess: async ({ id, roteiro }) => {
       setSelected((current) => current?.id === id ? { ...current, roteiro } : current);
+      setDraft(roteiro ?? "");
+      setDialogView("visualizar");
       await queryClient.invalidateQueries({ queryKey: ["erp-delivery-routes"] });
-      toast.success("Roteiro de entrega salvo no cadastro do cliente.");
+      toast.success(roteiro ? "Roteiro de entrega salvo." : "Roteiro de entrega removido.");
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : "Não foi possível salvar o roteiro."),
   });
@@ -74,6 +78,7 @@ export function ErpDeliveryRouteMaintenance() {
   function choose(customer: CustomerRoute) {
     setSelected(customer);
     setDraft(customer.roteiro ?? "");
+    setDialogView("visualizar");
   }
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {
@@ -138,29 +143,48 @@ export function ErpDeliveryRouteMaintenance() {
         )}
       </div>
 
-      {selected && (
-        <form className="space-y-4 rounded-lg border bg-card p-4" onSubmit={(event) => {
-          event.preventDefault();
-          save.mutate({ id: selected.id, text: draft });
-        }}>
-          <div>
-            <p className="text-sm text-muted-foreground">Código do cliente: {selected.codigo}</p>
-            <h4 className="text-base font-semibold">{selected.cliente}</h4>
+      <ErpRecordDialog
+        open={Boolean(selected)}
+        title={selected ? `${selected.codigo} · ${selected.cliente}` : "Roteiro de entrega"}
+        view={dialogView}
+        onViewChange={setDialogView}
+        onClose={() => { setSelected(null); setDraft(""); }}
+        details={selected && (
+          <div className="space-y-4 text-sm">
+            <p className="text-muted-foreground">{[selected.cidade, selected.uf].filter(Boolean).join("/") || "Local não informado"}</p>
+            <div>
+              <p className="mb-2 font-medium">Roteiro de entrega</p>
+              <p className="whitespace-pre-wrap rounded-md border bg-muted/30 p-4">
+                {selected.roteiro?.trim() || "Sem roteiro cadastrado."}
+              </p>
+            </div>
           </div>
-          <label htmlFor="erp-route-notes" className="block space-y-2 text-sm font-medium">
-            Informe observações do roteiro
-            <Textarea id="erp-route-notes" className="min-h-48" value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              placeholder="Descreva como chegar ao endereço de entrega..." />
-          </label>
-          <div className="flex flex-wrap gap-2">
-            <Button type="submit" disabled={save.isPending || draft.trim() === (selected.roteiro ?? "")}>
-              {save.isPending ? "Salvando..." : "Salvar roteiro"}
-            </Button>
-            <Button type="button" variant="outline" onClick={() => { setSelected(null); setDraft(""); }}>Fechar</Button>
-          </div>
-        </form>
-      )}
+        )}
+        editForm={selected && (
+          <form className="space-y-4" onSubmit={(event) => {
+            event.preventDefault();
+            save.mutate({ id: selected.id, text: draft });
+          }}>
+            <label htmlFor="erp-route-notes" className="block space-y-2 text-sm font-medium">
+              Informe observações do roteiro
+              <Textarea id="erp-route-notes" className="min-h-48" value={draft}
+                onChange={(event) => setDraft(event.target.value)}
+                placeholder="Descreva como chegar ao endereço de entrega..." />
+            </label>
+            <div className="flex flex-wrap gap-2">
+              <Button type="submit" disabled={save.isPending || draft.trim() === (selected.roteiro ?? "")}>
+                {save.isPending ? "Salvando..." : "Salvar roteiro"}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => setDialogView("visualizar")}>Cancelar</Button>
+            </div>
+          </form>
+        )}
+        deleteLabel="Excluir roteiro"
+        deleteDescription="Apenas o texto do roteiro será removido. O cliente continuará cadastrado."
+        onDelete={() => { if (selected) save.mutate({ id: selected.id, text: "" }); }}
+        deleting={save.isPending}
+        disableDelete={!selected?.roteiro?.trim()}
+      />
     </div>
   );
 }
