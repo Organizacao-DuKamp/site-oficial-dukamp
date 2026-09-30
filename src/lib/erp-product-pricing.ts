@@ -41,14 +41,6 @@ const format = (value: number, digits = 2) => value.toFixed(digits);
 const truncate = (value: number, digits = 2) => Math.trunc(value * 10 ** digits + 1e-8) / 10 ** digits;
 const dbfFormat = (value: number, digits = 2) => truncate(value, digits).toFixed(digits);
 const factor = (monthly: number, days: number) => 1 - monthly * days / 3000;
-const channelBase = (rows: PriceRow[], channel: typeof channels[number], monthly: number) => {
-  for (const row of [...rows].sort((a, b) => Number(a.prazo_dias ?? 0) - Number(b.prazo_dias ?? 0))) {
-    const price = numberFrom(row[channel]?.preco);
-    const term = factor(monthly, Number(row.prazo_dias ?? 0));
-    if (price !== null && price > 0 && term > 0) return price * term;
-  }
-  return null;
-};
 
 export function calculatedCost(values: PricingData): number | null {
   const real = numberFrom(values.custo_real);
@@ -92,7 +84,6 @@ function recalculate(previous: PricingData, next: PricingData): PricingData {
   const oldFirst = numberFrom(oldBands[0]?.margem_configurada) ?? 0;
   const first = numberFrom(bands[0]?.margem_configurada) ?? 0;
   const firstChanged = first !== oldFirst;
-  const firstCommission = numberFrom(bands[0]?.comissao_interna) ?? 0;
 
   if (firstChanged) {
     // In COMPRAS, these two discounts track the first margin at 5% and 10%.
@@ -112,7 +103,7 @@ function recalculate(previous: PricingData, next: PricingData): PricingData {
     const term = factor(monthly, days);
     const row: PriceRow = { ...sourceRow, preco_minimo: next.valor_minimo };
     if (sourceRow.calculo && typeof sourceRow.calculo === "object") {
-      row.calculo = { ...sourceRow.calculo as Record<string, unknown>, percentual_minimo: next.percentual_minimo };
+      row.calculo = { ...(sourceRow.calculo as Record<string, unknown>), percentual_minimo: next.percentual_minimo };
     }
     channels.forEach((channel, index) => {
       const band = bands[index];
