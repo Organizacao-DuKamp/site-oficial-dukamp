@@ -224,7 +224,7 @@ function ProductForm({
 }
 
 
-const derivedFields = new Set(["custo_final", "custo_ajustado"]);
+const derivedFields = new Set(["custo_final", "custo_ajustado", "percentual_minimo", "valor_minimo", "desconto_produto", "desconto_revenda"]);
 
 function PricingForm({ initial, saving, onSave, onCancel }: {
   initial: ErpProduct;
@@ -237,7 +237,7 @@ function PricingForm({ initial, saving, onSave, onCancel }: {
   const bands = values.percentual_margens ?? [];
   return (
     <form onSubmit={(event) => { event.preventDefault(); if (!error) onSave(values); }} className="space-y-5">
-      <p className="text-sm text-muted-foreground">Edite a margem de cada tabela. A primeira margem ajusta as outras três na mesma proporção; você também pode editar cada uma separadamente. Os preços e margens brutas são atualizados antes de salvar.</p>
+      <p className="text-sm text-muted-foreground">Edite a margem de cada tabela. A primeira margem ajusta as demais na mesma proporção. Preços por prazo, margens brutas, descontos e valor mínimo são recalculados antes de salvar. As comissões por prazo e o percentual mínimo acompanham a alteração.</p>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {priceFields.map(([key, label]) => (
           <label key={key} className="space-y-1 text-sm font-medium">
@@ -260,9 +260,9 @@ function PricingForm({ initial, saving, onSave, onCancel }: {
                 <tr key={band.numero} className="border-t">
                   <th scope="row" className="px-3 py-2 font-medium">{marginLabels[index]}</th>
                   <td className="px-3 py-2"><Input aria-label={marginLabels[index] + " margem"} inputMode="decimal" value={band.margem_configurada ?? ""}
-                    onChange={(event) => setValues((previous) => updateMarginBand(previous, index, "margem_configurada", event.target.value))} /></td>
+                    onChange={(event) => setValues((previous) => updateMarginBand(previous, index, "margem_configurada", event.target.value, initial.pricing_data))} /></td>
                   <td className="px-3 py-2"><Input aria-label={marginLabels[index] + " comissão"} inputMode="decimal" value={band.comissao_interna ?? ""}
-                    onChange={(event) => setValues((previous) => updateMarginBand(previous, index, "comissao_interna", event.target.value))} /></td>
+                    onChange={(event) => setValues((previous) => updateMarginBand(previous, index, "comissao_interna", event.target.value, initial.pricing_data))} /></td>
                   <td className="px-3 py-2 font-medium">{band.margem_bruta ?? "—"}</td>
                 </tr>
               ))}

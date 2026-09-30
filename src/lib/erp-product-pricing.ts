@@ -36,16 +36,20 @@ export function numberFrom(value: string | number | null | undefined): number | 
   return Number.isFinite(result) ? result : null;
 }
 
-const format = (value: number, digits = 2) => value.toFixed(digits);
+const format = (value: number, digits = 2) => (Math.round(value * 10 ** digits + 1e-8) / 10 ** digits).toFixed(digits);
+// The DBF program keeps two decimal places by truncation, including prices and gross margins.
+const truncate = (value: number, digits = 2) => Math.trunc(value * 10 ** digits + 1e-8) / 10 ** digits;
+const dbfFormat = (value: number, digits = 2) => truncate(value, digits).toFixed(digits);
 const factor = (monthly: number, days: number) => 1 - monthly * days / 3000;
-const channelBase = (rows: PriceRow[], channel: typeof channels[number], monthly: number) => {
-  for (const row of [...rows].sort((a, b) => Number(a.prazo_dias ?? 0) - Number(b.prazo_dias ?? 0))) {
-    const price = numberFrom(row[channel]?.preco);
-    const term = factor(monthly, Number(row.prazo_dias ?? 0));
-    if (price !== null && price > 0 && term > 0) return price * term;
-  }
-  return null;
-};
+
+// Calibrated against the COMPRAS screens at 32%, 34% and 38%, including all four channels.
+const minimumDiscountPerMarginPoint = 0.1704;
+const commissionTermExponent = 2.3975;
+function predictedMinimum(margin4: number, commission4: number, referenceMargin: number): number {
+  const discount = 1 - minimumDiscountPerMarginPoint * referenceMargin / 100;
+  return Number((100 * (1 - (1 - margin4 / 100) * (1 - commission4 / 100) / discount)).toFixed(2));
+}
+
 
 export function calculatedCost(values: PricingData): number | null {
   const real = numberFrom(values.custo_real);
@@ -80,56 +84,61 @@ export function pricingError(values: PricingData): string | null {
 
 function recalculate(previous: PricingData, next: PricingData): PricingData {
   if (pricingError(next)) return next;
-  const oldCost = sourceCost(previous);
-  const newCost = next.custo_ajustado !== previous.custo_ajustado ? numberFrom(next.custo_ajustado) : sourceCost(previous);
-  const oldMonthly = numberFrom(previous.financiamento_mensal);
-  const newMonthly = numberFrom(next.financiamento_mensal);
-  if (oldCost === null || newCost === null || oldMonthly === null || newMonthly === null) return next;
-  const costChanged = Math.abs(oldCost - newCost) > 0.000001;
-  const financingChanged = oldMonthly !== newMonthly;
+  const cost = sourceCost(next);
+  const monthly = numberFrom(next.financiamento_mensal);
+  if (cost === null || cost <= 0 || monthly === null) return next;
+
+  const bands = (next.percentual_margens ?? []).map((band) => ({ ...band }));
   const oldBands = previous.percentual_margens ?? [];
-  const newBands = (next.percentual_margens ?? []).map((band) => ({ ...band }));
-  const originalRows = previous.faixas ?? [];
-  const rows: PriceRow[] = originalRows.length ? originalRows : [0, 28, 56].map((prazo_dias) => ({ prazo_dias }));
-  const newRows: PriceRow[] = rows.map((row) => ({ ...row }));
+  const oldFirst = numberFrom(oldBands[0]?.margem_configurada) ?? 0;
+  const first = numberFrom(bands[0]?.margem_configurada) ?? 0;
+  const firstChanged = first !== oldFirst;
 
-  for (let index = 0; index < 4; index++) {
-    const channel = channels[index];
-    const oldMargin = numberFrom(oldBands[index]?.margem_configurada) ?? 0;
-    const newMargin = numberFrom(newBands[index]?.margem_configurada) ?? 0;
-    const oldCommission = numberFrom(oldBands[index]?.comissao_interna) ?? 0;
-    const newCommission = numberFrom(newBands[index]?.comissao_interna) ?? 0;
-    const rateChanged = oldMargin !== newMargin || oldCommission !== newCommission;
-    if (!costChanged && !financingChanged && !rateChanged) continue;
-    const oldDenominator = (1 - oldMargin / 100) * (1 - oldCommission / 100);
-    const newDenominator = (1 - newMargin / 100) * (1 - newCommission / 100);
-    const oldBase = channelBase(originalRows, channel, oldMonthly);
-    if (!newBands[index] && oldBase === null) continue;
-    const newBase = oldBase !== null && oldCost > 0
-      ? oldBase * newCost / oldCost * oldDenominator / newDenominator
-      : newCost / newDenominator;
+  if (firstChanged) {
+    // In COMPRAS, these two discounts track the first margin at 5% and 10%.
+    next.desconto_produto = dbfFormat(first * 0.05);
+    next.desconto_revenda = dbfFormat(first * 0.10);
 
-    for (const row of newRows) {
-      const days = Number(row.prazo_dias ?? 0);
-      const previousChannel = row[channel];
-      const previousRowCommission = numberFrom(previousChannel?.comissao_percentual) ?? oldCommission;
-      const rowCommission = oldCommission > 0
-        ? previousRowCommission * newCommission / oldCommission
-        : newCommission;
-      row[channel] = {
-        ...previousChannel,
-        preco: format(newBase / factor(newMonthly, days)),
-        comissao_percentual: format(rowCommission),
-      };
-    }
-    if (newCost > 0 && newBands[index]) {
-      const zeroDay = newRows.find((row) => Number(row.prazo_dias ?? 0) === 0);
-      const price = numberFrom(zeroDay?.[channel]?.preco) ?? newBase;
-      newBands[index] = { ...newBands[index], margem_bruta: format((price / newCost - 1) * 100) };
-    }
   }
-  next.faixas = newRows;
-  next.percentual_margens = newBands;
+
+  const minimum = numberFrom(next.percentual_minimo);
+  if (minimum !== null && minimum < 100) {
+    next.valor_minimo = dbfFormat(cost / (1 - minimum / 100));
+  }
+
+  const sourceRows = previous.faixas?.length ? previous.faixas : [0, 28, 56].map((prazo_dias) => ({ prazo_dias }));
+  next.faixas = sourceRows.map((sourceRow) => {
+    const days = Number(sourceRow.prazo_dias ?? 0);
+    const term = factor(monthly, days);
+    const row: PriceRow = { ...sourceRow, preco_minimo: next.valor_minimo };
+    if (sourceRow.calculo && typeof sourceRow.calculo === "object") {
+      row.calculo = { ...(sourceRow.calculo as Record<string, unknown>), percentual_minimo: next.percentual_minimo };
+    }
+    channels.forEach((channel, index) => {
+      const band = bands[index];
+      if (!band) return;
+      const margin = numberFrom(band.margem_configurada) ?? 0;
+      const commission = numberFrom(band.comissao_interna) ?? 0;
+      const divisor = (1 - margin / 100) * (1 - commission / 100) * term;
+      if (divisor <= 0) return;
+      const price = truncate(cost / divisor);
+      const saleTerm = numberFrom(next.prazo_venda) || Math.max(...sourceRows.map((item) => Number(item.prazo_dias ?? 0)));
+      const termCommission = saleTerm > 0
+        ? format(commission * (1 - monthly / 100) ** (commissionTermExponent * days / saleTerm))
+        : format(commission);
+      row[channel] = {
+        ...sourceRow[channel],
+        preco: dbfFormat(price),
+        comissao_percentual: termCommission,
+      };
+      if (days === 0) {
+        band.margem_bruta = dbfFormat((price / cost - 1) * 100);
+      }
+    });
+    return row;
+  });
+  next.percentual_margens = bands;
+  next.margem = bands[0]?.margem_bruta ?? next.margem;
   return next;
 }
 
@@ -149,25 +158,42 @@ export function updatePricingField(previous: PricingData, key: string, value: st
   return recalculate(previous, next);
 }
 
-export function updateMarginBand(previous: PricingData, index: number, key: "margem_configurada" | "comissao_interna", value: string): PricingData {
+export function updateMarginBand(previous: PricingData, index: number, key: "margem_configurada" | "comissao_interna", value: string, reference: PricingData = previous): PricingData {
   const previousBands = previous.percentual_margens ?? [];
+  const referenceBands = reference.percentual_margens ?? [];
   const bands = previousBands.map((band) => ({ ...band }));
   if (!bands[index]) return previous;
   bands[index][key] = value;
   if (value.trim() === "" || numberFrom(value) === null) return { ...previous, percentual_margens: bands };
   if (key === "margem_configurada") {
-    const oldMargin = numberFrom(previousBands[index].margem_configurada) ?? 0;
+    const oldMargin = numberFrom(referenceBands[index]?.margem_configurada) ?? 0;
     const newMargin = numberFrom(value) ?? 0;
-    const oldCommission = numberFrom(previousBands[index].comissao_interna) ?? 0;
+    const oldCommission = numberFrom(referenceBands[index]?.comissao_interna) ?? 0;
     if (oldMargin > 0) bands[index].comissao_interna = format(oldCommission * newMargin / oldMargin);
     if (index === 0 && oldMargin > 0) {
       for (let i = 1; i < Math.min(4, bands.length); i++) {
-        const margin = numberFrom(previousBands[i].margem_configurada) ?? 0;
-        const commission = numberFrom(previousBands[i].comissao_interna) ?? 0;
+        const margin = numberFrom(referenceBands[i]?.margem_configurada) ?? 0;
+        const commission = numberFrom(referenceBands[i]?.comissao_interna) ?? 0;
         bands[i].margem_configurada = format(margin * newMargin / oldMargin);
         bands[i].comissao_interna = format(commission * newMargin / oldMargin);
       }
     }
   }
-  return recalculate(previous, { ...previous, percentual_margens: bands });
+  const next = { ...previous, percentual_margens: bands };
+  const referenceMargin = numberFrom(referenceBands[0]?.margem_configurada) ?? 0;
+  const referenceFourth = referenceBands[3];
+  const fourth = bands[3];
+  if (referenceFourth && fourth && referenceMargin > 0) {
+    const oldMinimum = numberFrom(reference.percentual_minimo);
+    const oldMargin4 = numberFrom(referenceFourth.margem_configurada);
+    const oldCommission4 = numberFrom(referenceFourth.comissao_interna);
+    const margin4 = numberFrom(fourth.margem_configurada);
+    const commission4 = numberFrom(fourth.comissao_interna);
+    if ([oldMinimum, oldMargin4, oldCommission4, margin4, commission4].every((item) => item !== null)) {
+      const baseline = predictedMinimum(oldMargin4!, oldCommission4!, referenceMargin);
+      const changed = predictedMinimum(margin4!, commission4!, referenceMargin);
+      next.percentual_minimo = format(oldMinimum! + changed - baseline);
+    }
+  }
+  return recalculate(previous, next);
 }
