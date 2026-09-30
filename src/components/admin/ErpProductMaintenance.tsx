@@ -6,16 +6,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { ErpRecordDialog, type ErpRecordView } from "@/components/admin/ErpRecordDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { marginLabels, pricingError, updateMarginBand, updatePricingField, type PriceRow, type PricingData } from "@/lib/erp-product-pricing";
 
 type Values = Record<string, string>;
-type PriceRow = { prazo_dias?: number; tabela?: { preco?: string; comissao_percentual?: string }; produtor?: { preco?: string; comissao_percentual?: string }; revenda?: { preco?: string; comissao_percentual?: string }; tabela_endereco?: { preco?: string }; preco_web?: { preco?: string } };
 type ProductPage = { items: ErpProduct[]; total: number };
 const PAGE_SIZE = 50;
 type ErpProduct = {
   code: string;
   name: string;
   product_data: Values;
-  pricing_data: Values & { faixas?: PriceRow[] };
+  pricing_data: PricingData;
 };
 type Screen = "tabela" | "inclusao" | "consulta";
 
@@ -52,9 +52,8 @@ const priceFields: [string, string][] = [
   ["prazo_compra", "Prz Compra"], ["complemento", "Complemento"],
   ["quantidade_preco_promocional", "Qt_Pr_Promo"], ["descricao_ajuste", "Descrição Ajuste"],
   ["tabela_fixa", "Tabela Fixa"], ["pontos_site", "Pontos Site"],
-  ["qcm_prazo", "Qcm_Prz"], ["qcm_preco", "Qcm_Prc"], ["margem", "% Margem"],
-  ["desconto_produto", "Ds_PRD"], ["comissao_interna", "Comiss Int"],
-  ["desconto_revenda", "Ds_REV"], ["margem_bruta", "% Mrg Bruta"],
+  ["qcm_prazo", "Qcm_Prz"], ["qcm_preco", "Qcm_Prc"],
+  ["desconto_produto", "Ds_PRD"], ["desconto_revenda", "Ds_REV"],
   ["saldo_matriz", "Sld Matriz"], ["almoxarifado", "Almox"],
   ["filial_rp", "Fil_RP"], ["total", "Total"],
 ];
@@ -92,6 +91,77 @@ function FieldGrid({ fields, values }: { fields: [string, string][]; values: Val
   );
 }
 
+
+function displayPricing(values: PricingData): PricingData {
+  const first = values.faixas?.[0];
+  return {
+    ...values,
+    valor_minimo: values.valor_minimo || String(first?.preco_minimo ?? ""),
+  };
+}
+
+function MarginDetails({ values }: { values: PricingData }) {
+  const bands = values.percentual_margens ?? [];
+  const rows = (start: number, end: number) => bands.slice(start, end).map((band, offset) => (
+    <tr key={band.numero} className="border-t">
+      <th scope="row" className="px-3 py-2 font-medium">{marginLabels[start + offset]}</th>
+      <td className="px-3 py-2">{band.margem_configurada ?? "—"}%</td>
+      <td className="px-3 py-2">{band.margem_bruta ?? "—"}%</td>
+      <td className="px-3 py-2">{band.comissao_interna ?? "—"}%</td>
+    </tr>
+  ));
+  return (
+    <section className="space-y-2">
+      <h4 className="font-semibold">Margens por tabela</h4>
+      <p className="text-sm text-muted-foreground">Margem configurada, margem bruta e comissão são valores diferentes no COMPRAS.</p>
+      <div className="overflow-x-auto rounded-lg border bg-card">
+        <table className="w-full min-w-[520px] text-left text-sm">
+          <thead className="bg-muted/50"><tr>
+            {["Tabela", "Margem", "Margem bruta", "Comissão interna"].map((label) => <th key={label} className="px-3 py-2 font-medium">{label}</th>)}
+          </tr></thead>
+          <tbody>{rows(0, 4)}</tbody>
+        </table>
+      </div>
+      {bands.length > 4 && <details className="text-sm">
+        <summary className="cursor-pointer text-muted-foreground">Ver outras modalidades do cadastro original</summary>
+        <div className="mt-2 overflow-x-auto rounded-lg border bg-card">
+          <table className="w-full min-w-[520px] text-left text-sm"><tbody>{rows(4, bands.length)}</tbody></table>
+        </div>
+      </details>}
+    </section>
+  );
+}
+
+function PriceRows({ rows }: { rows: PriceRow[] }) {
+  return (
+    <div className="overflow-x-auto rounded-lg border bg-card">
+      <table className="min-w-[820px] w-full text-left text-sm">
+        <thead className="bg-muted/50 text-muted-foreground"><tr>
+          {["Prazo", "Tabela", "% comissão", "Produtor", "% comissão", "Revenda", "% comissão", "Tb. end.", "% comissão", "Preço web"].map((title) => (
+            <th key={title} className="px-3 py-2 font-medium">{title}</th>
+          ))}
+        </tr></thead>
+        <tbody>
+          {rows.length ? rows.map((row, index) => (
+            <tr key={index} className="border-t">
+              <td className="px-3 py-2">{row.prazo_dias ?? "—"}</td>
+              <td className="px-3 py-2">{row.tabela?.preco ?? "—"}</td>
+              <td className="px-3 py-2">{row.tabela?.comissao_percentual ?? "—"}</td>
+              <td className="px-3 py-2">{row.produtor?.preco ?? "—"}</td>
+              <td className="px-3 py-2">{row.produtor?.comissao_percentual ?? "—"}</td>
+              <td className="px-3 py-2">{row.revenda?.preco ?? "—"}</td>
+              <td className="px-3 py-2">{row.revenda?.comissao_percentual ?? "—"}</td>
+              <td className="px-3 py-2">{row.tabela_endereco?.preco ?? "—"}</td>
+              <td className="px-3 py-2">{row.tabela_endereco?.comissao_percentual ?? "—"}</td>
+              <td className="px-3 py-2">{row.preco_web?.preco ?? "—"}</td>
+            </tr>
+          )) : <tr><td colSpan={10} className="px-3 py-6 text-center text-muted-foreground">Nenhuma faixa de preço cadastrada.</td></tr>}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function ProductDetails({ product, showPricing }: { product: ErpProduct; showPricing: boolean }) {
   return (
     <div className="space-y-5">
@@ -103,31 +173,9 @@ function ProductDetails({ product, showPricing }: { product: ErpProduct; showPri
       {showPricing ? (
         <>
           <h4 className="font-semibold">Tabela de preço</h4>
-          <FieldGrid fields={priceFields} values={pricingForEdit(product.pricing_data ?? {})} />
-          <div className="overflow-x-auto rounded-lg border bg-card">
-            <table className="min-w-[760px] w-full text-left text-sm">
-              <thead className="bg-muted/50 text-muted-foreground"><tr>
-                {["Prazo", "Tabela", "% comissão", "Produtor", "% comissão", "Revenda", "% comissão", "Tb. end.", "Preço web"].map((title) => (
-                  <th key={title} className="px-3 py-2 font-medium">{title}</th>
-                ))}
-              </tr></thead>
-              <tbody>
-                {product.pricing_data?.faixas?.length ? product.pricing_data.faixas.map((row, index) => (
-                  <tr key={`${row.prazo_dias}-${index}`} className="border-t">
-                    <td className="px-3 py-2">{row.prazo_dias ?? "—"}</td>
-                    <td className="px-3 py-2">{row.tabela?.preco ?? "—"}</td>
-                    <td className="px-3 py-2">{row.tabela?.comissao_percentual ?? "—"}</td>
-                    <td className="px-3 py-2">{row.produtor?.preco ?? "—"}</td>
-                    <td className="px-3 py-2">{row.produtor?.comissao_percentual ?? "—"}</td>
-                    <td className="px-3 py-2">{row.revenda?.preco ?? "—"}</td>
-                    <td className="px-3 py-2">{row.revenda?.comissao_percentual ?? "—"}</td>
-                    <td className="px-3 py-2">{row.tabela_endereco?.preco ?? "—"}</td>
-                    <td className="px-3 py-2">{row.preco_web?.preco ?? "—"}</td>
-                  </tr>
-                )) : <tr><td colSpan={9} className="px-3 py-6 text-center text-muted-foreground">Nenhuma faixa de preço cadastrada.</td></tr>}
-              </tbody>
-            </table>
-          </div>
+          <FieldGrid fields={priceFields} values={displayPricing(product.pricing_data ?? {} as PricingData)} />
+          <MarginDetails values={product.pricing_data ?? {} as PricingData} />
+          <PriceRows rows={product.pricing_data?.faixas ?? []} />
         </>
       ) : (
         <><h4 className="font-semibold">Cadastro do produto</h4><FieldGrid fields={productFields} values={product.product_data ?? {}} /></>
@@ -176,164 +224,61 @@ function ProductForm({
 }
 
 
-const recalculatedFields = new Set(["custo_real", "frete", "carga_descarga", "percentual_ajuste", "margem", "financiamento_mensal"]);
 const derivedFields = new Set(["custo_final", "custo_ajustado"]);
-
-function numberFrom(value: string | number | undefined): number | null {
-  if (value === undefined || value === "") return 0;
-  if (typeof value === "number") return Number.isFinite(value) ? value : null;
-  const text = value.trim().replace(/\s/g, "");
-  if (!text) return 0;
-  const comma = text.lastIndexOf(",");
-  const dot = text.lastIndexOf(".");
-  const normalized = comma > dot ? text.replace(/\./g, "").replace(",", ".") : text.replace(/,/g, "");
-  const parsed = Number(normalized);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-function money(value: number, digits = 2): string {
-  return value.toFixed(digits);
-}
-
-function financingFactor(rate: number, days: number): number {
-  return 1 - (rate / 100) * days / 30;
-}
-
-function adjustedCost(values: Values): number | null {
-  const real = numberFrom(values.custo_real);
-  const freight = numberFrom(values.frete);
-  const handling = numberFrom(values.carga_descarga);
-  const adjustment = numberFrom(values.percentual_ajuste);
-  if (real === null || freight === null || handling === null || adjustment === null) return null;
-  return (real + freight + handling) * (1 + adjustment / 100);
-}
-
-function basePrice(rows: PriceRow[], channel: "tabela" | "produtor" | "revenda", rate: number): number | null {
-  for (const row of [...rows].sort((a, b) => (a.prazo_dias ?? 0) - (b.prazo_dias ?? 0))) {
-    const price = numberFrom(row[channel]?.preco);
-    const days = Number(row.prazo_dias ?? 0);
-    const factor = financingFactor(rate, days);
-    if (price !== null && price > 0 && factor > 0) return price * factor;
-  }
-  return null;
-}
-
-function recalculatePricing(previous: ErpProduct["pricing_data"], key: string, value: string): ErpProduct["pricing_data"] {
-  const next = { ...previous, [key]: value };
-  if (!recalculatedFields.has(key) || value.trim() === "") return next;
-  const oldCost = adjustedCost(previous);
-  const newCost = adjustedCost(next);
-  const oldRate = numberFrom(previous.financiamento_mensal);
-  const newRate = numberFrom(next.financiamento_mensal);
-  const desiredMargin = numberFrom(next.margem);
-  if (oldCost === null || newCost === null || oldRate === null || newRate === null || desiredMargin === null) return next;
-
-  const real = numberFrom(next.custo_real) ?? 0;
-  const freight = numberFrom(next.frete) ?? 0;
-  const handling = numberFrom(next.carga_descarga) ?? 0;
-  next.custo_final = money(real + freight + handling, 3);
-  next.custo_ajustado = money(newCost, 3);
-
-  const previousRows = previous.faixas ?? [];
-  const requestedDays = numberFrom(next.prazo_venda) ?? 56;
-  const lastDay = Number.isFinite(requestedDays) && requestedDays > 0 ? Math.round(requestedDays) : 56;
-  const rows = previousRows.length ? previousRows : key === "margem"
-    ? [0, Math.round(lastDay / 2), lastDay].map((prazo_dias) => ({ prazo_dias } as PriceRow))
-    : [];
-  const oldBases = {
-    tabela: basePrice(previousRows, "tabela", oldRate),
-    produtor: basePrice(previousRows, "produtor", oldRate),
-    revenda: basePrice(previousRows, "revenda", oldRate),
-  };
-  let tableBase = oldBases.tabela;
-  if (key === "margem") {
-    tableBase = newCost * (1 + desiredMargin / 100);
-  } else if (tableBase !== null && oldCost > 0) {
-    tableBase *= newCost / oldCost;
-  } else if (newCost > 0 && desiredMargin > -100) {
-    tableBase = newCost * (1 + desiredMargin / 100);
-  }
-  if (tableBase === null || tableBase < 0 || rows.some((row) => financingFactor(newRate, Number(row.prazo_dias ?? 0)) <= 0)) return next;
-
-  if (newCost > 0) next.margem = money((tableBase / newCost - 1) * 100);
-  next.faixas = rows.map((row) => {
-    const days = Number(row.prazo_dias ?? 0);
-    const factor = financingFactor(newRate, days);
-    const updated: PriceRow = { ...row };
-    for (const channel of ["tabela", "produtor", "revenda"] as const) {
-      const oldBase = oldBases[channel];
-      if (channel !== "tabela" && oldBase === null) continue;
-      const channelBase = channel === "tabela" ? tableBase! : oldBases.tabela && oldBase
-        ? tableBase! * oldBase / oldBases.tabela
-        : oldBase! * (oldCost > 0 ? newCost / oldCost : 1);
-      updated[channel] = { ...row[channel], preco: money(channelBase / factor) };
-    }
-    return updated;
-  });
-  return next;
-}
-
-function pricingError(values: ErpProduct["pricing_data"]): string | null {
-  for (const key of recalculatedFields) {
-    if (numberFrom(values[key]) === null) return "Informe números válidos nos campos de cálculo.";
-  }
-  const cost = adjustedCost(values);
-  if (cost === null || cost < 0) return "O custo ajustado precisa ser válido e não negativo.";
-  if ((numberFrom(values.margem) ?? 0) <= -100) return "A margem deve ser maior que -100%.";
-  if ((values.faixas ?? []).some((row) => financingFactor(numberFrom(values.financiamento_mensal) ?? 0, Number(row.prazo_dias ?? 0)) <= 0)) {
-    return "A taxa de financiamento é alta demais para um dos prazos.";
-  }
-  return null;
-}
-
-function pricingForEdit(values: ErpProduct["pricing_data"]): ErpProduct["pricing_data"] {
-  const cost = adjustedCost(values);
-  const rate = numberFrom(values.financiamento_mensal);
-  const base = rate === null ? null : basePrice(values.faixas ?? [], "tabela", rate);
-  return cost && cost > 0 && base !== null
-    ? { ...values, margem: money((base / cost - 1) * 100) }
-    : values;
-}
 
 function PricingForm({ initial, saving, onSave, onCancel }: {
   initial: ErpProduct;
   saving: boolean;
-  onSave: (values: ErpProduct["pricing_data"]) => void;
+  onSave: (values: PricingData) => void;
   onCancel: () => void;
 }) {
-  const [values, setValues] = useState<ErpProduct["pricing_data"]>(() => pricingForEdit(initial.pricing_data ?? {}));
+  const [values, setValues] = useState<PricingData>(() => displayPricing(initial.pricing_data ?? {} as PricingData));
   const error = pricingError(values);
+  const bands = values.percentual_margens ?? [];
   return (
     <form onSubmit={(event) => { event.preventDefault(); if (!error) onSave(values); }} className="space-y-5">
-      <p className="text-sm text-muted-foreground">Custo, ajuste, margem e financiamento recalculam os preços por prazo enquanto você edita.</p>
+      <p className="text-sm text-muted-foreground">Edite a margem de cada tabela. A primeira margem ajusta as outras três na mesma proporção; você também pode editar cada uma separadamente. Os preços e margens brutas são atualizados antes de salvar.</p>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {priceFields.map(([key, label]) => (
           <label key={key} className="space-y-1 text-sm font-medium">
             {label}
             <Input value={values[key] ?? ""} readOnly={derivedFields.has(key)}
               className={derivedFields.has(key) ? "bg-muted/40" : undefined}
-              onChange={(event) => setValues((previous) => recalculatePricing(previous, key, event.target.value))} />
+              onChange={(event) => setValues((previous) => updatePricingField(previous, key, event.target.value))} />
           </label>
         ))}
       </div>
+      <section className="space-y-2">
+        <h4 className="font-semibold">Margens por tabela</h4>
+        <div className="overflow-x-auto rounded-lg border bg-card">
+          <table className="w-full min-w-[620px] text-left text-sm">
+            <thead className="bg-muted/50"><tr>
+              {["Tabela", "Margem (%)", "Comissão interna (%)", "Margem bruta (%)"].map((label) => <th key={label} className="px-3 py-2 font-medium">{label}</th>)}
+            </tr></thead>
+            <tbody>
+              {bands.slice(0, 4).map((band, index) => (
+                <tr key={band.numero} className="border-t">
+                  <th scope="row" className="px-3 py-2 font-medium">{marginLabels[index]}</th>
+                  <td className="px-3 py-2"><Input aria-label={marginLabels[index] + " margem"} inputMode="decimal" value={band.margem_configurada ?? ""}
+                    onChange={(event) => setValues((previous) => updateMarginBand(previous, index, "margem_configurada", event.target.value))} /></td>
+                  <td className="px-3 py-2"><Input aria-label={marginLabels[index] + " comissão"} inputMode="decimal" value={band.comissao_interna ?? ""}
+                    onChange={(event) => setValues((previous) => updateMarginBand(previous, index, "comissao_interna", event.target.value))} /></td>
+                  <td className="px-3 py-2 font-medium">{band.margem_bruta ?? "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {bands.length > 4 && <details className="text-sm">
+          <summary className="cursor-pointer text-muted-foreground">Ver outras modalidades do cadastro original</summary>
+          <div className="mt-2 space-y-1 rounded-lg border bg-card p-3">
+            {bands.slice(4).map((band, index) => <p key={band.numero}>{marginLabels[index + 4]}: margem {band.margem_configurada ?? "—"}%, comissão {band.comissao_interna ?? "—"}%, margem bruta {band.margem_bruta ?? "—"}%</p>)}
+          </div>
+        </details>}
+      </section>
+      <h4 className="font-semibold">Preços calculados por prazo</h4>
+      <PriceRows rows={values.faixas ?? []} />
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-      <div className="overflow-x-auto rounded-lg border bg-card">
-        <table className="min-w-[600px] w-full text-left text-sm">
-          <thead className="bg-muted/50 text-muted-foreground"><tr>
-            {["Prazo", "Tabela", "Produtor", "Revenda"].map((label) => <th key={label} className="px-3 py-2 font-medium">{label}</th>)}
-          </tr></thead>
-          <tbody>
-            {values.faixas?.length ? values.faixas.map((row, index) => (
-              <tr key={index} className="border-t">
-                <td className="px-3 py-2">{row.prazo_dias ?? "—"} dias</td>
-                <td className="px-3 py-2">{row.tabela?.preco ?? "—"}</td>
-                <td className="px-3 py-2">{row.produtor?.preco ?? "—"}</td>
-                <td className="px-3 py-2">{row.revenda?.preco ?? "—"}</td>
-              </tr>
-            )) : <tr><td colSpan={4} className="px-3 py-4 text-muted-foreground">Informe a margem para criar as faixas de preço.</td></tr>}
-          </tbody>
-        </table>
-      </div>
       <div className="flex flex-wrap gap-2">
         <Button type="submit" disabled={saving || Boolean(error)}>{saving ? "Salvando..." : "Salvar tabela de preços"}</Button>
         <Button type="button" variant="outline" onClick={onCancel}>Cancelar</Button>
