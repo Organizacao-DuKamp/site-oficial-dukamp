@@ -38,7 +38,7 @@ export function numberFrom(value: string | number | null | undefined): number | 
 
 const format = (value: number, digits = 2) => value.toFixed(digits);
 // The DBF program keeps two decimal places by truncation, including prices and gross margins.
-const truncate = (value: number, digits = 2) => Math.trunc(value * 10 ** digits + Number.EPSILON * 100) / 10 ** digits;
+const truncate = (value: number, digits = 2) => Math.trunc(value * 10 ** digits + 1e-8) / 10 ** digits;
 const dbfFormat = (value: number, digits = 2) => truncate(value, digits).toFixed(digits);
 const factor = (monthly: number, days: number) => 1 - monthly * days / 3000;
 const channelBase = (rows: PriceRow[], channel: typeof channels[number], monthly: number) => {
@@ -98,12 +98,7 @@ function recalculate(previous: PricingData, next: PricingData): PricingData {
     // In COMPRAS, these two discounts track the first margin at 5% and 10%.
     next.desconto_produto = dbfFormat(first * 0.05);
     next.desconto_revenda = dbfFormat(first * 0.10);
-    // Preserve the product-specific minimum offset recorded in its DBF row.
-    // COMPRAS changes the minimum by the movement in margin after commission.
-    const oldMinimum = numberFrom(previous.percentual_minimo) ?? 0;
-    const oldCommission = numberFrom(oldBands[0]?.comissao_interna) ?? 0;
-    const delta = (first - oldFirst) - (firstCommission - oldCommission);
-    next.percentual_minimo = format(oldMinimum + delta + Math.sign(delta) * 0.01);
+
   }
 
   const minimum = numberFrom(next.percentual_minimo);
@@ -127,15 +122,12 @@ function recalculate(previous: PricingData, next: PricingData): PricingData {
       const divisor = (1 - margin / 100) * (1 - commission / 100) * term;
       if (divisor <= 0) return;
       const price = truncate(cost / divisor);
-      // Term commissions in the original are lower than the zero-day rate.
-      // The DBF keeps only the zero-day rate; the displayed term rate is
-      // reconstructed from its monthly financing factor.
-      const termReduction = 0.0188 + 0.00433 * monthly;
-      const termCommission = days === 0 ? commission : commission * (1 - termReduction) ** (days / 28);
+      // The DBF stores only the zero-day rate. Do not invent a term rate.
+      const termCommission = days === 0 ? format(commission) : undefined;
       row[channel] = {
         ...sourceRow[channel],
         preco: dbfFormat(price),
-        comissao_percentual: format(termCommission),
+        comissao_percentual: termCommission,
       };
       if (days === 0) {
         band.margem_bruta = dbfFormat((price / cost - 1) * 100);
