@@ -17,7 +17,7 @@ type ErpProduct = {
   pricing_data: Values & { faixas?: PriceRow[] };
 };
 type Action = "tabela" | "alteracao" | "inclusao" | "exclusao" | "consulta";
-type Screen = "escolha" | "produto" | Action;
+type Screen = Action;
 
 // Campos exibidos no cadastro do Clipper. As abreviações foram mantidas quando são parte do nome original.
 const productFields: [string, string][] = [
@@ -175,9 +175,9 @@ function ProductForm({
   );
 }
 
-export function ErpProductMaintenance({ onBack }: { onBack: () => void }) {
+export function ErpProductMaintenance() {
   const queryClient = useQueryClient();
-  const [screen, setScreen] = useState<Screen>("escolha");
+  const [screen, setScreen] = useState<Screen>("consulta");
   const [search, setSearch] = useState("");
   const [submitted, setSubmitted] = useState("");
   const [page, setPage] = useState(0);
@@ -234,43 +234,28 @@ export function ErpProductMaintenance({ onBack }: { onBack: () => void }) {
     setPage(0);
   }
 
-  if (screen === "escolha") {
-    return (
-      <div className="space-y-3">
-        <p className="text-sm text-muted-foreground">Escolha a área do programa Tabela Preço/Produto.</p>
-        <Button className="w-full justify-start" variant="outline" onClick={() => choose("tabela")}>Tabela de preço</Button>
-        <Button className="w-full justify-start" variant="outline" onClick={() => choose("produto")}>Produto</Button>
-        <Button variant="ghost" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Voltar</Button>
-      </div>
-    );
-  }
-
-  if (screen === "produto") {
-    return (
-      <div className="space-y-3">
-        <p className="text-sm text-muted-foreground">Manutenção de produtos</p>
-        {(["alteracao", "inclusao", "exclusao", "consulta"] as const).map((option) => (
-          <Button key={option} className="w-full justify-start" variant="outline" onClick={() => choose(option)}>
-            {option === "alteracao" ? <Pencil className="mr-2 h-4 w-4" /> : option === "inclusao" ? <Plus className="mr-2 h-4 w-4" /> : option === "exclusao" ? <Trash2 className="mr-2 h-4 w-4" /> : <Search className="mr-2 h-4 w-4" />}
-            {{ alteracao: "Alteração", inclusao: "Inclusão", exclusao: "Exclusão", consulta: "Consulta" }[option]}
-          </Button>
-        ))}
-        <Button variant="ghost" onClick={() => choose("escolha")}><ArrowLeft className="mr-2 h-4 w-4" /> Voltar</Button>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between gap-3">
-        <h3 className="text-lg font-semibold">
-          {{ tabela: "Tabela de preço", alteracao: "Alteração de produto", inclusao: "Inclusão de produto", exclusao: "Exclusão de produto", consulta: "Consulta de produto" }[screen]}
-        </h3>
-        <Button variant="outline" size="sm" onClick={() => choose(screen === "tabela" ? "escolha" : "produto")}>Voltar</Button>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Visualização de produtos">
+          <Button variant={screen === "tabela" ? "outline" : "default"} size="sm" aria-pressed={screen !== "tabela"} onClick={() => choose("consulta")}>Produtos</Button>
+          <Button variant={screen === "tabela" ? "default" : "outline"} size="sm" aria-pressed={screen === "tabela"} onClick={() => choose("tabela")}>Tabela de preços</Button>
+        </div>
+        <Button size="sm" onClick={() => choose("inclusao")}><Plus className="mr-2 h-4 w-4" /> Novo produto</Button>
       </div>
+      {(screen === "inclusao" || screen === "alteracao" || screen === "exclusao") && (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-lg font-semibold">
+            {{ inclusao: "Novo produto", alteracao: "Editar produto", exclusao: "Excluir produto" }[screen]}
+          </h3>
+          <Button variant="ghost" size="sm" onClick={() => setScreen("consulta")}>
+            <ArrowLeft className="mr-2 h-4 w-4" /> Voltar aos produtos
+          </Button>
+        </div>
+      )}
 
       {screen === "inclusao" ? (
-        <ProductForm saving={save.isPending} onSave={(name, values) => save.mutate({ name, values })} onCancel={() => choose("produto")} />
+        <ProductForm saving={save.isPending} onSave={(name, values) => save.mutate({ name, values })} onCancel={() => setScreen("consulta")} />
       ) : (
         <>
           <form className="flex flex-col gap-2 sm:flex-row" onSubmit={(event) => { event.preventDefault(); setSelectedCode(null); setPage(0); setSubmitted(search.trim()); }}>
@@ -325,6 +310,12 @@ export function ErpProductMaintenance({ onBack }: { onBack: () => void }) {
           {selected && (screen === "tabela" || screen === "consulta" || screen === "exclusao") && (
             <>
               <ProductDetails product={selected} showPricing={screen === "tabela"} />
+              {screen === "consulta" && (
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" onClick={() => setScreen("alteracao")}><Pencil className="mr-2 h-4 w-4" /> Editar produto</Button>
+                  <Button variant="outline" onClick={() => setScreen("exclusao")}><Trash2 className="mr-2 h-4 w-4" /> Excluir produto</Button>
+                </div>
+              )}
               {screen === "exclusao" && (
                 <Button variant="destructive" disabled={remove.isPending} onClick={() => {
                   if (window.confirm(`Excluir definitivamente o produto ${selected.code} — ${selected.name}?`)) remove.mutate(selected.code);

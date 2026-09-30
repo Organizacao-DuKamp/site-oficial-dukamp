@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Download, Search } from "lucide-react";
+import { Download, Search } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { marginPercent, sumMargins, type MarginValues } from "@/lib/erp-margin";
@@ -109,7 +109,7 @@ function exportCsv(rows: SellerMargin[], totals: MarginValues, days: number) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export function ErpSalesMargin({ onBack }: { onBack: () => void }) {
+export function ErpSalesMargin() {
   const today = localToday();
   const [draftFrom, setDraftFrom] = useState(`${today.slice(0, 7)}-01`);
   const [draftTo, setDraftTo] = useState(today);
@@ -159,18 +159,6 @@ export function ErpSalesMargin({ onBack }: { onBack: () => void }) {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h3 className="text-xl font-semibold">Consulta de margem e venda</h3>
-          <p className="text-sm text-muted-foreground">
-            Relatórios importados do ERP, agrupados pelo código do vendedor.
-          </p>
-        </div>
-        <Button variant="outline" size="sm" onClick={onBack}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Voltar
-        </Button>
-      </div>
       <form
         className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4"
         onSubmit={(event) => {

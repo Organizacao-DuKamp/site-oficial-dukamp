@@ -1,13 +1,13 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { ArrowLeft, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 type ProductUnit = { code: string; description: string; decimal_places: number };
-type Mode = "menu" | "inclusao" | "alteracao" | "exclusao" | "consulta";
+type Mode = "inclusao" | "alteracao" | "exclusao" | "consulta";
 
 // A tabela é criada pela migração do ERP e ainda não consta nos tipos gerados do Supabase.
 const db = supabase as any;
@@ -72,9 +72,9 @@ function UnitForm({ initial, saving, onSave, onCancel }: {
   );
 }
 
-export function ErpProductUnitMaintenance({ onBack }: { onBack: () => void }) {
+export function ErpProductUnitMaintenance() {
   const queryClient = useQueryClient();
-  const [mode, setMode] = useState<Mode>("menu");
+  const [mode, setMode] = useState<Mode>("consulta");
   const [search, setSearch] = useState("");
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
   const results = useQuery({ queryKey: ["erp-product-units"], queryFn: listUnits });
@@ -129,40 +129,25 @@ export function ErpProductUnitMaintenance({ onBack }: { onBack: () => void }) {
   }
 
   const titles: Record<Mode, string> = {
-    menu: "Unidades Medidas Produtos", inclusao: "Inclusão de unidade",
-    alteracao: "Alteração de unidade", exclusao: "Exclusão de unidade",
-    consulta: "Consulta de unidades",
+    inclusao: "Nova unidade", alteracao: "Editar unidade",
+    exclusao: "Excluir unidade", consulta: "Unidades de medida",
   };
 
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h3 className="text-lg font-semibold">{titles[mode]}</h3>
-          <p className="text-sm text-muted-foreground">Unidades de medida dos produtos do ERP.</p>
-        </div>
-        <Button variant="outline" size="sm" onClick={() => mode === "menu" ? onBack() : choose("menu")}>
-          <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
-        </Button>
+        {mode !== "consulta" && <h3 className="text-lg font-semibold">{titles[mode]}</h3>}
+        {mode === "consulta" ? (
+          <Button size="sm" onClick={() => choose("inclusao")}><Plus className="mr-2 h-4 w-4" /> Nova unidade</Button>
+        ) : (
+          <Button variant="ghost" size="sm" onClick={() => setMode("consulta")}>
+            <ArrowLeft className="mr-2 h-4 w-4" /> Voltar às unidades
+          </Button>
+        )}
       </div>
 
-      {mode === "menu" && (
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-          {([
-            { mode: "inclusao", label: "Inclusão", icon: Plus },
-            { mode: "alteracao", label: "Alteração", icon: Pencil },
-            { mode: "exclusao", label: "Exclusão", icon: Trash2 },
-            { mode: "consulta", label: "Consulta", icon: Search },
-          ] as const).map((option) => (
-            <Button key={option.mode} variant="outline" className="justify-start" onClick={() => choose(option.mode)}>
-              <option.icon className="mr-2 h-4 w-4" /> {option.label}
-            </Button>
-          ))}
-        </div>
-      )}
-
       {mode === "inclusao" && (
-        <UnitForm saving={save.isPending} onSave={(unit) => save.mutate(unit)} onCancel={() => choose("menu")} />
+        <UnitForm saving={save.isPending} onSave={(unit) => save.mutate(unit)} onCancel={() => setMode("consulta")} />
       )}
 
       {mode !== "inclusao" && (
@@ -184,7 +169,7 @@ export function ErpProductUnitMaintenance({ onBack }: { onBack: () => void }) {
               <ul className="max-h-80 divide-y overflow-y-auto">
                 {filtered.map((unit) => (
                   <li key={unit.code}>
-                    <button type="button" onClick={() => { setSelectedCode(unit.code); if (mode === "menu") setMode("consulta"); }}
+                    <button type="button" onClick={() => setSelectedCode(unit.code)}
                       className={"grid w-full grid-cols-[5rem_1fr_7rem] gap-3 px-4 py-2 text-left text-sm hover:bg-accent sm:grid-cols-[7rem_1fr_10rem] " + (selectedCode === unit.code ? "bg-primary/10" : "")}>
                       <span className="font-mono">{unit.code}</span><span>{unit.description}</span><span>{unit.decimal_places}</span>
                     </button>
@@ -195,13 +180,19 @@ export function ErpProductUnitMaintenance({ onBack }: { onBack: () => void }) {
           </div>
           {selected && mode === "alteracao" && (
             <UnitForm key={selected.code} initial={selected} saving={save.isPending}
-              onSave={(unit) => save.mutate(unit)} onCancel={() => setSelectedCode(null)} />
+              onSave={(unit) => save.mutate(unit)} onCancel={() => setMode("consulta")} />
           )}
           {selected && (mode === "consulta" || mode === "exclusao") && (
             <div className="space-y-3 rounded-lg border bg-card p-4">
               <p className="text-sm"><strong>Unidade:</strong> {selected.code}</p>
               <p className="text-sm"><strong>Descrição:</strong> {selected.description}</p>
               <p className="text-sm"><strong>Casas decimais:</strong> {selected.decimal_places}</p>
+              {mode === "consulta" && (
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" onClick={() => setMode("alteracao")}><Pencil className="mr-2 h-4 w-4" /> Editar unidade</Button>
+                  <Button variant="outline" onClick={() => setMode("exclusao")}><Trash2 className="mr-2 h-4 w-4" /> Excluir unidade</Button>
+                </div>
+              )}
               {mode === "exclusao" && (
                 <Button variant="destructive" disabled={remove.isPending} onClick={() => {
                   if (window.confirm("Excluir definitivamente a unidade " + selected.code + "?")) remove.mutate(selected.code);

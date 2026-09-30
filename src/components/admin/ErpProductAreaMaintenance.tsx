@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { ArrowLeft, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ type ProductArea = {
   responsible_code: string;
   responsible_name: string;
 };
-type Mode = "menu" | "inclusao" | "alteracao" | "exclusao" | "consulta";
+type Mode = "inclusao" | "alteracao" | "exclusao" | "consulta";
 
 // A migração do ERP ainda não aparece nos tipos gerados do cliente Supabase.
 const db = supabase as any;
@@ -87,9 +87,9 @@ function AreaForm({ initial, saving, onSave, onCancel }: {
   );
 }
 
-export function ErpProductAreaMaintenance({ onBack }: { onBack: () => void }) {
+export function ErpProductAreaMaintenance() {
   const queryClient = useQueryClient();
-  const [mode, setMode] = useState<Mode>("menu");
+  const [mode, setMode] = useState<Mode>("consulta");
   const [search, setSearch] = useState("");
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
   const results = useQuery({ queryKey: ["erp-product-areas"], queryFn: listAreas });
@@ -148,39 +148,25 @@ export function ErpProductAreaMaintenance({ onBack }: { onBack: () => void }) {
   }
 
   const titles: Record<Mode, string> = {
-    menu: "Áreas Produtos/Responsável", inclusao: "Inclusão de área",
-    alteracao: "Alteração de área", exclusao: "Exclusão de área", consulta: "Consulta de áreas",
+    inclusao: "Nova área", alteracao: "Editar área",
+    exclusao: "Excluir área", consulta: "Áreas e responsáveis",
   };
 
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h3 className="text-lg font-semibold">{titles[mode]}</h3>
-          <p className="text-sm text-muted-foreground">Cadastro de áreas de produtos e responsáveis do ERP.</p>
-        </div>
-        <Button variant="outline" size="sm" onClick={() => mode === "menu" ? onBack() : choose("menu")}>
-          <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
-        </Button>
+        {mode !== "consulta" && <h3 className="text-lg font-semibold">{titles[mode]}</h3>}
+        {mode === "consulta" ? (
+          <Button size="sm" onClick={() => choose("inclusao")}><Plus className="mr-2 h-4 w-4" /> Nova área</Button>
+        ) : (
+          <Button variant="ghost" size="sm" onClick={() => setMode("consulta")}>
+            <ArrowLeft className="mr-2 h-4 w-4" /> Voltar às áreas
+          </Button>
+        )}
       </div>
 
-      {mode === "menu" && (
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-          {([
-            { mode: "inclusao", label: "Inclusão", icon: Plus },
-            { mode: "alteracao", label: "Alteração", icon: Pencil },
-            { mode: "exclusao", label: "Exclusão", icon: Trash2 },
-            { mode: "consulta", label: "Consulta", icon: Search },
-          ] as const).map((option) => (
-            <Button key={option.mode} variant="outline" className="justify-start" onClick={() => choose(option.mode)}>
-              <option.icon className="mr-2 h-4 w-4" /> {option.label}
-            </Button>
-          ))}
-        </div>
-      )}
-
       {mode === "inclusao" && (
-        <AreaForm saving={save.isPending} onSave={(area) => save.mutate(area)} onCancel={() => choose("menu")} />
+        <AreaForm saving={save.isPending} onSave={(area) => save.mutate(area)} onCancel={() => setMode("consulta")} />
       )}
 
       {mode !== "inclusao" && (
@@ -190,7 +176,6 @@ export function ErpProductAreaMaintenance({ onBack }: { onBack: () => void }) {
             <Input type="search" value={search} onChange={(event) => { setSearch(event.target.value); setSelectedCode(null); }}
               placeholder="Código, descrição ou responsável" />
           </label>
-          <p className="text-xs text-muted-foreground">Alguns nomes vieram abreviados nas capturas do sistema anterior. É possível completá-los em Alteração.</p>
           <div className="overflow-x-auto rounded-lg border bg-card">
             <div className="min-w-[570px]">
               <div className="grid grid-cols-[5rem_1fr_4rem_1fr] gap-3 border-b bg-muted/40 px-4 py-2 text-xs font-semibold">
@@ -204,7 +189,7 @@ export function ErpProductAreaMaintenance({ onBack }: { onBack: () => void }) {
                 <ul className="max-h-80 divide-y overflow-y-auto">
                   {filtered.map((area) => (
                     <li key={area.code}>
-                      <button type="button" onClick={() => { setSelectedCode(area.code); if (mode === "menu") setMode("consulta"); }}
+                      <button type="button" onClick={() => setSelectedCode(area.code)}
                         className={"grid w-full grid-cols-[5rem_1fr_4rem_1fr] gap-3 px-4 py-2 text-left text-sm hover:bg-accent " + (selectedCode === area.code ? "bg-primary/10" : "")}>
                         <span className="font-mono">{area.code}</span><span>{area.description || "—"}</span>
                         <span className="font-mono">{area.responsible_code || "—"}</span><span>{area.responsible_name || "—"}</span>
@@ -217,13 +202,19 @@ export function ErpProductAreaMaintenance({ onBack }: { onBack: () => void }) {
           </div>
           {selected && mode === "alteracao" && (
             <AreaForm key={selected.code} initial={selected} saving={save.isPending}
-              onSave={(area) => save.mutate(area)} onCancel={() => setSelectedCode(null)} />
+              onSave={(area) => save.mutate(area)} onCancel={() => setMode("consulta")} />
           )}
           {selected && (mode === "consulta" || mode === "exclusao") && (
             <div className="space-y-3 rounded-lg border bg-card p-4">
               <p className="text-sm"><strong>Área:</strong> {selected.code}</p>
               <p className="text-sm"><strong>Descrição:</strong> {selected.description || "—"}</p>
               <p className="text-sm"><strong>Responsável:</strong> {[selected.responsible_code, selected.responsible_name].filter(Boolean).join(" - ") || "—"}</p>
+              {mode === "consulta" && (
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" onClick={() => setMode("alteracao")}><Pencil className="mr-2 h-4 w-4" /> Editar área</Button>
+                  <Button variant="outline" onClick={() => setMode("exclusao")}><Trash2 className="mr-2 h-4 w-4" /> Excluir área</Button>
+                </div>
+              )}
               {mode === "exclusao" && (
                 <Button variant="destructive" disabled={remove.isPending} onClick={() => {
                   if (window.confirm("Excluir definitivamente a área " + selected.code + "?")) remove.mutate(selected.code);

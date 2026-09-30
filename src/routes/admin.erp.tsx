@@ -1,15 +1,17 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowLeft,
-  ChevronRight,
+  ArrowUpRight,
   ClipboardList,
-  Database,
-  FileText,
-  Search,
-  Settings2,
+  MapPinned,
+  Package,
+  Ruler,
   ShoppingCart,
+  Tags,
+  TrendingUp,
+  UsersRound,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { ErpProductMaintenance } from "@/components/admin/ErpProductMaintenance";
 import { ErpSupplierMaintenance } from "@/components/admin/ErpSupplierMaintenance";
 import { ErpPurchaseOrderMaintenance } from "@/components/admin/ErpPurchaseOrderMaintenance";
@@ -18,242 +20,208 @@ import { ErpProductAreaMaintenance } from "@/components/admin/ErpProductAreaMain
 import { ErpDeliveryRouteMaintenance } from "@/components/admin/ErpDeliveryRouteMaintenance";
 import { ErpSalesMargin } from "@/components/admin/ErpSalesMargin";
 
+const modules = [
+  {
+    id: "produtos",
+    title: "Produtos e preços",
+    description: "Cadastro de produtos e tabela de preços.",
+    group: "Cadastros",
+    icon: Package,
+  },
+  {
+    id: "fornecedores",
+    title: "Fornecedores",
+    description: "Consulte e mantenha os fornecedores.",
+    group: "Cadastros",
+    icon: UsersRound,
+  },
+  {
+    id: "pedidos",
+    title: "Pedidos de compra",
+    description: "Cadastre e acompanhe pedidos de compra.",
+    group: "Cadastros",
+    icon: ClipboardList,
+  },
+  {
+    id: "unidades",
+    title: "Unidades de medida",
+    description: "Defina as unidades usadas nos produtos.",
+    group: "Cadastros",
+    icon: Ruler,
+  },
+  {
+    id: "areas",
+    title: "Áreas e responsáveis",
+    description: "Organize as áreas e seus responsáveis.",
+    group: "Cadastros",
+    icon: Tags,
+  },
+  {
+    id: "roteiros",
+    title: "Roteiros de entrega",
+    description: "Consulte e edite os roteiros dos clientes.",
+    group: "Cadastros",
+    icon: MapPinned,
+  },
+  {
+    id: "margem",
+    title: "Margem e venda",
+    description: "Analise vendas e margens por vendedor.",
+    group: "Consultas",
+    icon: TrendingUp,
+  },
+] as const;
+
+type ModuleId = (typeof modules)[number]["id"];
+
+function isModuleId(value: unknown): value is ModuleId {
+  return modules.some((module) => module.id === value);
+}
+
 export const Route = createFileRoute("/admin/erp")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    modulo: isModuleId(search.modulo) ? search.modulo : undefined,
+  }),
   component: ErpPage,
 });
 
-type Section =
-  | "inicio"
-  | "compras"
-  | "cadastros"
-  | "preco-produto"
-  | "fornecedores"
-  | "pedido-compra"
-  | "unidades-produtos"
-  | "areas-produtos"
-  | "roteiro-entrega"
-  | "margem-venda"
-  | "relatorios"
-  | "consultas"
-  | "operacoes";
-
-const purchaseEntries: Record<"cadastros" | "relatorios" | "consultas", string[]> = {
-  cadastros: [
-    "Tabela Preço/Produto",
-    "Fornecedores",
-    "Pedidos Compra",
-    "Falta/Novas Mercadorias",
-    "Agenda Vendedores",
-    "Índices Preço/Vlrs Compras",
-    "Metas Vendas Produtos",
-    "Unidades Medidas Produtos",
-    "Metas Pagamentos Compras",
-    "Áreas Produtos/Responsável",
-    "Roteiro de Entrega",
-  ],
-  relatorios: [
-    "Tabela Preço",
-    "Produtos/Sugestão Compras",
-    "Vendas/Premiação Clie/Prod",
-    "Curva ABC Fornec/Prod/Grupo",
-    "Prod Custo/Venda",
-    "Curva ABC Vendedor/Clientes",
-    "Vendas/Premiação Pedidos",
-    "Compras Produtos PIS/COFINS",
-    "Produtos em Promoção",
-    "Curva ABC Compras",
-    "Roteiro de Entrega",
-  ],
-  consultas: [
-    "Margem Venda",
-    "Fluxo Vencimentos",
-    "Notas Fiscal Venda",
-    "Clientes/Títulos",
-    "Fornecedor/Títulos",
-    "Pedidos Venda",
-    "Comissão Venda",
-    "Comissão <Teste>",
-    "Prêmio Metas Venda Prod",
-    "Meta Venda por Vendedor",
-    "Log Produtos",
-  ],
-};
+function ModuleContent({ id }: { id: ModuleId }) {
+  switch (id) {
+    case "produtos":
+      return <ErpProductMaintenance />;
+    case "fornecedores":
+      return <ErpSupplierMaintenance />;
+    case "pedidos":
+      return <ErpPurchaseOrderMaintenance />;
+    case "unidades":
+      return <ErpProductUnitMaintenance />;
+    case "areas":
+      return <ErpProductAreaMaintenance />;
+    case "roteiros":
+      return <ErpDeliveryRouteMaintenance />;
+    case "margem":
+      return <ErpSalesMargin />;
+  }
+}
 
 function ErpPage() {
-  const [section, setSection] = useState<Section>("inicio");
-
-  const options = [
-    { label: "Manutenção Cadastros", icon: Settings2, section: "cadastros" },
-    { label: "Relatórios", icon: FileText, section: "relatorios" },
-    { label: "Consultas", icon: Search, section: "consultas" },
-    { label: "Operações Especiais", icon: ClipboardList, section: "operacoes" },
-  ] as const;
-  const currentOption = options.find((option) => option.section === section);
-  const sectionLabel =
-    section === "margem-venda"
-      ? "Margem Venda"
-      : section === "preco-produto"
-        ? "Tabela Preço/Produto"
-        : section === "fornecedores"
-          ? "Fornecedores"
-          : section === "pedido-compra"
-            ? "Pedidos Compra"
-            : section === "unidades-produtos"
-              ? "Unidades Medidas Produtos"
-              : section === "areas-produtos"
-                ? "Áreas Produtos/Responsável"
-                : section === "roteiro-entrega"
-                  ? "Roteiro de Entrega"
-                  : currentOption?.label;
-
-  function menuButton(label: string, icon: typeof Database, onClick: () => void) {
-    const Icon = icon;
-    return (
-      <button
-        key={label}
-        type="button"
-        onClick={onClick}
-        className="flex w-full items-center gap-4 rounded-lg border bg-card p-4 text-left transition-colors hover:bg-accent"
-      >
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-          <Icon className="h-5 w-5" aria-hidden="true" />
-        </span>
-        <span className="flex-1 font-medium">{label}</span>
-        <ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-      </button>
-    );
-  }
+  const { modulo } = Route.useSearch();
+  const active = modules.find((module) => module.id === modulo);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">ERP</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Migração gradual do sistema da DuKamp desenvolvido em Clipper.
-        </p>
-      </div>
-
-      <div
-        className={`${section === "margem-venda" ? "max-w-full" : section === "preco-produto" || section === "fornecedores" || section === "pedido-compra" || section === "unidades-produtos" || section === "areas-produtos" || section === "roteiro-entrega" ? "max-w-6xl" : "max-w-2xl"} space-y-3`}
-      >
-        <div className="mb-4">
-          <h2 className="text-lg font-semibold">
-            {section === "inicio" ? "Módulos" : section === "compras" ? "Compras" : sectionLabel}
-          </h2>
-          {section !== "inicio" && (
-            <p className="text-sm text-muted-foreground">
-              ERP / Compras
-              {section !== "compras"
-                ? ` / ${section === "preco-produto" || section === "fornecedores" || section === "pedido-compra" || section === "unidades-produtos" || section === "areas-produtos" || section === "roteiro-entrega" ? "Manutenção Cadastros / " : ""}${sectionLabel}`
-                : ""}
+    <div className="mx-auto max-w-7xl space-y-5 pb-8">
+      <header className="rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/10 via-card to-card p-5 shadow-sm sm:p-7">
+        {active && (
+          <nav
+            aria-label="Caminho no ERP"
+            className="mb-5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground"
+          >
+            <Link
+              to="/admin/erp"
+              search={{ modulo: undefined }}
+              className="hover:text-foreground hover:underline"
+            >
+              ERP
+            </Link>
+            <span aria-hidden="true">/</span>
+            <span>Compras</span>
+            <span aria-hidden="true">/</span>
+            <span>{active.group}</span>
+            <span aria-hidden="true">/</span>
+            <span className="font-medium text-foreground">{active.title}</span>
+          </nav>
+        )}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/15 bg-background/70 px-3 py-1 text-xs font-semibold text-primary">
+              <ShoppingCart className="h-3.5 w-3.5" aria-hidden="true" /> Compras
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+              {active?.title ?? "ERP"}
+            </h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              {active?.description ?? "Acesse os cadastros e consultas de compras."}
             </p>
+          </div>
+          {active && (
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="shrink-0 self-start bg-background/80"
+            >
+              <Link to="/admin/erp" search={{ modulo: undefined }}>
+                <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" /> Voltar ao ERP
+              </Link>
+            </Button>
           )}
         </div>
+      </header>
 
-        {section === "inicio" && menuButton("Compras", ShoppingCart, () => setSection("compras"))}
-
-        {section === "compras" && (
-          <>
-            {options.map((option) =>
-              menuButton(option.label, option.icon, () => setSection(option.section)),
-            )}
-            {menuButton("Voltar", ArrowLeft, () => setSection("inicio"))}
-          </>
-        )}
-
-        {section === "preco-produto" && (
-          <ErpProductMaintenance onBack={() => setSection("cadastros")} />
-        )}
-
-        {section === "fornecedores" && (
-          <ErpSupplierMaintenance onBack={() => setSection("cadastros")} />
-        )}
-
-        {section === "pedido-compra" && (
-          <ErpPurchaseOrderMaintenance onBack={() => setSection("cadastros")} />
-        )}
-
-        {section === "unidades-produtos" && (
-          <ErpProductUnitMaintenance onBack={() => setSection("cadastros")} />
-        )}
-
-        {section === "areas-produtos" && (
-          <ErpProductAreaMaintenance onBack={() => setSection("cadastros")} />
-        )}
-
-        {section === "roteiro-entrega" && (
-          <ErpDeliveryRouteMaintenance onBack={() => setSection("cadastros")} />
-        )}
-
-        {section === "margem-venda" && <ErpSalesMargin onBack={() => setSection("consultas")} />}
-
-        {section !== "inicio" &&
-          section !== "compras" &&
-          section !== "preco-produto" &&
-          section !== "fornecedores" &&
-          section !== "pedido-compra" &&
-          section !== "unidades-produtos" &&
-          section !== "areas-produtos" &&
-          section !== "roteiro-entrega" &&
-          section !== "margem-venda" && (
-            <>
-              {section === "operacoes" ? (
-                <div className="rounded-lg border bg-card p-6 text-sm text-muted-foreground">
-                  Funcionalidades em preparação.
-                </div>
-              ) : (
-                <>
-                  <p className="text-sm text-muted-foreground">
-                    Estas opções serão implementadas gradualmente.
-                  </p>
-                  <ol className="overflow-hidden rounded-lg border bg-card divide-y">
-                    {purchaseEntries[section].map((entry, index) => (
-                      <li key={entry} className="flex items-center gap-4 px-4 py-3 text-sm">
-                        <span className="w-6 shrink-0 font-mono text-muted-foreground">
-                          {index === 9 ? "0" : index === 10 ? "A" : index + 1}.
+      {active ? (
+        <>
+          <nav aria-label="Ferramentas do ERP" className="flex gap-2 overflow-x-auto pb-1">
+            {modules.map((module) => (
+              <Link
+                key={module.id}
+                to="/admin/erp"
+                search={{ modulo: module.id }}
+                aria-current={module.id === modulo ? "page" : undefined}
+                className={
+                  "whitespace-nowrap rounded-full border px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " +
+                  (module.id === modulo
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground")
+                }
+              >
+                {module.title}
+              </Link>
+            ))}
+          </nav>
+          <section
+            aria-label={active.title}
+            className="min-w-0 rounded-xl border bg-card p-4 shadow-sm sm:p-6"
+          >
+            <ModuleContent key={active.id} id={active.id} />
+          </section>
+        </>
+      ) : (
+        <div className="space-y-7">
+          {(["Cadastros", "Consultas"] as const).map((group) => (
+            <section key={group} aria-labelledby={"erp-" + group}>
+              <h2 id={"erp-" + group} className="mb-3 text-lg font-semibold">
+                {group}
+              </h2>
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {modules
+                  .filter((module) => module.group === group)
+                  .map((module) => (
+                    <Link
+                      key={module.id}
+                      to="/admin/erp"
+                      search={{ modulo: module.id }}
+                      className="group flex min-h-32 flex-col justify-between rounded-xl border bg-card p-5 shadow-sm transition-colors hover:border-primary/50 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="grid h-10 w-10 place-items-center rounded-lg bg-primary/10 text-primary">
+                          <module.icon className="h-5 w-5" aria-hidden="true" />
                         </span>
-                        {(section === "cadastros" &&
-                          (index < 3 || index === 7 || index === 9 || index === 10)) ||
-                        (section === "consultas" && index === 0) ? (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setSection(
-                                section === "consultas"
-                                  ? "margem-venda"
-                                  : index === 0
-                                    ? "preco-produto"
-                                    : index === 1
-                                      ? "fornecedores"
-                                      : index === 2
-                                        ? "pedido-compra"
-                                        : index === 7
-                                          ? "unidades-produtos"
-                                          : index === 9
-                                            ? "areas-produtos"
-                                            : "roteiro-entrega",
-                              )
-                            }
-                            className="flex flex-1 items-center justify-between text-left font-medium text-primary hover:underline"
-                          >
-                            {entry}
-                            <ChevronRight className="h-4 w-4" aria-hidden="true" />
-                          </button>
-                        ) : (
-                          <>
-                            <span className="flex-1">{entry}</span>
-                            <span className="text-xs text-muted-foreground">Em breve</span>
-                          </>
-                        )}
-                      </li>
-                    ))}
-                  </ol>
-                </>
-              )}
-              {menuButton("Voltar", ArrowLeft, () => setSection("compras"))}
-            </>
-          )}
-      </div>
+                        <ArrowUpRight
+                          className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-primary"
+                          aria-hidden="true"
+                        />
+                      </div>
+                      <div className="mt-4">
+                        <h3 className="font-semibold">{module.title}</h3>
+                        <p className="mt-1 text-sm text-muted-foreground">{module.description}</p>
+                      </div>
+                    </Link>
+                  ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

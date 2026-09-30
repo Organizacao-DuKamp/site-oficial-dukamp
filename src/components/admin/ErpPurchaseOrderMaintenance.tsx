@@ -17,7 +17,9 @@ type PurchaseOrder = {
 };
 type SupplierOption = { code: string; name: string };
 type ProductOption = { code: string; name: string };
-type Mode = "menu" | "inclusao" | "alteracao" | "exclusao" | "consulta";
+type OrderPage = { items: PurchaseOrder[]; total: number };
+type Mode = "inclusao" | "alteracao" | "exclusao" | "consulta";
+const PAGE_SIZE = 50;
 
 const fields: [string, string][] = [
   ["contato", "Contato"], ["fone", "Fone"], ["data_emissao", "Data Emissão"],
@@ -49,10 +51,10 @@ function orderTotal(items: OrderItem[]): number {
   }, 0);
 }
 
-async function listOrders(term: string): Promise<PurchaseOrder[]> {
+async function listOrders(term: string, page: number): Promise<OrderPage> {
   let query = db.from("erp_purchase_orders")
-    .select("code,supplier_code,supplier_name,details,items")
-    .order("code", { ascending: false }).limit(50);
+    .select("code,supplier_code,supplier_name,details,items", { count: "exact" })
+    .order("code", { ascending: false });
   if (term) {
     const digits = term.replace(/\D/g, "");
     if (digits.length === term.length && digits.length <= 5) {
@@ -61,9 +63,9 @@ async function listOrders(term: string): Promise<PurchaseOrder[]> {
       query = query.ilike("supplier_name", `%${term.replace(/[\\%_]/g, "\\$&")}%`);
     }
   }
-  const { data, error } = await query;
+  const { data, count, error } = await query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
   if (error) throw error;
-  return (data ?? []) as PurchaseOrder[];
+  return { items: (data ?? []) as PurchaseOrder[], total: count ?? 0 };
 }
 
 async function listSuppliers(): Promise<SupplierOption[]> {
@@ -212,16 +214,17 @@ function OrderForm({ initial, suppliers, products, saving, onSave, onCancel }: {
   );
 }
 
-export function ErpPurchaseOrderMaintenance({ onBack }: { onBack: () => void }) {
+export function ErpPurchaseOrderMaintenance() {
   const queryClient = useQueryClient();
-  const [mode, setMode] = useState<Mode>("menu");
+  const [mode, setMode] = useState<Mode>("consulta");
   const [search, setSearch] = useState("");
   const [submitted, setSubmitted] = useState("");
+  const [page, setPage] = useState(0);
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
-  const results = useQuery({ queryKey: ["erp-purchase-orders", submitted], queryFn: () => listOrders(submitted) });
+  const results = useQuery({ queryKey: ["erp-purchase-orders", submitted, page], queryFn: () => listOrders(submitted, page) });
   const supplierOptions = useQuery({ queryKey: ["erp-suppliers-options"], queryFn: listSuppliers, enabled: mode === "inclusao" || mode === "alteracao" });
   const productOptions = useQuery({ queryKey: ["erp-products-options"], queryFn: listProducts, enabled: mode === "inclusao" || mode === "alteracao" });
-  const selected = results.data?.find((order) => order.code === selectedCode) ?? null;
+  const selected = results.data?.items.find((order) => order.code === selectedCode) ?? null;
 
   const save = useMutation({
     mutationFn: async (order: Omit<PurchaseOrder, "code">) => {
@@ -240,6 +243,7 @@ export function ErpPurchaseOrderMaintenance({ onBack }: { onBack: () => void }) 
       await queryClient.invalidateQueries({ queryKey: ["erp-purchase-orders"] });
       setSearch(code);
       setSubmitted(code);
+      setPage(0);
       setSelectedCode(code);
       setMode("consulta");
     },
@@ -255,6 +259,7 @@ export function ErpPurchaseOrderMaintenance({ onBack }: { onBack: () => void }) 
       setSelectedCode(null);
       setSearch("");
       setSubmitted("");
+      setPage(0);
       await queryClient.invalidateQueries({ queryKey: ["erp-purchase-orders"] });
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : "Não foi possível excluir o pedido."),
@@ -264,59 +269,52 @@ export function ErpPurchaseOrderMaintenance({ onBack }: { onBack: () => void }) 
     setMode(next);
     setSearch("");
     setSubmitted("");
+    setPage(0);
     setSelectedCode(null);
   }
 
   const titles: Record<Mode, string> = {
-    menu: "Pedidos de compra", inclusao: "Inclusão de pedido",
-    alteracao: "Alteração de pedido", exclusao: "Exclusão de pedido",
-    consulta: "Consulta de pedido",
+    inclusao: "Novo pedido", alteracao: "Editar pedido",
+    exclusao: "Excluir pedido", consulta: "Pedidos de compra",
   };
 
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h3 className="text-lg font-semibold">{titles[mode]}</h3>
-          <p className="text-sm text-muted-foreground">Manutenção de pedidos de compra do ERP.</p>
-        </div>
-        <Button variant="outline" size="sm" onClick={() => mode === "menu" ? onBack() : choose("menu")}><ArrowLeft className="mr-2 h-4 w-4" /> Voltar</Button>
+        {mode !== "consulta" && <h3 className="text-lg font-semibold">{titles[mode]}</h3>}
+        {mode === "consulta" ? (
+          <Button size="sm" onClick={() => choose("inclusao")}><Plus className="mr-2 h-4 w-4" /> Novo pedido</Button>
+        ) : (
+          <Button variant="ghost" size="sm" onClick={() => setMode("consulta")}>
+            <ArrowLeft className="mr-2 h-4 w-4" /> Voltar aos pedidos
+          </Button>
+        )}
       </div>
-
-      {mode === "menu" && (
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-          {([
-            { mode: "inclusao", label: "Inclusão", icon: Plus },
-            { mode: "alteracao", label: "Alteração", icon: Pencil },
-            { mode: "exclusao", label: "Exclusão", icon: Trash2 },
-            { mode: "consulta", label: "Consulta", icon: Search },
-          ] as const).map((option) => (
-            <Button key={option.mode} variant="outline" className="justify-start" onClick={() => choose(option.mode)}><option.icon className="mr-2 h-4 w-4" /> {option.label}</Button>
-          ))}
-        </div>
-      )}
 
       {mode === "inclusao" && (
         <OrderForm saving={save.isPending} suppliers={supplierOptions.data ?? []} products={productOptions.data ?? []}
-          onSave={(order) => save.mutate(order)} onCancel={() => choose("menu")} />
+          onSave={(order) => save.mutate(order)} onCancel={() => setMode("consulta")} />
       )}
 
       {mode !== "inclusao" && (
         <>
-          <form className="flex flex-col gap-2 sm:flex-row" onSubmit={(event) => { event.preventDefault(); setSelectedCode(null); setSubmitted(search.trim()); }}>
+          <form className="flex flex-col gap-2 sm:flex-row" onSubmit={(event) => { event.preventDefault(); setSelectedCode(null); setPage(0); setSubmitted(search.trim()); }}>
             <label htmlFor="erp-purchase-order-search" className="sr-only">Número do pedido ou fornecedor</label>
             <Input id="erp-purchase-order-search" inputMode="search" className="sm:max-w-md" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Número do pedido ou nome do fornecedor" />
             <Button type="submit"><Search className="mr-2 h-4 w-4" /> Pesquisar</Button>
           </form>
           <div className="rounded-lg border bg-card">
-            <p className="border-b px-4 py-2 text-xs text-muted-foreground">{submitted ? "Resultado da pesquisa" : "Pedidos cadastrados (até 50)"}</p>
+            <p className="border-b px-4 py-2 text-xs text-muted-foreground">
+              {submitted ? "Resultado da pesquisa" : "Pedidos cadastrados"}
+              {results.data && " · " + results.data.total.toLocaleString("pt-BR") + " resultado(s)"}
+            </p>
             {results.isPending ? <p className="p-4 text-sm">Carregando pedidos...</p> : results.isError ? (
               <p role="alert" className="p-4 text-sm text-destructive">Erro ao consultar pedidos: {results.error instanceof Error ? results.error.message : "tente novamente"}</p>
-            ) : results.data?.length ? (
+            ) : results.data?.items.length ? (
               <ul className="max-h-64 divide-y overflow-y-auto">
-                {results.data.map((order) => (
+                {results.data.items.map((order) => (
                   <li key={order.code}>
-                    <button type="button" onClick={() => { setSelectedCode(order.code); if (mode === "menu") setMode("consulta"); }}
+                    <button type="button" onClick={() => setSelectedCode(order.code)}
                       className={"flex w-full flex-wrap gap-3 px-4 py-2 text-left text-sm hover:bg-accent " + (selectedCode === order.code ? "bg-primary/10" : "")}>
                       <span className="font-mono text-muted-foreground">{order.code}</span><span>{order.supplier_name}</span>
                       <span className="ml-auto text-muted-foreground">{order.details?.data_emissao || "Sem data"}</span>
@@ -324,16 +322,36 @@ export function ErpPurchaseOrderMaintenance({ onBack }: { onBack: () => void }) 
                   </li>
                 ))}
               </ul>
-            ) : <p className="p-4 text-sm text-muted-foreground">Nenhum pedido encontrado. Use Inclusão para cadastrar o primeiro.</p>}
+            ) : <p className="p-4 text-sm text-muted-foreground">Nenhum pedido encontrado.</p>}
           </div>
+          {results.data && results.data.total > PAGE_SIZE && (
+            <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+              <span className="text-muted-foreground">
+                Exibindo {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, results.data.total)} de {results.data.total.toLocaleString("pt-BR")}
+              </span>
+              <div className="flex items-center gap-2">
+                <Button type="button" variant="outline" size="sm" disabled={page === 0 || results.isFetching}
+                  onClick={() => { setSelectedCode(null); setPage((current) => current - 1); }}>Anterior</Button>
+                <span>Página {page + 1} de {Math.ceil(results.data.total / PAGE_SIZE)}</span>
+                <Button type="button" variant="outline" size="sm" disabled={(page + 1) * PAGE_SIZE >= results.data.total || results.isFetching}
+                  onClick={() => { setSelectedCode(null); setPage((current) => current + 1); }}>Próxima</Button>
+              </div>
+            </div>
+          )}
           {selected && mode === "alteracao" && (
             <OrderForm key={selected.code} initial={selected} saving={save.isPending}
               suppliers={supplierOptions.data ?? []} products={productOptions.data ?? []}
-              onSave={(order) => save.mutate(order)} onCancel={() => setSelectedCode(null)} />
+              onSave={(order) => save.mutate(order)} onCancel={() => setMode("consulta")} />
           )}
           {selected && (mode === "consulta" || mode === "exclusao") && (
             <>
               <OrderDetails order={selected} />
+              {mode === "consulta" && (
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" onClick={() => setMode("alteracao")}><Pencil className="mr-2 h-4 w-4" /> Editar pedido</Button>
+                  <Button variant="outline" onClick={() => setMode("exclusao")}><Trash2 className="mr-2 h-4 w-4" /> Excluir pedido</Button>
+                </div>
+              )}
               {mode === "exclusao" && (
                 <Button variant="destructive" disabled={remove.isPending} onClick={() => {
                   if (window.confirm("Excluir definitivamente o pedido " + selected.code + " de " + selected.supplier_name + "?")) remove.mutate(selected.code);

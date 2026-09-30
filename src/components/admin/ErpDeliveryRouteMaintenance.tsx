@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -41,7 +41,7 @@ async function searchCustomers(term: string, filter: RouteFilter, page: number) 
   return { rows: (data ?? []) as CustomerRoute[], total: count ?? 0 };
 }
 
-export function ErpDeliveryRouteMaintenance({ onBack }: { onBack: () => void }) {
+export function ErpDeliveryRouteMaintenance() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [term, setTerm] = useState("");
@@ -85,14 +85,6 @@ export function ErpDeliveryRouteMaintenance({ onBack }: { onBack: () => void }) 
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h3 className="text-lg font-semibold">Roteiro de Entrega</h3>
-          <p className="text-sm text-muted-foreground">Consulte ou edite o roteiro do cadastro de clientes da DuKamp.</p>
-        </div>
-        <Button variant="outline" size="sm" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Voltar</Button>
-      </div>
-
       <form className="flex flex-col gap-2 sm:flex-row" onSubmit={submitSearch}>
         <label htmlFor="erp-route-search" className="sr-only">Código ou nome do cliente</label>
         <Input id="erp-route-search" className="sm:max-w-lg" value={search}

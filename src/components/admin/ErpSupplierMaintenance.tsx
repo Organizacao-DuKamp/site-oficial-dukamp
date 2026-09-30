@@ -10,7 +10,7 @@ type Values = Record<string, string>;
 type Supplier = { code: string; name: string; details: Values };
 type SupplierPage = { items: Supplier[]; total: number };
 const PAGE_SIZE = 50;
-type Mode = "menu" | "inclusao" | "alteracao" | "exclusao" | "consulta";
+type Mode = "inclusao" | "alteracao" | "exclusao" | "consulta";
 
 const fields: [string, string][] = [
   ["endereco", "Endereço"], ["cidade", "Cidade"], ["uf", "UF"], ["codigo_cidade", "Código da cidade"], ["bairro", "Bairro"], ["cep", "CEP"],
@@ -98,9 +98,9 @@ function SupplierForm({ initial, saving, onSave, onCancel }: {
   );
 }
 
-export function ErpSupplierMaintenance({ onBack }: { onBack: () => void }) {
+export function ErpSupplierMaintenance() {
   const queryClient = useQueryClient();
-  const [mode, setMode] = useState<Mode>("menu");
+  const [mode, setMode] = useState<Mode>("consulta");
   const [search, setSearch] = useState("");
   const [submitted, setSubmitted] = useState("");
   const [page, setPage] = useState(0);
@@ -157,40 +157,25 @@ export function ErpSupplierMaintenance({ onBack }: { onBack: () => void }) {
   }
 
   const titles: Record<Mode, string> = {
-    menu: "Fornecedores", inclusao: "Inclusão de fornecedor",
-    alteracao: "Alteração de fornecedor", exclusao: "Exclusão de fornecedor",
-    consulta: "Consulta de fornecedor",
+    inclusao: "Novo fornecedor", alteracao: "Editar fornecedor",
+    exclusao: "Excluir fornecedor", consulta: "Fornecedores",
   };
 
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h3 className="text-lg font-semibold">{titles[mode]}</h3>
-          <p className="text-sm text-muted-foreground">Cadastro de fornecedores do ERP.</p>
-        </div>
-        <Button variant="outline" size="sm" onClick={() => mode === "menu" ? onBack() : choose("menu")}>
-          <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
-        </Button>
+        {mode !== "consulta" && <h3 className="text-lg font-semibold">{titles[mode]}</h3>}
+        {mode === "consulta" ? (
+          <Button size="sm" onClick={() => choose("inclusao")}><Plus className="mr-2 h-4 w-4" /> Novo fornecedor</Button>
+        ) : (
+          <Button variant="ghost" size="sm" onClick={() => setMode("consulta")}>
+            <ArrowLeft className="mr-2 h-4 w-4" /> Voltar aos fornecedores
+          </Button>
+        )}
       </div>
 
-      {mode === "menu" && (
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-          {([
-            { mode: "inclusao", label: "Inclusão", icon: Plus },
-            { mode: "alteracao", label: "Alteração", icon: Pencil },
-            { mode: "exclusao", label: "Exclusão", icon: Trash2 },
-            { mode: "consulta", label: "Consulta", icon: Search },
-          ] as const).map((option) => (
-            <Button key={option.mode} variant="outline" className="justify-start" onClick={() => choose(option.mode)}>
-              <option.icon className="mr-2 h-4 w-4" /> {option.label}
-            </Button>
-          ))}
-        </div>
-      )}
-
       {mode === "inclusao" && (
-        <SupplierForm saving={save.isPending} onSave={(name, details) => save.mutate({ name, details })} onCancel={() => choose("menu")} />
+        <SupplierForm saving={save.isPending} onSave={(name, details) => save.mutate({ name, details })} onCancel={() => setMode("consulta")} />
       )}
 
       {mode !== "inclusao" && (
@@ -214,7 +199,7 @@ export function ErpSupplierMaintenance({ onBack }: { onBack: () => void }) {
               <ul className="max-h-64 divide-y overflow-y-auto">
                 {results.data.items.map((supplier) => (
                   <li key={supplier.code}>
-                    <button type="button" onClick={() => { setSelectedCode(supplier.code); if (mode === "menu") setMode("consulta"); }}
+                    <button type="button" onClick={() => setSelectedCode(supplier.code)}
                       className={"flex w-full gap-3 px-4 py-2 text-left text-sm hover:bg-accent " + (selectedCode === supplier.code ? "bg-primary/10" : "")}>
                       <span className="font-mono text-muted-foreground">{supplier.code}</span>
                       <span>{supplier.name}</span>
@@ -222,7 +207,7 @@ export function ErpSupplierMaintenance({ onBack }: { onBack: () => void }) {
                   </li>
                 ))}
               </ul>
-            ) : <p className="p-4 text-sm text-muted-foreground">Nenhum fornecedor encontrado. Use Inclusão para cadastrar o primeiro.</p>}
+            ) : <p className="p-4 text-sm text-muted-foreground">Nenhum fornecedor encontrado.</p>}
           </div>
           {results.data && results.data.total > PAGE_SIZE && (
             <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
@@ -240,11 +225,17 @@ export function ErpSupplierMaintenance({ onBack }: { onBack: () => void }) {
           )}
           {selected && mode === "alteracao" && (
             <SupplierForm key={selected.code} initial={selected} saving={save.isPending}
-              onSave={(name, details) => save.mutate({ name, details })} onCancel={() => setSelectedCode(null)} />
+              onSave={(name, details) => save.mutate({ name, details })} onCancel={() => setMode("consulta")} />
           )}
           {selected && (mode === "consulta" || mode === "exclusao") && (
             <>
               <SupplierDetails supplier={selected} />
+              {mode === "consulta" && (
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" onClick={() => setMode("alteracao")}><Pencil className="mr-2 h-4 w-4" /> Editar fornecedor</Button>
+                  <Button variant="outline" onClick={() => setMode("exclusao")}><Trash2 className="mr-2 h-4 w-4" /> Excluir fornecedor</Button>
+                </div>
+              )}
               {mode === "exclusao" && (
                 <Button variant="destructive" disabled={remove.isPending} onClick={() => {
                   if (window.confirm("Excluir definitivamente o fornecedor " + selected.code + " — " + selected.name + "?")) {
