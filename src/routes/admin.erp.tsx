@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { ErpProductMaintenance } from "@/components/admin/ErpProductMaintenance";
 import { ErpSupplierMaintenance } from "@/components/admin/ErpSupplierMaintenance";
 import { ErpPurchaseOrderMaintenance } from "@/components/admin/ErpPurchaseOrderMaintenance";
+import { ErpMissingMerchandiseMaintenance } from "@/components/admin/ErpMissingMerchandiseMaintenance";
 import { ErpProductUnitMaintenance } from "@/components/admin/ErpProductUnitMaintenance";
 import { ErpProductAreaMaintenance } from "@/components/admin/ErpProductAreaMaintenance";
 import { ErpDeliveryRouteMaintenance } from "@/components/admin/ErpDeliveryRouteMaintenance";
@@ -41,6 +42,13 @@ const modules = [
     description: "Cadastre e acompanhe pedidos de compra.",
     group: "Cadastros",
     icon: ClipboardList,
+  },
+  {
+    id: "faltas",
+    title: "Falta/novas mercadorias",
+    description: "Consulte e mantenha as listas de mercadorias faltantes e novas.",
+    group: "Cadastros",
+    icon: Package,
   },
   {
     id: "unidades",
@@ -93,6 +101,8 @@ function ModuleContent({ id }: { id: ModuleId }) {
       return <ErpSupplierMaintenance />;
     case "pedidos":
       return <ErpPurchaseOrderMaintenance />;
+    case "faltas":
+      return <ErpMissingMerchandiseMaintenance />;
     case "unidades":
       return <ErpProductUnitMaintenance />;
     case "areas":
@@ -225,3 +235,4 @@ function ErpPage() {
     </div>
   );
 }
+
