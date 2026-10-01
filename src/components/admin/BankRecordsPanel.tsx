@@ -152,9 +152,9 @@ export function BankRecordsPanel() {
       </header>
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Metric
-          label={`Total conciliado · ${BANK_MONTHS[selected.month - 1]}`}
+          label={`${current?.payload.reconciliation_pending ? "Total do resumo" : "Total conciliado"} · ${BANK_MONTHS[selected.month - 1]}`}
           value={current ? money(current.payload.total) : "Sem relatório"}
-          note="Total informado no documento, não saldo disponível"
+          note={current?.payload.reconciliation_pending ? "Conciliação bancária pendente; não é saldo disponível" : "Total informado no documento, não saldo disponível"}
         />
         <Metric
           label={`Acumulado de ${selected.year}`}
@@ -180,7 +180,7 @@ export function BankRecordsPanel() {
         <Metric
           label="Ajuste líquido de conciliação"
           value={current ? money(current.payload.adjustment) : "—"}
-          note="Incluído no total conciliado; não somar novamente"
+          note={current?.payload.reconciliation_pending ? "Nenhum ajuste comprovado; saques não somados ao resumo" : "Incluído no total conciliado; não somar novamente"}
         />
       </section>
       <section className={panel}>
@@ -201,7 +201,7 @@ export function BankRecordsPanel() {
               <Legend />
               <Line
                 dataKey="total"
-                name="Total conciliado"
+                name="Total do resumo / conciliado"
                 stroke="#159447"
                 strokeWidth={3}
                 connectNulls={false}
@@ -324,11 +324,17 @@ export function BankRecordsPanel() {
             </p>
           )}
           <section className={panel}>
-            <h2 className="font-semibold">Pagamento por fora / Conciliação</h2>
+            <h2 className="font-semibold">{current.payload.reconciliation_pending ? "Movimentações bancárias para análise" : "Pagamento por fora / Conciliação"}</h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              Transcrição da memória do relatório. Saques, ajustes e linhas de totalização são
-              distintos; valores negativos são preservados.
+              {current.payload.reconciliation_pending
+                ? "Os saques constam do extrato, mas os documentos não identificam quanto já está incluído nas rubricas. Nenhum valor foi acrescentado às despesas."
+                : "Transcrição da memória do relatório. Saques, ajustes e linhas de totalização são distintos; valores negativos são preservados."}
             </p>
+            {current.payload.bank_totals && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Extrato: débitos {money(current.payload.bank_totals.debits)}, créditos {money(current.payload.bank_totals.credits)}, saldo inicial {money(current.payload.bank_totals.opening_balance)} e saldo final {money(current.payload.bank_totals.closing_balance)}. Movimentação bancária não equivale ao total de despesas.
+              </p>
+            )}
             <div className="mt-4 overflow-x-auto">
               <table className="w-full min-w-[650px] text-sm">
                 <thead>
@@ -365,10 +371,10 @@ export function BankRecordsPanel() {
               <Metric
                 label="Ajuste líquido"
                 value={money(current.payload.adjustment)}
-                note="Acréscimo ou redução"
+                note={current.payload.reconciliation_pending ? "Pendente de comprovação" : "Acréscimo ou redução"}
               />
               <Metric
-                label="Total conciliado"
+                label={current.payload.reconciliation_pending ? "Total do resumo" : "Total conciliado"}
                 value={money(current.payload.total)}
                 note="Original + ajuste líquido"
               />
