@@ -36,6 +36,13 @@ export type BankReport = {
       amount: number;
       summary: boolean;
     }[];
+    reconciliation_pending?: boolean;
+    bank_totals?: {
+      debits: number;
+      credits: number;
+      opening_balance: number;
+      closing_balance: number;
+    };
     source_text: string;
   };
 };
