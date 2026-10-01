@@ -34,6 +34,7 @@ import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { BankRecordsPanel } from "@/components/admin/BankRecordsPanel";
+import { BankOverviewMetrics } from "@/components/admin/BankOverviewMetrics";
 import { BANK_RECORDS_CODE } from "@/lib/bank-reports";
 
 export const Route = createFileRoute("/admin/despesas-dukamp")({
@@ -570,6 +571,13 @@ function DukampExpensesPage() {
               </select>
             </label>
           </div>
+
+          {selectedCategory == null && selectedSubcategory == null && (
+            <BankOverviewMetrics
+              year={Math.floor(computed.activePeriod / 100)}
+              month={computed.activePeriod % 100}
+            />
+          )}
 
           <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <MetricCard
