@@ -9,8 +9,8 @@ BEGIN
  IF admin_id IS NULL OR customer_id IS NULL THEN RAISE EXCEPTION 'Test requires an admin and a customer'; END IF;
  PERFORM set_config('request.jwt.claims',jsonb_build_object('role','service_role')::text,true);
  PERFORM set_config('request.headers',jsonb_build_object('x-dukamp-actor-id',admin_id,'x-dukamp-actor-ip','127.0.0.1')::text,true);
- INSERT INTO public.orders(id,user_id,customer_name,email,phone,cep,rua,numero,bairro,cidade,estado,subtotal,total,shipping_cost,fulfillment_method,payment_status)
- VALUES(order_id,customer_id,'Test pickup','fixture@example.invalid','17999999999','','','','','','SP',10,10,99,'pickup','approved');
+ INSERT INTO public.orders(id,user_id,customer_name,email,phone,cpf_cnpj,cep,rua,numero,bairro,cidade,estado,subtotal,total,shipping_cost,fulfillment_method,payment_status)
+ VALUES(order_id,customer_id,'Test pickup','fixture@example.invalid','17999999999','99999999701','','','','','','SP',10,10,99,'pickup','approved');
  SELECT * INTO o FROM public.orders WHERE id=order_id;
  IF o.shipping_cost<>0 OR o.delivery_status::text<>'preparando' THEN RAISE EXCEPTION 'Pickup default or freight failed'; END IF;
  blocked:=false;
