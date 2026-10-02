@@ -24,6 +24,17 @@ function AuditPage() {
       const payload = await response.json(); if (!response.ok) throw new Error(payload.error || "Erro ao carregar auditoria"); return payload as { rows:any[];total:number };
     },
   });
+  const detail = useQuery({
+    queryKey:["audit-detail",selected?.id], enabled:!!selected,
+    queryFn:async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) throw new Error("Entre novamente");
+      const response = await fetch("/api/admin/audit?id="+encodeURIComponent(selected!.id),{ headers:{ Authorization:`Bearer ${data.session.access_token}` },cache:"no-store" });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Erro ao carregar detalhes");
+      return payload;
+    },
+  });
   const change = (setter:(value:string)=>void) => (value:string) => { setter(value);setPage(0); };
   return <div className="space-y-4 min-w-0">
     <div><h1 className="text-2xl font-bold">Auditoria</h1><p className="text-sm text-muted-foreground">Acessos de administradores e alterações de dados. Os registros começam na implantação desta área.</p></div>
@@ -41,7 +52,9 @@ function AuditPage() {
     </tbody></table></div>
     <div className="flex items-center justify-between text-sm"><span>{q.data?.total || 0} registros · página {page+1}</span><div className="flex gap-2"><Button variant="outline" disabled={!page} onClick={() => setPage(page-1)}>Anterior</Button><Button variant="outline" disabled={(page+1)*50 >= (q.data?.total || 0)} onClick={() => setPage(page+1)}>Próxima</Button></div></div>
     <Dialog open={!!selected} onOpenChange={open => { if (!open) setSelected(null); }}><DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto"><DialogHeader><DialogTitle>Detalhes da ação</DialogTitle><DialogDescription>{selected && `${ACTIONS[selected.action] || selected.action} · ${TABLES[selected.entity_table] || selected.entity_table}`}</DialogDescription></DialogHeader>
-      <div className="grid gap-4 sm:grid-cols-2">{["before_data","after_data"].map((key,index) => <div key={key} className="min-w-0"><h3 className="mb-2 font-semibold">{index ? "Depois" : "Antes"}</h3><pre className="rounded bg-muted p-3 overflow-auto text-xs max-h-96">{JSON.stringify(selected?.[key],null,2)}</pre></div>)}</div>
+      {detail.isLoading && <p>Carregando detalhes...</p>}
+      {detail.error && <p role="alert" className="text-destructive">{(detail.error as Error).message}</p>}
+      {detail.data && <div className="grid gap-4 sm:grid-cols-2">{["before_data","after_data"].map((key,index) => <div key={key} className="min-w-0"><h3 className="mb-2 font-semibold">{index ? "Depois" : "Antes"}</h3><pre className="rounded bg-muted p-3 overflow-auto text-xs max-h-96">{JSON.stringify(detail.data?.[key],null,2)}</pre></div>)}</div>}
     </DialogContent></Dialog>
   </div>;
 }
