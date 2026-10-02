@@ -1,88 +1,64 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { adminListOrders, adminUpdateDeliveryStatus, type DeliveryStatus } from "@/lib/orders.functions";
-import { Loader2, Package, Truck, CheckCircle2 } from "lucide-react";
+import { useState } from "react";
+import { adminListOrders, adminUpdateDeliveryStatus, manageOrderFulfillment } from "@/lib/orders.functions";
+import { DELIVERY_LABELS, PICKUP_LOCATIONS, isPickup, type DeliveryStatus, type PickupLocation } from "@/lib/order-fulfillment";
 import { OrderShippingPanel } from "@/components/admin/OrderShippingPanel";
-
+import { OrderFulfillment } from "@/components/site/OrderFulfillment";
+import { OrderCancellation } from "@/components/site/OrderCancellation";
 import { formatBRL } from "@/lib/cart";
 import { toast } from "sonner";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/admin/vendas/pedidos")({
-  component: PedidosAtivos,
+  validateSearch: (search: Record<string, unknown>): { orderId?: string } => ({ orderId: typeof search.orderId === "string" && /^[0-9a-f-]{36}$/i.test(search.orderId) ? search.orderId : undefined }),
+  component: Pedidos,
 });
-
-const OPTIONS: Array<{ value: DeliveryStatus; label: string; icon: any }> = [
-  { value: "preparando", label: "Preparando", icon: Package },
-  { value: "a_caminho", label: "A caminho", icon: Truck },
-  { value: "entregue", label: "Entregue", icon: CheckCircle2 },
-];
-
-function PedidosAtivos() {
+function Pedidos() {
+  const { orderId } = Route.useSearch();
   const fetchOrders = useServerFn(adminListOrders);
   const updateStatus = useServerFn(adminUpdateDeliveryStatus);
+  const manage = useServerFn(manageOrderFulfillment);
+  const [filter, setFilter] = useState("all");
+  const [search, setSearch] = useState("");
   const qc = useQueryClient();
-
-  const q = useQuery({
-    queryKey: ["admin-orders", "open"],
-    queryFn: () => fetchOrders({ data: { onlyOpen: true } }),
+  const q = useQuery({ queryKey: ["admin-orders", "all", orderId || "all"], queryFn: () => fetchOrders({ data: { orderId } }), refetchInterval: 10000 });
+  const mutation = useMutation({
+    mutationFn: (data: { orderId: string; status?: DeliveryStatus; pickupLocation?: PickupLocation }) => data.status
+      ? updateStatus({ data: { ...data, status: data.status as Exclude<DeliveryStatus,"cancelada"> } })
+      : manage({ data: { orderId: data.orderId, action: "location", pickupLocation: data.pickupLocation, requestRefund: false } }),
+    onSuccess: () => { toast.success("Pedido atualizado"); void qc.invalidateQueries({ queryKey: ["admin-orders"] }); },
+    onError: error => toast.error(error instanceof Error ? error.message : "Não foi possível atualizar"),
   });
-
-  const m = useMutation({
-    mutationFn: (v: { orderId: string; status: DeliveryStatus }) => updateStatus({ data: v }),
-    onSuccess: () => {
-      toast.success("Status atualizado");
-      qc.invalidateQueries({ queryKey: ["admin-orders"] });
-    },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro"),
-  });
-
-  return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold">Lista de Pedidos</h1>
-        <p className="text-sm text-muted-foreground">Pedidos pagos aguardando entrega. Altere o status conforme o andamento.</p>
-      </div>
-      {q.isLoading && <div className="py-8 text-center"><Loader2 className="h-5 w-5 animate-spin mx-auto" /></div>}
-      {q.data && q.data.length === 0 && (
-        <div className="border rounded-lg p-8 text-center bg-card text-muted-foreground">
-          Nenhum pedido em aberto no momento.
-        </div>
-      )}
-      <div className="space-y-2">
-        {q.data?.map((o) => (
-          <div key={o.id} className="border rounded-lg p-4 bg-card flex flex-wrap items-center gap-4">
-            <div className="flex-1 min-w-[220px]">
-              <div className="font-semibold">{o.order_number}</div>
-              <div className="text-xs text-muted-foreground">{o.customer_name} — {o.cidade}/{o.estado}</div>
-              <div className="text-xs text-muted-foreground">{new Date(o.created_at).toLocaleString("pt-BR")}</div>
-            </div>
-            <div className="text-right">
-              <div className="font-bold">{formatBRL(Number(o.total))}</div>
-            </div>
-            <div className="w-48">
-              <Select
-                value={o.delivery_status ?? "preparando"}
-                onValueChange={(v) => m.mutate({ orderId: o.id, status: v as DeliveryStatus })}
-              >
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {OPTIONS.map((op) => (
-                    <SelectItem key={op.value} value={op.value}>
-                      <span className="inline-flex items-center gap-2"><op.icon className="h-4 w-4" /> {op.label}</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <OrderShippingPanel order={o} />
-          </div>
-
-        ))}
-      </div>
+  const rows = (q.data || []).filter((o: any) => {
+    const matches = !search || `${o.order_number} ${o.customer_name} ${o.email}`.toLowerCase().includes(search.toLowerCase());
+    return matches && (filter === "all" || (filter === "refund" ? o.refund_status === "requested" : o.delivery_status === filter));
+  }).sort((a: any,b: any) => Number(b.refund_status === "requested") - Number(a.refund_status === "requested"));
+  return <div className="space-y-4">
+    <div><h1 className="text-2xl font-bold">Lista de Pedidos</h1><p className="text-sm text-muted-foreground">Acompanhe entrega, retirada e reembolso. Pedidos entregues continuam disponíveis para edição.</p></div>
+    <div className="flex flex-wrap gap-3"><Input className="max-w-sm" value={search} onChange={event => setSearch(event.target.value)} placeholder="Buscar pedido ou cliente" />
+      <Select value={filter} onValueChange={setFilter}><SelectTrigger className="w-56"><SelectValue /></SelectTrigger><SelectContent>
+        <SelectItem value="all">Todos os pedidos</SelectItem><SelectItem value="refund">Reembolsos solicitados</SelectItem>
+        {Object.entries(DELIVERY_LABELS).map(([value,label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}
+      </SelectContent></Select>
     </div>
-  );
+    {orderId && <Link to="/admin/vendas/pedidos" search={{ orderId: undefined }} className="text-sm underline">Ver todos os pedidos</Link>}
+    {q.error && <p role="alert" className="text-destructive">{(q.error as Error).message}</p>}
+    {q.isLoading && <p>Carregando pedidos...</p>}
+    {q.error && <p role="alert" className="text-destructive">{(q.error as Error).message}</p>}
+    {!q.isLoading && !rows.length && <p className="rounded-lg border p-6 text-muted-foreground">Nenhum pedido encontrado.</p>}
+    {rows.map((o: any) => <div key={o.id} className={`rounded-lg border p-4 space-y-4 ${o.refund_status === "requested" ? "border-red-500 bg-red-50" : "bg-card"}`}>
+      <div className="flex flex-wrap justify-between gap-3"><div><h2 className="font-semibold">{o.order_number}</h2><p className="text-xs text-muted-foreground">{o.customer_name} · {o.email}</p><p className="text-xs text-muted-foreground">{new Date(o.created_at).toLocaleString("pt-BR")}</p></div><div className="text-right"><p className="font-bold">{formatBRL(Number(o.total))}</p>{o.refund_status === "requested" && <Badge variant="destructive">Reembolso solicitado</Badge>}</div></div>
+      <OrderFulfillment order={o} />
+      <div className="flex flex-wrap gap-3">
+        {isPickup(o) && <div className="space-y-1"><p className="text-xs font-medium">Unidade de retirada</p><Select disabled={mutation.isPending} value={o.pickup_location || ""} onValueChange={value => mutation.mutate({ orderId: o.id, pickupLocation: value as PickupLocation })}><SelectTrigger className="w-72 max-w-full"><SelectValue placeholder="Escolha a unidade" /></SelectTrigger><SelectContent>{Object.entries(PICKUP_LOCATIONS).map(([value,label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div>}
+        <div className="space-y-1"><p className="text-xs font-medium">Status do pedido</p><Select disabled={mutation.isPending || o.refund_status !== "none"} value={o.delivery_status} onValueChange={value => mutation.mutate({ orderId: o.id, status: value as DeliveryStatus, pickupLocation: o.pickup_location || undefined })}><SelectTrigger className="w-56"><SelectValue /></SelectTrigger><SelectContent>{o.delivery_status === "cancelada" && <SelectItem value="cancelada" disabled>Entrega cancelada</SelectItem>}{Object.entries(DELIVERY_LABELS).filter(([value]) => value !== "cancelada" && (isPickup(o) ? value !== "a_caminho" : value !== "pronto")).map(([value,label]) => <SelectItem key={value} value={value} disabled={value === "pronto" && (!o.pickup_location || o.payment_status !== "approved")}>{label}</SelectItem>)}</SelectContent></Select></div>
+      </div>
+      <OrderCancellation order={o} admin />
+      {!isPickup(o) && o.delivery_status !== "cancelada" && o.refund_status === "none" && <OrderShippingPanel order={o} />}
+    </div>)}
+  </div>;
 }
