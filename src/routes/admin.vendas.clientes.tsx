@@ -163,6 +163,9 @@ function CustomerDetails({ customer }: { customer: CustomerRecord }) {
 
         <CustomerDetailSection title="Endereços" icon={<MapPin className="h-4 w-4" />}>
           <dl className="space-y-4">
+            <CustomerDetailField label="Complemento" value={emptyValue(customer.complemento)} />
+            <CustomerDetailField label="Referência para entrega" value={emptyValue(customer.referencia_entrega)} />
+            <CustomerDetailField label="Pessoa autorizada a receber" value={emptyValue(customer.pessoa_autorizada)} />
             <CustomerDetailField label="Endereço principal" value={formatAddress(customer)} />
             <CustomerDetailField label="Endereço de pagamento" value={formatAddress(customer, true)} />
           </dl>
@@ -174,6 +177,7 @@ function CustomerDetails({ customer }: { customer: CustomerRecord }) {
             <CustomerDetailField label="Valor da última" value={formatCurrency(customer.valor_ultima_compra)} />
             <CustomerDetailField label="Maior compra" value={formatDate(customer.data_maior_compra)} />
             <CustomerDetailField label="Valor da maior" value={formatCurrency(customer.valor_maior_compra)} />
+            <CustomerDetailField label="Compras pelo site neste ano" value={formatCurrency(customer.web_compra_ano)} />
             <CustomerDetailField label="Compra no ano" value={formatCurrency(customer.compra_ano)} />
             <CustomerDetailField label="Ano anterior" value={formatCurrency(customer.compra_ano_anterior)} />
             <CustomerDetailField label="Média de atraso" value={formatDelay(customer.media_atraso_dias)} />
@@ -303,6 +307,7 @@ function CustomersAdmin() {
       <ResourceCrud
         title="Clientes"
         table="customers"
+        readTable="customers_sales_summary"
         orderBy={{ column: "cliente", ascending: true }}
         searchField="cliente"
         searchFields={["cliente", "codigo", "cnpj_cpf", "cidade"]}
