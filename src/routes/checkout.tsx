@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteLayout";
+import { PICKUP_SERVICE, checkoutFieldValid } from "@/lib/order-fulfillment";
 import { useCart, formatBRL } from "@/lib/cart";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -228,6 +229,8 @@ function CheckoutPage() {
   const [loadingFrete, setLoadingFrete] = useState(false);
   const [method, setMethod] = useState<"pix" | "card" | "boleto">("pix");
   const [installments, setInstallments] = useState<CardInstallments>(1);
+  const [fulfillmentMethod, setFulfillmentMethod] = useState<"delivery" | "pickup">("delivery");
+  const freightRequest = useRef(0);
   const [frete, setFrete] = useState<ShippingOption | null>(null);
   const [freteOpcoes, setFreteOpcoes] = useState<ShippingOption[]>([]);
   const [taxAmount, setTaxAmount] = useState<number | null>(null);
@@ -251,6 +254,7 @@ function CheckoutPage() {
   const [focusCardPanel, setFocusCardPanel] = useState(false);
 
   function resetDeliveryCalculation() {
+    freightRequest.current++;
     setFrete(null);
     setFreteOpcoes([]);
     setTaxAmount(null);
@@ -259,7 +263,7 @@ function CheckoutPage() {
 
   function set<K extends keyof Form>(k: K, v: string) {
     setForm((f) => ({ ...f, [k]: v }));
-    if (k === "cep" || k === "estado") resetDeliveryCalculation();
+    if (fulfillmentMethod === "delivery" && (k === "cep" || k === "estado")) resetDeliveryCalculation();
   }
 
   async function lookupCep(cep: string): Promise<CepLookupResult | null> {
@@ -304,6 +308,7 @@ function CheckoutPage() {
     if (items.length === 0) return;
 
     resetDeliveryCalculation();
+    const requestId = freightRequest.current;
     setLoadingFrete(true);
     try {
       let destinationUf = String(destinationUfOverride || form.estado || "").trim().toUpperCase();
@@ -387,6 +392,7 @@ function CheckoutPage() {
         },
       })) as any;
 
+      if (requestId !== freightRequest.current) return;
       setFreteOpcoes(opcoes);
       const defaultOption = dukampOption ?? [...opcoes].sort((a, b) => a.valor - b.valor)[0];
       setFrete(defaultOption);
@@ -398,13 +404,15 @@ function CheckoutPage() {
           : `Frete e impostos calculados para ${destinationUf}`,
       );
     } catch (e) {
+      if (requestId !== freightRequest.current) return;
       resetDeliveryCalculation();
+      setLoadingFrete(false);
       const raw = e instanceof Error ? e.message : String(e ?? "");
       console.error("[Checkout] Falha ao calcular frete/impostos", { cep, itens: items.length, error: e });
       const detail = raw && raw !== "Invalid API Error" ? raw : "resposta inesperada do servidor (Invalid API Error). Verifique as integrações e tente novamente.";
       toast.error(`Cálculo: ${detail}`, { duration: 10000 });
     } finally {
-      setLoadingFrete(false);
+      if (requestId === freightRequest.current) setLoadingFrete(false);
     }
   }
 
@@ -416,6 +424,34 @@ function CheckoutPage() {
       destinationUf = result?.estado || destinationUf;
     }
     await handleCalcFreteFor(cep, undefined, destinationUf);
+  }
+
+  async function choosePickup() {
+    resetDeliveryCalculation();
+    const requestId = freightRequest.current;
+    setFulfillmentMethod("pickup");
+    setFrete({ valor: 0, prazoDias: 0, servico: PICKUP_SERVICE });
+    setLoadingFrete(true);
+    try {
+      const taxes = await calcTax({ data: { destinationUf: "SP", accountType: accountType === "produtor" ? "produtor" : "cliente", items: items.map(i => ({ product_id: i.id, quantity: i.quantity })) } });
+      if (requestId !== freightRequest.current) return;
+      setTaxAmount(Number(taxes.taxAmount));
+      setTaxDestinationUf("SP");
+    } catch (error) { if (requestId === freightRequest.current) toast.error(error instanceof Error ? error.message : "Não foi possível calcular os impostos"); }
+    finally { if (requestId === freightRequest.current) setLoadingFrete(false); }
+  }
+
+  function fieldProps(key: keyof Form) {
+    const optional = key === "complemento" || (fulfillmentMethod === "pickup" && method !== "boleto" && ["cep","rua","numero","bairro","cidade","estado"].includes(key));
+    const valid = checkoutFieldValid(key, form[key]);
+    return {
+      "aria-invalid": !optional && !valid,
+      "aria-label": key === "cpf_cnpj" ? "CPF ou CNPJ" : undefined,
+      required: !optional,
+      className: optional && !form[key] ? "" : valid
+        ? "border-green-600 focus-visible:ring-green-600/40"
+        : "border-red-500 focus-visible:ring-red-500/40",
+    };
   }
 
   function validateDelivery(): string | null {
@@ -433,15 +469,10 @@ function CheckoutPage() {
       cidade: "Cidade",
       estado: "UF",
     };
-    for (const k of ["customer_name", "email", "phone", "cpf_cnpj", "cep", "rua", "numero", "bairro", "cidade", "estado"] as const) {
-      if (!form[k]?.trim()) return `Preencha o campo: ${labels[k]}`;
-    }
-    const documentLength = form.cpf_cnpj.replace(/\D/g, "").length;
-    if (documentLength !== 11 && documentLength !== 14) {
-      return "Informe um CPF com 11 dígitos ou um CNPJ com 14 dígitos.";
-    }
-    if (!/^\S+@\S+\.\S+$/.test(form.email)) return "E-mail inválido — confira o endereço digitado";
-    if (form.estado.length !== 2) return "UF deve ter 2 letras (ex: SP, MG, GO)";
+    const fields = fulfillmentMethod === "pickup" && method !== "boleto"
+      ? ["customer_name", "email", "phone", "cpf_cnpj"] as const
+      : ["customer_name", "email", "phone", "cpf_cnpj", "cep", "rua", "numero", "bairro", "cidade", "estado"] as const;
+    for (const key of fields) if (!checkoutFieldValid(key, form[key])) return `Preencha corretamente: ${labels[key]}`;
     if (!frete || taxAmount == null) return "Calcule o frete e os impostos antes de finalizar";
     return null;
   }
@@ -454,6 +485,7 @@ function CheckoutPage() {
         shipping_cost: frete?.valor ?? 0,
         shipping_service: frete?.servico ?? "A combinar",
         shipping_deadline_days: frete?.prazoDias ?? 0,
+        fulfillment_method: fulfillmentMethod,
         payment_method: method,
         card_installments: method === "card" ? installments : undefined,
       },
@@ -725,6 +757,17 @@ function CheckoutPage() {
 
             <Section number={2} icon={<MapPin className="h-4 w-4" />} title="Entrega">
               <div className="space-y-6">
+                <div className="grid gap-3 sm:grid-cols-2" role="group" aria-label="Tipo de entrega">
+                  <Button type="button" variant={fulfillmentMethod === "delivery" ? "default" : "outline"} onClick={() => { resetDeliveryCalculation(); setLoadingFrete(false); setFulfillmentMethod("delivery"); }}>Receber no endereço</Button>
+                  <Button type="button" variant={fulfillmentMethod === "pickup" ? "default" : "outline"} onClick={choosePickup}>Retirar na loja — sem frete</Button>
+                </div>
+                {fulfillmentMethod === "pickup" && <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 space-y-2 text-sm">
+                  <p className="font-semibold">Retirada gratuita na loja</p>
+                  <p>O pedido começa como Preparando. A administração informará se a retirada será na filial de São José do Rio Preto ou na matriz de Monte Aprazível.</p>
+                  <p>Quando o pedido estiver Pronto, você terá 7 dias para retirar. A data limite aparecerá no seu pedido.</p>
+                  {loadingFrete && <p>Calculando impostos...</p>}
+                </div>}
+                {fulfillmentMethod === "delivery" && <>
                 <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-4">
                   <Label className="text-sm font-semibold flex items-center gap-2 mb-3">
                     <Truck className="h-4 w-4 text-primary" />
@@ -745,7 +788,8 @@ function CheckoutPage() {
                             value={form.cep}
                             onChange={(e) => set("cep", e.target.value)}
                             onBlur={(e) => lookupCep(e.target.value)}
-                            className="h-11 text-base font-medium"
+                            {...fieldProps("cep")}
+                            className={`${fieldProps("cep").className} h-11 text-base font-medium`}
                           />
                           {loadingCep && (
                             <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-primary" />
@@ -873,43 +917,50 @@ function CheckoutPage() {
                   </div>
                 </div>
 
+                </>}
+                {(fulfillmentMethod === "delivery" || method === "boleto") && <>
+                {fulfillmentMethod === "pickup" && <Field label="CEP de faturamento (obrigatório para boleto)">
+                  <Input {...fieldProps("cep")} value={form.cep} onChange={e => set("cep", e.target.value)} onBlur={e => lookupCep(e.target.value)} placeholder="CEP do pagador" />
+                </Field>}
                 <div className="grid grid-cols-1 sm:grid-cols-6 gap-3">
                   <Field className="sm:col-span-4" label="Rua / Estrada">
-                    <Input value={form.rua} onChange={(e) => set("rua", e.target.value)} placeholder="Ex: Estrada da Fazenda, KM 10" />
+                    <Input {...fieldProps("rua")} value={form.rua} onChange={(e) => set("rua", e.target.value)} placeholder="Ex: Estrada da Fazenda, KM 10" />
                   </Field>
                   <Field className="sm:col-span-2" label="Número / KM">
-                    <Input value={form.numero} onChange={(e) => set("numero", e.target.value)} placeholder="500" />
+                    <Input {...fieldProps("numero")} value={form.numero} onChange={(e) => set("numero", e.target.value)} placeholder="500" />
                   </Field>
                   <Field className="sm:col-span-4" label="Complemento (opcional)">
-                    <Input value={form.complemento} onChange={(e) => set("complemento", e.target.value)} placeholder="Ponto de referência" />
+                    <Input {...fieldProps("complemento")} value={form.complemento} onChange={(e) => set("complemento", e.target.value)} placeholder="Ponto de referência" />
                   </Field>
                   <Field className="sm:col-span-2" label="Bairro">
-                    <Input value={form.bairro} onChange={(e) => set("bairro", e.target.value)} placeholder="Zona Rural" />
+                    <Input {...fieldProps("bairro")} value={form.bairro} onChange={(e) => set("bairro", e.target.value)} placeholder="Zona Rural" />
                   </Field>
                   <Field className="sm:col-span-4" label="Cidade">
-                    <Input value={form.cidade} onChange={(e) => set("cidade", e.target.value)} placeholder="São José do Rio Preto" />
+                    <Input {...fieldProps("cidade")} value={form.cidade} onChange={(e) => set("cidade", e.target.value)} placeholder="São José do Rio Preto" />
                   </Field>
                   <Field className="sm:col-span-2" label="UF">
-                    <Input value={form.estado} maxLength={2} onChange={(e) => set("estado", e.target.value.toUpperCase())} placeholder="SP" className="uppercase" />
+                    <Input {...fieldProps("estado")} value={form.estado} maxLength={2} onChange={(e) => set("estado", e.target.value.toUpperCase())} placeholder="SP" className={`${fieldProps("estado").className} uppercase`} />
                   </Field>
                 </div>
 
+                </>}
                 <Separator />
 
                 <div>
                   <h3 className="text-sm font-semibold mb-3">Dados para contato</h3>
+                  <p className="mb-3 text-xs text-muted-foreground">Borda vermelha: preencha ou corrija o campo. Borda verde: preenchimento válido.</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Field label="Nome completo">
-                      <Input value={form.customer_name} onChange={(e) => set("customer_name", e.target.value)} placeholder="Ex: José Pereira" />
+                      <Input {...fieldProps("customer_name")} value={form.customer_name} onChange={(e) => set("customer_name", e.target.value)} placeholder="Ex: José Pereira" />
                     </Field>
                     <Field label="Telefone / WhatsApp">
-                      <Input value={form.phone} inputMode="tel" onChange={(e) => set("phone", e.target.value)} placeholder="(17) 99999-9999" />
+                      <Input {...fieldProps("phone")} value={form.phone} inputMode="tel" onChange={(e) => set("phone", e.target.value)} placeholder="(17) 99999-9999" />
                     </Field>
                     <Field label="E-mail">
-                      <Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="seunome@email.com" />
+                      <Input {...fieldProps("email")} type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="seunome@email.com" />
                     </Field>
                     <Field label="CPF ou CNPJ">
-                      <Input value={form.cpf_cnpj} inputMode="numeric" onChange={(e) => set("cpf_cnpj", e.target.value.replace(/\D/g, "").slice(0, 14))} placeholder="Somente números" />
+                      <Input {...fieldProps("cpf_cnpj")} value={form.cpf_cnpj} inputMode="numeric" onChange={(e) => set("cpf_cnpj", e.target.value.replace(/\D/g, "").slice(0, 14))} placeholder="Somente números" />
                     </Field>
                   </div>
                 </div>
