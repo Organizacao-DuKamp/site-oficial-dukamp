@@ -40,7 +40,8 @@ async function authorizeAdmin(request: Request) {
     return { error: response({ error: "Acesso restrito ao administrativo." }, { status: 403 }) } as const;
   }
 
-  return { supabaseAdmin: supabaseAdmin as any, reviewerId: userData.user.id } as const;
+  const { createAuditedAdminClient } = await import("@/lib/audit.server");
+  return { supabaseAdmin: createAuditedAdminClient(userData.user.id, request) as any, reviewerId: userData.user.id } as const;
 }
 
 export const Route = createFileRoute("/api/admin/password-recovery")({
