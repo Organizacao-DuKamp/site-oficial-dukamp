@@ -1,6 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { useServerFn } from "@tanstack/react-start";
+import { useAuth } from "@/lib/auth";
+import { OrderFulfillment } from "@/components/site/OrderFulfillment";
+import { OrderCancellation } from "@/components/site/OrderCancellation";
+import { isPickup } from "@/lib/order-fulfillment";
 import { getOrderPublic } from "@/lib/checkout.functions";
 import { useQuery } from "@tanstack/react-query";
 import { formatBRL, useCart } from "@/lib/cart";
@@ -19,6 +23,7 @@ export const Route = createFileRoute("/pedido/$id")({
 
 function OrderPage() {
   const { id } = Route.useParams();
+  const { user } = useAuth();
   const fetchOrder = useServerFn(getOrderPublic);
   const { clear } = useCart();
   const clearedRef = useRef(false);
@@ -27,7 +32,7 @@ function OrderPage() {
     queryFn: () => fetchOrder({ data: { id } }),
     refetchInterval: (query) => {
       const s = query.state.data?.order.payment_status;
-      return s === "approved" || s === "rejected" || s === "cancelled" ? false : 5000;
+      return s === "approved" || s === "refunded" ? 10000 : s === "rejected" || s === "cancelled" ? false : 5000;
     },
   });
 
@@ -53,7 +58,11 @@ function OrderPage() {
   return (
     <SiteLayout>
       <div className="max-w-3xl mx-auto space-y-6">
-        {isPaid ? (
+        <div className="rounded-lg border bg-card p-4 space-y-3">
+          <OrderFulfillment order={order} />
+          {user && order.user_id === user.id && <OrderCancellation order={order} />}
+        </div>
+        {isPaid && order.delivery_status !== "cancelada" ? (
           <div className="relative overflow-hidden border rounded-2xl p-8 bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 text-center">
             <div className="absolute inset-0 pointer-events-none opacity-30">
               <div className="absolute -top-10 -left-10 h-40 w-40 rounded-full bg-green-300 blur-3xl animate-pulse" />
@@ -68,7 +77,7 @@ function OrderPage() {
                 Recebemos seu pagamento com sucesso.
               </p>
               <p className="mt-1 text-sm text-green-700/80">
-                Seu pedido <strong>{order.order_number}</strong> já está sendo preparado para envio ao destino.
+                Seu pedido <strong>{order.order_number}</strong> {isPickup(order) ? "será preparado para retirada na loja." : "já está sendo preparado para envio ao destino."}
               </p>
               <div className="mt-6 flex flex-wrap justify-center gap-2">
                 <Button asChild variant="default"><Link to="/minhas-compras">Ver minhas compras</Link></Button>
@@ -90,7 +99,7 @@ function OrderPage() {
           </div>
         )}
 
-        {!isPaid && !isFailed && order.payment_method === "boleto" && order.mp_ticket_url && (
+        {!isPaid && !isFailed && order.delivery_status !== "cancelada" && order.payment_method === "boleto" && order.mp_ticket_url && (
           <div className="border rounded-lg p-6 bg-card space-y-4">
             <h2 className="font-semibold text-lg text-center">Boleto — {formatBRL(Number(order.total))}</h2>
             <div className="text-center">
@@ -126,7 +135,7 @@ function OrderPage() {
           </div>
         )}
 
-        {!isPaid && !isFailed && order.payment_method !== "boleto" && order.mp_qr_code_base64 && (
+        {!isPaid && !isFailed && order.delivery_status !== "cancelada" && order.payment_method !== "boleto" && order.mp_qr_code_base64 && (
           <div className="border rounded-lg p-6 bg-card space-y-4">
             <h2 className="font-semibold text-lg text-center">Pague com Pix — {formatBRL(Number(order.total))}</h2>
             <img
@@ -152,7 +161,7 @@ function OrderPage() {
         )}
 
         <div className="border rounded-lg p-4 bg-card">
-          <OrderTracking order={order} />
+          {!isPickup(order) && order.delivery_status !== "cancelada" && <OrderTracking order={order} />}
         </div>
 
         <div className="border rounded-lg p-4 bg-card">

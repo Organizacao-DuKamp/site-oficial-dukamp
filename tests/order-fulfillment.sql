@@ -1,0 +1,67 @@
+-- Run against a migrated database. All fixtures and audit rows roll back.
+BEGIN;
+DO $$
+DECLARE admin_id uuid; customer_id uuid; other_id uuid:=gen_random_uuid(); order_id uuid:=gen_random_uuid();
+ o public.orders%ROWTYPE; ready_at timestamptz; deadline_at timestamptz; n integer; blocked boolean;
+BEGIN
+ SELECT id INTO admin_id FROM public.profiles WHERE public.has_role(id,'admin') LIMIT 1;
+ SELECT id INTO customer_id FROM public.profiles WHERE NOT public.has_role(id,'admin') LIMIT 1;
+ IF admin_id IS NULL OR customer_id IS NULL THEN RAISE EXCEPTION 'Test requires an admin and a customer'; END IF;
+ PERFORM set_config('request.jwt.claims',jsonb_build_object('role','service_role')::text,true);
+ PERFORM set_config('request.headers',jsonb_build_object('x-dukamp-actor-id',admin_id,'x-dukamp-actor-ip','127.0.0.1')::text,true);
+ INSERT INTO public.orders(id,user_id,customer_name,email,phone,cep,rua,numero,bairro,cidade,estado,subtotal,total,shipping_cost,fulfillment_method,payment_status)
+ VALUES(order_id,customer_id,'Test pickup','fixture@example.invalid','17999999999','','','','','','SP',10,10,99,'pickup','approved');
+ SELECT * INTO o FROM public.orders WHERE id=order_id;
+ IF o.shipping_cost<>0 OR o.delivery_status::text<>'preparando' THEN RAISE EXCEPTION 'Pickup default or freight failed'; END IF;
+ blocked:=false;
+ BEGIN PERFORM public.manage_order_fulfillment(order_id,admin_id,'status','pronto'); EXCEPTION WHEN OTHERS THEN blocked:=true; END;
+ IF NOT blocked THEN RAISE EXCEPTION 'Ready without store accepted'; END IF;
+ PERFORM public.manage_order_fulfillment(order_id,admin_id,'status','pronto','rio_preto');
+ SELECT * INTO o FROM public.orders WHERE id=order_id;
+ ready_at:=o.pickup_ready_at; deadline_at:=o.pickup_deadline_at;
+ IF (deadline_at AT TIME ZONE 'America/Sao_Paulo')::date-(ready_at AT TIME ZONE 'America/Sao_Paulo')::date<>7 THEN RAISE EXCEPTION 'Pickup deadline is not seven calendar days'; END IF;
+ PERFORM public.manage_order_fulfillment(order_id,admin_id,'location',NULL,'monte_aprazivel');
+ SELECT * INTO o FROM public.orders WHERE id=order_id;
+ IF o.pickup_ready_at<>ready_at OR o.pickup_deadline_at<>deadline_at THEN RAISE EXCEPTION 'Store edit reset deadline'; END IF;
+ blocked:=false;
+ BEGIN PERFORM public.manage_order_fulfillment(order_id,admin_id,'status','a_caminho'); EXCEPTION WHEN OTHERS THEN blocked:=true; END;
+ IF NOT blocked THEN RAISE EXCEPTION 'Pickup shipment accepted'; END IF;
+ PERFORM public.manage_order_fulfillment(order_id,admin_id,'status','entregue');
+ PERFORM public.manage_order_fulfillment(order_id,admin_id,'status','preparando');
+ SELECT * INTO o FROM public.orders WHERE id=order_id;
+ IF o.delivered_at IS NOT NULL OR o.pickup_ready_at IS NOT NULL THEN RAISE EXCEPTION 'Delivered correction failed'; END IF;
+ blocked:=false;
+ BEGIN PERFORM public.manage_order_fulfillment(order_id,other_id,'cancel',NULL,NULL,'test cancellation'); EXCEPTION WHEN OTHERS THEN blocked:=true; END;
+ IF NOT blocked THEN RAISE EXCEPTION 'Foreign customer cancellation accepted'; END IF;
+ blocked:=false;
+ BEGIN PERFORM public.manage_order_fulfillment(order_id,customer_id,'status','entregue'); EXCEPTION WHEN OTHERS THEN blocked:=true; END;
+ IF NOT blocked THEN RAISE EXCEPTION 'Customer status modification accepted'; END IF;
+ PERFORM public.manage_order_fulfillment(order_id,customer_id,'cancel',NULL,NULL,'test cancellation',true);
+ SELECT * INTO o FROM public.orders WHERE id=order_id;
+ IF o.delivery_status::text<>'cancelada' OR o.refund_status<>'requested' THEN RAISE EXCEPTION 'Cancellation/refund request failed'; END IF;
+ blocked:=false;
+ BEGIN PERFORM public.manage_order_fulfillment(order_id,customer_id,'refunded'); EXCEPTION WHEN OTHERS THEN blocked:=true; END;
+ IF NOT blocked THEN RAISE EXCEPTION 'Customer refund completion accepted'; END IF;
+ PERFORM public.manage_order_fulfillment(order_id,admin_id,'refunded');
+ UPDATE public.orders SET payment_status='approved' WHERE id=order_id;
+ SELECT * INTO o FROM public.orders WHERE id=order_id;
+ IF o.payment_status::text<>'refunded' OR o.refund_completed_by<>admin_id THEN RAISE EXCEPTION 'Refund reconciliation protection failed'; END IF;
+ SELECT count(*) INTO n FROM public.audit_logs WHERE entity_id=order_id::text AND actor_id=admin_id AND actor_ip='127.0.0.1'::inet;
+ IF n<5 THEN RAISE EXCEPTION 'Audit actor/IP/change capture failed'; END IF;
+ SELECT count(*) INTO n FROM public.audit_logs WHERE entity_id=order_id::text;
+ UPDATE public.orders SET updated_at=now() WHERE id=order_id;
+ IF (SELECT count(*) FROM public.audit_logs WHERE entity_id=order_id::text)<>n THEN RAISE EXCEPTION 'No-op update logged'; END IF;
+ IF dukamp_private.redact_audit_data('{"password":"secret","items":[{"access_token":"secret"}],"name":"visible"}') <> '{"password":"[protegido]","items":[{"access_token":"[protegido]"}],"name":"visible"}'::jsonb THEN RAISE EXCEPTION 'Audit secret redaction failed'; END IF;
+ IF has_function_privilege('authenticated','public.manage_order_fulfillment(uuid,uuid,text,text,text,text,boolean)','EXECUTE') OR has_table_privilege('authenticated','public.audit_logs','INSERT') OR has_table_privilege('service_role','public.audit_logs','UPDATE') THEN RAISE EXCEPTION 'Audit/RPC privileges too broad'; END IF;
+ IF EXISTS(SELECT 1 FROM pg_tables t WHERE t.schemaname='public' AND t.tablename<>'audit_logs' AND NOT EXISTS(SELECT 1 FROM pg_trigger g WHERE g.tgrelid=(format('public.%I',t.tablename))::regclass AND g.tgname='dukamp_audit_changes')) THEN RAISE EXCEPTION 'Missing table audit trigger'; END IF;
+ -- Verify direct browser updates cannot bypass the controlled cancellation RPC.
+ PERFORM set_config('request.jwt.claims',jsonb_build_object('role','authenticated','sub',customer_id)::text,true);
+ PERFORM set_config('role','authenticated',true);
+ IF EXISTS(SELECT 1 FROM public.audit_logs) THEN RAISE EXCEPTION 'Customer can see admin audit'; END IF;
+ blocked:=false;
+ BEGIN UPDATE public.orders SET total=1 WHERE id=order_id; EXCEPTION WHEN OTHERS THEN blocked:=true; END;
+ IF NOT blocked THEN RAISE EXCEPTION 'Customer changed order total directly'; END IF;
+ PERFORM set_config('role','none',true);
+END $$;
+SELECT 'pickup, deadline, delivered correction, ownership, refund, audit and RLS checks passed' AS result;
+ROLLBACK;

@@ -2,19 +2,19 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
-export type DeliveryStatus = "preparando" | "a_caminho" | "entregue";
+export type { DeliveryStatus } from "@/lib/order-fulfillment";
 
 export const listMyOrders = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("orders")
       .select(
-        "id,order_number,total,payment_status,delivery_status,delivered_at,created_at,shipping_service,tracking_code,tracking_status,posted_at,label_created_at,tracking_updated_at",
+        "*",
       )
       .eq("user_id", userId)
-      .in("payment_status", ["approved", "in_process"])
+      .in("payment_status", ["approved", "in_process", "refunded", "cancelled"])
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return data ?? [];
@@ -76,19 +76,21 @@ export const adminListOrders = createServerFn({ method: "GET" })
     z
       .object({
         onlyOpen: z.boolean().optional(),
+        orderId: z.string().uuid().optional(),
       })
       .parse(d ?? {}),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await assertAdmin(supabase, userId);
-    let q = supabase
+    let q = (supabase as any)
       .from("orders")
       .select(
-        "id,order_number,customer_name,email,phone,cidade,estado,total,payment_status,delivery_status,delivered_at,created_at,shipping_service,tracking_code,tracking_status,correios_prepostagem_id,shipping_label_url,shipping_service_code,shipping_error,posted_at,label_created_at,tracking_updated_at",
+        "*",
       )
       .order("created_at", { ascending: false })
       .limit(500);
+    if (data.orderId) q = q.eq("id", data.orderId);
     if (data.onlyOpen) {
       q = q.eq("payment_status", "approved").neq("delivery_status", "entregue");
     } else {
@@ -106,19 +108,21 @@ export const adminUpdateDeliveryStatus = createServerFn({ method: "POST" })
     z
       .object({
         orderId: z.string().uuid(),
-        status: z.enum(["preparando", "a_caminho", "entregue"]),
+        status: z.enum(["preparando", "pronto", "a_caminho", "entregue"]),
+        pickupLocation: z.enum(["rio_preto", "monte_aprazivel"]).optional(),
       })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await assertAdmin(supabase, userId);
-    const patch: any = { delivery_status: data.status };
-    if (data.status === "entregue") {
-      patch.delivered_at = new Date().toISOString();
-      patch.delivery_notified = false;
-    }
-    const { error } = await supabase.from("orders").update(patch).eq("id", data.orderId);
+    const { getRequest } = await import("@tanstack/react-start/server");
+    const { createAuditedAdminClient } = await import("@/lib/audit.server");
+    const admin = createAuditedAdminClient(userId, getRequest());
+    const { error } = await admin.rpc("manage_order_fulfillment", {
+      p_order_id: data.orderId, p_actor_id: userId, p_action: "status",
+      p_status: data.status, p_pickup_location: data.pickupLocation || null,
+    });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -173,4 +177,26 @@ export const adminSalesStats = createServerFn({ method: "GET" })
       openDeliveries: approved.filter((r: any) => r.delivery_status !== "entregue").length,
       week: days,
     };
+  });
+
+export const manageOrderFulfillment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    orderId: z.string().uuid(),
+    action: z.enum(["cancel", "refunded", "location"]),
+    pickupLocation: z.enum(["rio_preto", "monte_aprazivel"]).optional(),
+    reason: z.string().trim().min(3).max(1000).optional(),
+    requestRefund: z.boolean().default(false),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { getRequest } = await import("@tanstack/react-start/server");
+    const { createAuditedAdminClient } = await import("@/lib/audit.server");
+    const admin = createAuditedAdminClient(context.userId, getRequest());
+    const { data: result, error } = await admin.rpc("manage_order_fulfillment", {
+      p_order_id: data.orderId, p_actor_id: context.userId, p_action: data.action,
+      p_pickup_location: data.pickupLocation || null, p_reason: data.reason || null,
+      p_request_refund: data.requestRefund,
+    });
+    if (error) throw new Error(error.message);
+    return result;
   });

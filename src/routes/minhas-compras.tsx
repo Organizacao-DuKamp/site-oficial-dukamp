@@ -1,6 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { useServerFn } from "@tanstack/react-start";
+import { OrderFulfillment } from "@/components/site/OrderFulfillment";
+import { OrderCancellation } from "@/components/site/OrderCancellation";
+import { isPickup } from "@/lib/order-fulfillment";
 import { listMyOrders } from "@/lib/orders.functions";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
@@ -21,6 +24,8 @@ export const Route = createFileRoute("/minhas-compras")({
 
 const DELIVERY_LABEL = {
   preparando: { label: "Preparando", icon: Package, color: "bg-amber-100 text-amber-800 border-amber-200" },
+  pronto: { label: "Pronto para retirada", icon: CheckCircle2, color: "bg-green-100 text-green-800 border-green-200" },
+  cancelada: { label: "Entrega cancelada", icon: Package, color: "bg-red-100 text-red-800 border-red-200" },
   a_caminho: { label: "A caminho", icon: Truck, color: "bg-blue-100 text-blue-800 border-blue-200" },
   entregue: { label: "Entregue", icon: CheckCircle2, color: "bg-green-100 text-green-800 border-green-200" },
 } as const;
@@ -37,6 +42,7 @@ function MyOrdersPage() {
     queryKey: ["my-orders", user?.id],
     queryFn: () => fetchOrders(),
     enabled: !!user,
+    refetchInterval: 10000,
   });
 
   if (loading || !user) {
@@ -56,7 +62,7 @@ function MyOrdersPage() {
           </div>
         )}
         <div className="space-y-3">
-          {q.data?.map((o) => {
+          {q.data?.map((o: any) => {
             const isApproved = o.payment_status === "approved";
             const dl = DELIVERY_LABEL[o.delivery_status as keyof typeof DELIVERY_LABEL] ?? DELIVERY_LABEL.preparando;
             const Icon = dl.icon;
@@ -98,7 +104,9 @@ function MyOrdersPage() {
                   )}
                 </Link>
                 <div className="border-t px-4 py-3">
-                  <OrderTracking order={o} />
+                  <OrderFulfillment order={o} />
+                  <div className="mt-3"><OrderCancellation order={o} /></div>
+                  {!isPickup(o) && o.delivery_status !== "cancelada" && <OrderTracking order={o} />}
                 </div>
               </div>
             );

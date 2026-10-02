@@ -5,6 +5,7 @@ import { adminListOrders } from "@/lib/orders.functions";
 import { Loader2 } from "lucide-react";
 import { formatBRL } from "@/lib/cart";
 import { Badge } from "@/components/ui/badge";
+import { Link } from "@tanstack/react-router";
 import { trackingStatusLabel } from "@/lib/shipping-status";
 
 
@@ -15,6 +16,8 @@ export const Route = createFileRoute("/admin/vendas/historico")({
 const DELIVERY_LABEL: Record<string, { label: string; className: string }> = {
   preparando: { label: "Preparando", className: "bg-amber-100 text-amber-900" },
   a_caminho: { label: "A caminho", className: "bg-blue-100 text-blue-900" },
+  pronto: { label: "Pronto para retirada", className: "bg-green-100 text-green-900" },
+  cancelada: { label: "Entrega cancelada", className: "bg-red-100 text-red-900" },
   entregue: { label: "Entregue", className: "bg-green-100 text-green-900" },
 };
 
@@ -46,11 +49,11 @@ function HistoricoVendas() {
             </tr>
           </thead>
           <tbody>
-            {q.data?.map((o) => {
+            {q.data?.map((o: any) => {
               const dl = DELIVERY_LABEL[o.delivery_status] ?? DELIVERY_LABEL.preparando;
               return (
-                <tr key={o.id} className="border-t">
-                  <td className="p-3 font-mono text-xs">{o.order_number}</td>
+                <tr key={o.id} className={`border-t ${o.refund_status === "requested" ? "bg-red-50 text-red-900" : ""}`}>
+                  <td className="p-3 font-mono text-xs"><Link to="/admin/vendas/pedidos" search={{ orderId: o.id }}>{o.order_number} · Gerenciar</Link></td>
                   <td className="p-3">
                     <div>{o.customer_name}</div>
                     <div className="text-xs text-muted-foreground">{o.cidade}/{o.estado}</div>

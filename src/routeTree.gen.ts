@@ -29,6 +29,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAnunciosRouteImport } from './routes/admin.anuncios'
 import { Route as AdminAtendimentosRouteImport } from './routes/admin.atendimentos'
 import { Route as AdminAtualizarValoresRouteImport } from './routes/admin.atualizar-valores'
+import { Route as AdminAuditoriaRouteImport } from './routes/admin.auditoria'
 import { Route as AdminBaixarAppRouteImport } from './routes/admin.baixar-app'
 import { Route as AdminBannersRouteImport } from './routes/admin.banners'
 import { Route as AdminCatalogosRouteImport } from './routes/admin.catalogos'
@@ -70,6 +71,7 @@ import { Route as ApiAccountQuotesRouteImport } from './routes/api/account/quote
 import { Route as ApiAccountSellerChatRouteImport } from './routes/api/account/seller-chat'
 import { Route as ApiAccountSellerLinkRouteImport } from './routes/api/account/seller-link'
 import { Route as ApiAdminAccountTypeRouteImport } from './routes/api/admin/account-type'
+import { Route as ApiAdminAuditRouteImport } from './routes/api/admin/audit'
 import { Route as ApiAdminErpMarginVendaRouteImport } from './routes/api/admin/erp-margin-venda'
 import { Route as ApiAdminPasswordRecoveryRouteImport } from './routes/api/admin/password-recovery'
 import { Route as ApiAdminSellerMarginReportRouteImport } from './routes/api/admin/seller-margin-report'
@@ -187,6 +189,11 @@ const AdminAtendimentosRoute = AdminAtendimentosRouteImport.update({
 const AdminAtualizarValoresRoute = AdminAtualizarValoresRouteImport.update({
   id: '/atualizar-valores',
   path: '/atualizar-valores',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAuditoriaRoute = AdminAuditoriaRouteImport.update({
+  id: '/auditoria',
+  path: '/auditoria',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminBaixarAppRoute = AdminBaixarAppRouteImport.update({
@@ -397,6 +404,11 @@ const ApiAdminAccountTypeRoute = ApiAdminAccountTypeRouteImport.update({
   path: '/api/admin/account-type',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminAuditRoute = ApiAdminAuditRouteImport.update({
+  id: '/api/admin/audit',
+  path: '/api/admin/audit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminErpMarginVendaRoute = ApiAdminErpMarginVendaRouteImport.update({
   id: '/api/admin/erp-margin-venda',
   path: '/api/admin/erp-margin-venda',
@@ -515,6 +527,7 @@ export interface FileRoutesByFullPath {
   '/admin/anuncios': typeof AdminAnunciosRoute
   '/admin/atendimentos': typeof AdminAtendimentosRoute
   '/admin/atualizar-valores': typeof AdminAtualizarValoresRoute
+  '/admin/auditoria': typeof AdminAuditoriaRoute
   '/admin/baixar-app': typeof AdminBaixarAppRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/catalogos': typeof AdminCatalogosRoute
@@ -556,6 +569,7 @@ export interface FileRoutesByFullPath {
   '/api/account/seller-chat': typeof ApiAccountSellerChatRoute
   '/api/account/seller-link': typeof ApiAccountSellerLinkRoute
   '/api/admin/account-type': typeof ApiAdminAccountTypeRoute
+  '/api/admin/audit': typeof ApiAdminAuditRoute
   '/api/admin/erp-margin-venda': typeof ApiAdminErpMarginVendaRoute
   '/api/admin/password-recovery': typeof ApiAdminPasswordRecoveryRoute
   '/api/admin/seller-margin-report': typeof ApiAdminSellerMarginReportRoute
@@ -592,6 +606,7 @@ export interface FileRoutesByTo {
   '/admin/anuncios': typeof AdminAnunciosRoute
   '/admin/atendimentos': typeof AdminAtendimentosRoute
   '/admin/atualizar-valores': typeof AdminAtualizarValoresRoute
+  '/admin/auditoria': typeof AdminAuditoriaRoute
   '/admin/baixar-app': typeof AdminBaixarAppRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/catalogos': typeof AdminCatalogosRoute
@@ -633,6 +648,7 @@ export interface FileRoutesByTo {
   '/api/account/seller-chat': typeof ApiAccountSellerChatRoute
   '/api/account/seller-link': typeof ApiAccountSellerLinkRoute
   '/api/admin/account-type': typeof ApiAdminAccountTypeRoute
+  '/api/admin/audit': typeof ApiAdminAuditRoute
   '/api/admin/erp-margin-venda': typeof ApiAdminErpMarginVendaRoute
   '/api/admin/password-recovery': typeof ApiAdminPasswordRecoveryRoute
   '/api/admin/seller-margin-report': typeof ApiAdminSellerMarginReportRoute
@@ -674,6 +690,7 @@ export interface FileRoutesById {
   '/admin/anuncios': typeof AdminAnunciosRoute
   '/admin/atendimentos': typeof AdminAtendimentosRoute
   '/admin/atualizar-valores': typeof AdminAtualizarValoresRoute
+  '/admin/auditoria': typeof AdminAuditoriaRoute
   '/admin/baixar-app': typeof AdminBaixarAppRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/catalogos': typeof AdminCatalogosRoute
@@ -715,6 +732,7 @@ export interface FileRoutesById {
   '/api/account/seller-chat': typeof ApiAccountSellerChatRoute
   '/api/account/seller-link': typeof ApiAccountSellerLinkRoute
   '/api/admin/account-type': typeof ApiAdminAccountTypeRoute
+  '/api/admin/audit': typeof ApiAdminAuditRoute
   '/api/admin/erp-margin-venda': typeof ApiAdminErpMarginVendaRoute
   '/api/admin/password-recovery': typeof ApiAdminPasswordRecoveryRoute
   '/api/admin/seller-margin-report': typeof ApiAdminSellerMarginReportRoute
@@ -757,6 +775,7 @@ export interface FileRouteTypes {
     | '/admin/anuncios'
     | '/admin/atendimentos'
     | '/admin/atualizar-valores'
+    | '/admin/auditoria'
     | '/admin/baixar-app'
     | '/admin/banners'
     | '/admin/catalogos'
@@ -798,6 +817,7 @@ export interface FileRouteTypes {
     | '/api/account/seller-chat'
     | '/api/account/seller-link'
     | '/api/admin/account-type'
+    | '/api/admin/audit'
     | '/api/admin/erp-margin-venda'
     | '/api/admin/password-recovery'
     | '/api/admin/seller-margin-report'
@@ -834,6 +854,7 @@ export interface FileRouteTypes {
     | '/admin/anuncios'
     | '/admin/atendimentos'
     | '/admin/atualizar-valores'
+    | '/admin/auditoria'
     | '/admin/baixar-app'
     | '/admin/banners'
     | '/admin/catalogos'
@@ -875,6 +896,7 @@ export interface FileRouteTypes {
     | '/api/account/seller-chat'
     | '/api/account/seller-link'
     | '/api/admin/account-type'
+    | '/api/admin/audit'
     | '/api/admin/erp-margin-venda'
     | '/api/admin/password-recovery'
     | '/api/admin/seller-margin-report'
@@ -915,6 +937,7 @@ export interface FileRouteTypes {
     | '/admin/anuncios'
     | '/admin/atendimentos'
     | '/admin/atualizar-valores'
+    | '/admin/auditoria'
     | '/admin/baixar-app'
     | '/admin/banners'
     | '/admin/catalogos'
@@ -956,6 +979,7 @@ export interface FileRouteTypes {
     | '/api/account/seller-chat'
     | '/api/account/seller-link'
     | '/api/admin/account-type'
+    | '/api/admin/audit'
     | '/api/admin/erp-margin-venda'
     | '/api/admin/password-recovery'
     | '/api/admin/seller-margin-report'
@@ -1006,6 +1030,7 @@ export interface RootRouteChildren {
   ApiAccountSellerChatRoute: typeof ApiAccountSellerChatRoute
   ApiAccountSellerLinkRoute: typeof ApiAccountSellerLinkRoute
   ApiAdminAccountTypeRoute: typeof ApiAdminAccountTypeRoute
+  ApiAdminAuditRoute: typeof ApiAdminAuditRoute
   ApiAdminErpMarginVendaRoute: typeof ApiAdminErpMarginVendaRoute
   ApiAdminPasswordRecoveryRoute: typeof ApiAdminPasswordRecoveryRoute
   ApiAdminSellerMarginReportRoute: typeof ApiAdminSellerMarginReportRoute
@@ -1163,6 +1188,13 @@ declare module '@tanstack/react-router' {
       path: '/atualizar-valores'
       fullPath: '/admin/atualizar-valores'
       preLoaderRoute: typeof AdminAtualizarValoresRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/auditoria': {
+      id: '/admin/auditoria'
+      path: '/auditoria'
+      fullPath: '/admin/auditoria'
+      preLoaderRoute: typeof AdminAuditoriaRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/baixar-app': {
@@ -1452,6 +1484,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminAccountTypeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/audit': {
+      id: '/api/admin/audit'
+      path: '/api/admin/audit'
+      fullPath: '/api/admin/audit'
+      preLoaderRoute: typeof ApiAdminAuditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/erp-margin-venda': {
       id: '/api/admin/erp-margin-venda'
       path: '/api/admin/erp-margin-venda'
@@ -1585,6 +1624,7 @@ interface AdminRouteChildren {
   AdminAnunciosRoute: typeof AdminAnunciosRoute
   AdminAtendimentosRoute: typeof AdminAtendimentosRoute
   AdminAtualizarValoresRoute: typeof AdminAtualizarValoresRoute
+  AdminAuditoriaRoute: typeof AdminAuditoriaRoute
   AdminBaixarAppRoute: typeof AdminBaixarAppRoute
   AdminBannersRoute: typeof AdminBannersRoute
   AdminCatalogosRoute: typeof AdminCatalogosRoute
@@ -1612,6 +1652,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAnunciosRoute: AdminAnunciosRoute,
   AdminAtendimentosRoute: AdminAtendimentosRoute,
   AdminAtualizarValoresRoute: AdminAtualizarValoresRoute,
+  AdminAuditoriaRoute: AdminAuditoriaRoute,
   AdminBaixarAppRoute: AdminBaixarAppRoute,
   AdminBannersRoute: AdminBannersRoute,
   AdminCatalogosRoute: AdminCatalogosRoute,
@@ -1720,6 +1761,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAccountSellerChatRoute: ApiAccountSellerChatRoute,
   ApiAccountSellerLinkRoute: ApiAccountSellerLinkRoute,
   ApiAdminAccountTypeRoute: ApiAdminAccountTypeRoute,
+  ApiAdminAuditRoute: ApiAdminAuditRoute,
   ApiAdminErpMarginVendaRoute: ApiAdminErpMarginVendaRoute,
   ApiAdminPasswordRecoveryRoute: ApiAdminPasswordRecoveryRoute,
   ApiAdminSellerMarginReportRoute: ApiAdminSellerMarginReportRoute,
