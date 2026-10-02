@@ -55,6 +55,7 @@ type StatisticsResponse = {
     hasMarginData: boolean;
     hasPreviousMarginData?: boolean;
     partialWithoutBaseline: boolean;
+    websiteSales?: number; websiteTotal?: number; unknownWebsiteCosts?: number;
   };
   annualSeries?: Array<{
     month: number;
@@ -509,6 +510,9 @@ export function SellerStatisticsDialog({ seller }: { seller?: Seller | null }) {
                     </ResponsiveContainer>
                   </div>
                 </div>
+
+                {Boolean(query.data.dataQuality?.websiteSales) && <p className="rounded-lg border bg-green-50 p-3 text-sm text-green-900">Inclui {query.data.dataQuality?.websiteSales} venda(s) paga(s) pelo site: {money(query.data.dataQuality?.websiteTotal)} em produtos, sem frete e taxas. Reembolsos são descontados automaticamente.</p>}
+                {Boolean(query.data.dataQuality?.unknownWebsiteCosts) && <p className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">{query.data.dataQuality?.unknownWebsiteCosts} venda(s) do site ainda não têm custo completo no ERP. Elas entram nas vendas; sua margem só entra quando o custo está disponível.</p>}
 
                 {query.data.dataQuality?.partialWithoutBaseline && mode === "day" && (
                   <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm text-amber-800">
