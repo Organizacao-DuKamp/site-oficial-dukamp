@@ -61,6 +61,7 @@ const NAV: NavEntry[] = [
   { to: "/admin/equipe-vendas", label: "Equipe de Vendas", icon: UserSquare2 },
   { to: "/admin/banners", label: "Banners", icon: ImageIcon },
   { to: "/admin/anuncios", label: "Anúncios", icon: Megaphone },
+  { to: "/admin/auditoria", label: "Auditoria", icon: History },
   { to: "/admin/atendimentos", label: "Atendimentos", icon: MessageSquare },
   { to: "/admin/solicitacoes", label: "Solicitações", icon: ClipboardList },
   { to: "/admin/contas", label: "Contas", icon: Users, masterOnly: true },
