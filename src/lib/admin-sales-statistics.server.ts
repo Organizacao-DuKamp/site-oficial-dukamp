@@ -1,3 +1,4 @@
+import { customerPortfolioFilter, loadWebSales, webSalesInRange, webSalesTotals } from "@/lib/web-sales.server";
 type MarginRow = {
   id: string;
   seller_user_id: string | null;
@@ -100,14 +101,14 @@ function latestReport(rows: MarginRow[], from: string, to: string) { return rows
 function blueDeadline(lastPurchase: string) { const date = parseDate(lastPurchase.slice(0, 10)); if (!Number.isFinite(date.getTime())) return null; date.setUTCMonth(date.getUTCMonth() + 6); return isoDate(date); }
 function nearBlue(customers: CustomerRow[], asOf: string) { const horizon = shiftDays(asOf, 30); return customers.map((customer) => { if (!customer.ultima_compra) return null; const entersBlueAt = blueDeadline(customer.ultima_compra); if (!entersBlueAt || entersBlueAt <= asOf || entersBlueAt > horizon) return null; return { id: customer.id, codigo: customer.codigo, cliente: customer.cliente, cidade: customer.cidade, uf: customer.uf, ultima_compra: customer.ultima_compra, entersBlueAt, daysRemaining: daysInclusive(asOf, entersBlueAt) - 1 }; }).filter(Boolean).sort((a: any, b: any) => a.daysRemaining - b.daysRemaining); }
 
-async function loadCustomers(supabaseAdmin: any, sellerCode: string | null): Promise<CustomerRow[]> {
+async function loadCustomers(supabaseAdmin: any, sellerCode: string | null, sellerId: string | null): Promise<CustomerRow[]> {
   const rows: CustomerRow[] = []; const pageSize = 1000;
-  for (let from = 0; ; from += pageSize) { let query = supabaseAdmin.from("customers").select("id,codigo,cliente,cidade,uf,telefone,celular,email,ultima_compra,compra_ano,compra_ano_anterior,abc_na_carteira_atual,vendedor_codigo,vendedor_nome").eq("abc_na_carteira_atual", true); if (sellerCode) query = query.in("vendedor_codigo", codeVariants(sellerCode)); const { data, error } = await query.range(from, from + pageSize - 1); if (error) throw error; rows.push(...((data ?? []) as CustomerRow[])); if ((data ?? []).length < pageSize) break; }
-  return sellerCode ? rows.filter((row) => normalizeCode(row.vendedor_codigo) === normalizeCode(sellerCode)) : rows;
+  for (let from = 0; ; from += pageSize) { let query = supabaseAdmin.from("customers_sales_summary").select("id,codigo,cliente,cidade,uf,telefone,celular,email,ultima_compra,compra_ano,compra_ano_anterior,abc_na_carteira_atual,vendedor_codigo,vendedor_nome"); if (sellerId) query = query.or(customerPortfolioFilter(sellerId, sellerCode)); else query = query.or("abc_na_carteira_atual.eq.true,web_registered.eq.true"); const { data, error } = await query.range(from, from + pageSize - 1); if (error) throw error; rows.push(...((data ?? []) as CustomerRow[])); if ((data ?? []).length < pageSize) break; }
+  return rows;
 }
-async function loadSales(supabaseAdmin: any, sellerCode: string | null): Promise<SaleRequestRow[]> {
+async function loadSales(supabaseAdmin: any, sellerCode: string | null, sellerId: string | null): Promise<SaleRequestRow[]> {
   const rows: SaleRequestRow[] = []; const pageSize = 1000;
-  for (let from = 0; ; from += pageSize) { let query = supabaseAdmin.from("seller_sale_requests").select("id,seller_user_id,seller_record_id,seller_code,seller_name,customer_code,customer_name,sale_notes,sale_value,status,created_at"); if (sellerCode) query = query.in("seller_code", codeVariants(sellerCode)); const { data, error } = await query.order("created_at", { ascending: false }).range(from, from + pageSize - 1); if (error) throw error; rows.push(...((data ?? []) as SaleRequestRow[])); if ((data ?? []).length < pageSize) break; }
+  for (let from = 0; ; from += pageSize) { let query = supabaseAdmin.from("seller_sale_requests").select("id,seller_user_id,seller_record_id,seller_code,seller_name,customer_code,customer_name,sale_notes,sale_value,status,created_at"); if (sellerCode) query = query.in("seller_code", codeVariants(sellerCode)); else if (sellerId) query = query.eq("seller_record_id", sellerId); const { data, error } = await query.order("created_at", { ascending: false }).range(from, from + pageSize - 1); if (error) throw error; rows.push(...((data ?? []) as SaleRequestRow[])); if ((data ?? []).length < pageSize) break; }
   return sellerCode ? rows.filter((row) => normalizeCode(row.seller_code) === normalizeCode(sellerCode)) : rows;
 }
 function quoteTotal(quote: any) { return (quote.items ?? []).reduce((sum: number, item: any) => sum + n(item.unit_price_snapshot) * n(item.quantity), 0); }
@@ -118,12 +119,12 @@ export async function buildAdminSalesStatistics(supabaseAdmin: any, request: Req
   if (to < from) throw new Error("A data final não pode ser anterior à inicial.");
   const sellerId = url.searchParams.get("sellerId")?.trim() || null;
   let seller: { id: string; name: string; erp_seller_code: string | null } | null = null; let sellerCode: string | null = null;
-  if (sellerId) { const result = await supabaseAdmin.from("sellers").select("id,name,erp_seller_code").eq("id", sellerId).maybeSingle(); if (result.error) throw result.error; if (!result.data) throw new Error("Vendedor não encontrado."); seller = result.data; sellerCode = result.data.erp_seller_code?.trim() || null; if (!sellerCode) return { sellerCodeMissing: true, seller: { id: seller.id, name: seller.name, code: null }, period: { from, to } }; }
+  if (sellerId) { const result = await supabaseAdmin.from("sellers").select("id,name,erp_seller_code").eq("id", sellerId).maybeSingle(); if (result.error) throw result.error; if (!result.data) throw new Error("Vendedor não encontrado."); seller = result.data; sellerCode = result.data.erp_seller_code?.trim() || null; }
 
-  const [{ data: snapshotData, error: snapshotError }, { data: monthlyData, error: monthlyError }, customers, saleRequests] = await Promise.all([
+  const [{ data: snapshotData, error: snapshotError }, { data: monthlyData, error: monthlyError }, customers, saleRequests, websiteSales] = await Promise.all([
     supabaseAdmin.from("seller_margin_report_snapshots").select("*").order("period_end", { ascending: true }).limit(20000),
     supabaseAdmin.from("seller_monthly_margin_reports").select("*").order("period_end", { ascending: true }).limit(20000),
-    loadCustomers(supabaseAdmin, sellerCode), loadSales(supabaseAdmin, sellerCode),
+    loadCustomers(supabaseAdmin, sellerCode, sellerId), loadSales(supabaseAdmin, sellerCode, sellerId), loadWebSales(supabaseAdmin, sellerId, sellerCode),
   ]);
   if (snapshotError) throw snapshotError; if (monthlyError) throw monthlyError;
 
@@ -138,12 +139,20 @@ export async function buildAdminSalesStatistics(supabaseAdmin: any, request: Req
     merged.set(`snapshot:${normalizeCode(row.report_seller_code)}:${row.period_start}:${row.period_end}`, row);
   }
   let reports = [...merged.values()];
+  if (sellerId && !sellerCode) reports = [];
   if (sellerCode) reports = reports.filter((row) => normalizeCode(row.report_seller_code) === normalizeCode(sellerCode));
 
   const previous = previousPeriod(from, to, preset); const currentMargin = aggregateRange(reports, from, to); const previousMargin = aggregateRange(reports, previous.from, previous.to);
+  const websiteCurrent = webSalesTotals(webSalesInRange(websiteSales, from, to));
+  const websitePrevious = webSalesTotals(webSalesInRange(websiteSales, previous.from, previous.to));
+  for (const [margin, online] of [[currentMargin, websiteCurrent], [previousMargin, websitePrevious]] as const) {
+    margin.totals = withMargin({ ...margin.totals, total_venda: margin.totals.total_venda + online.total_venda, total_custo: margin.totals.total_custo + online.total_custo, margem_bruta: margin.totals.margem_bruta + online.margem_bruta, tonelagem: margin.totals.tonelagem + online.tonelagem });
+    margin.hasData ||= online.count > 0;
+  }
   const inRange = (value: string, start: string, end: string) => value.slice(0, 10) >= start && value.slice(0, 10) <= end;
   const currentSales = saleRequests.filter((row) => inRange(row.created_at, from, to)); const previousSales = saleRequests.filter((row) => inRange(row.created_at, previous.from, previous.to));
   const { listQuotes } = await import("@/lib/seller-quotes.server"); let quotes = await listQuotes(supabaseAdmin);
+  if (sellerId && !sellerCode) quotes = quotes.filter((quote: any) => quote.seller_record_id === sellerId);
   if (sellerCode) { const userIds = new Set<string>(); reports.forEach((row) => { if (row.seller_user_id) userIds.add(row.seller_user_id); }); saleRequests.forEach((row) => { if (row.seller_user_id) userIds.add(row.seller_user_id); }); quotes = quotes.filter((quote: any) => userIds.has(quote.seller_user_id)); }
   const currentQuotes = quotes.filter((quote: any) => inRange(quote.created_at, from, to)); const previousQuotes = quotes.filter((quote: any) => inRange(quote.created_at, previous.from, previous.to));
   const activity = { sale_requests: currentSales.length, sale_value: currentSales.reduce((sum, row) => sum + n(row.sale_value), 0), quotes: currentQuotes.length, quote_value: currentQuotes.reduce((sum: number, quote: any) => sum + quoteTotal(quote), 0) };
@@ -153,12 +162,15 @@ export async function buildAdminSalesStatistics(supabaseAdmin: any, request: Req
   const annualSeries = Array.from({ length: 12 }, (_, index) => {
     const bounds = monthBounds(year, index + 1); const aggregate = aggregateRange(reports, bounds.from, bounds.to);
     const previousBounds = monthBounds(year - 1, index + 1); const previousAggregate = aggregateRange(reports, previousBounds.from, previousBounds.to);
+    const online = webSalesTotals(webSalesInRange(websiteSales, bounds.from, bounds.to)); const onlinePrevious = webSalesTotals(webSalesInRange(websiteSales, previousBounds.from, previousBounds.to));
+    aggregate.totals.total_venda += online.total_venda; aggregate.totals.margem_bruta += online.margem_bruta; aggregate.totals.tonelagem += online.tonelagem; aggregate.hasData ||= online.count > 0;
+    previousAggregate.totals.total_venda += onlinePrevious.total_venda; previousAggregate.hasData ||= onlinePrevious.count > 0;
     return { month: index + 1, label: new Intl.DateTimeFormat("pt-BR", { month: "short", timeZone: "UTC" }).format(new Date(Date.UTC(year, index, 1, 12))), total_venda: aggregate.totals.total_venda, previous_total_venda: previousAggregate.totals.total_venda, margem_bruta: aggregate.totals.margem_bruta, tonelagem: aggregate.totals.tonelagem, hasData: aggregate.hasData, previousHasData: previousAggregate.hasData };
   });
   const comparisonSeries = [{ label: "Vendas", current: currentMargin.totals.total_venda, previous: previousMargin.totals.total_venda }, { label: "Margem bruta", current: currentMargin.totals.margem_bruta, previous: previousMargin.totals.margem_bruta }, { label: "Custo", current: currentMargin.totals.total_custo, previous: previousMargin.totals.total_custo }];
   const near = nearBlue(customers, to);
   const topCustomers = customers.map((customer) => ({ id: customer.id, code: customer.codigo, name: customer.cliente, city: customer.cidade, uf: customer.uf, total: n(customer.compra_ano) })).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name, "pt-BR")).slice(0, 3);
-  const actions = [...currentSales.map((row) => ({ id: `sale:${row.id}`, type: "sale" as const, title: "Registro de venda", description: row.customer_name, customerCode: row.customer_code, value: n(row.sale_value), status: row.status, notes: row.sale_notes, sellerName: row.seller_name, createdAt: row.created_at })), ...currentQuotes.map((quote: any) => ({ id: `quote:${quote.id}`, type: "quote" as const, title: "Orçamento", description: quote.client_name_snapshot || quote.client_email_snapshot || "Cliente", customerCode: null, value: quoteTotal(quote), status: quote.status, notes: quote.notes, sellerName: quote.seller_name_snapshot, createdAt: quote.created_at }))].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 500);
+  const actions = [...webSalesInRange(websiteSales, from, to).map(sale => ({ id: `website:${sale.order_id}`, type: "sale" as const, title: "Venda paga pelo site", description: customers.find(customer => customer.id === sale.customer_id)?.cliente || "Cliente do site", customerCode: customers.find(customer => customer.id === sale.customer_id)?.codigo || null, value: Number(sale.amount), status: "paid", notes: "Pagamento confirmado automaticamente. Valor dos produtos, sem frete e taxas.", sellerName: sale.seller_name || "Nenhum vendedor", createdAt: sale.paid_at })), ...currentSales.map((row) => ({ id: `sale:${row.id}`, type: "sale" as const, title: "Registro de venda", description: row.customer_name, customerCode: row.customer_code, value: n(row.sale_value), status: row.status, notes: row.sale_notes, sellerName: row.seller_name, createdAt: row.created_at })), ...currentQuotes.map((quote: any) => ({ id: `quote:${quote.id}`, type: "quote" as const, title: "Orçamento", description: quote.client_name_snapshot || quote.client_email_snapshot || "Cliente", customerCode: null, value: quoteTotal(quote), status: quote.status, notes: quote.notes, sellerName: quote.seller_name_snapshot, createdAt: quote.created_at }))].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 500);
 
   const margin = currentMargin.totals;
   return {
@@ -167,7 +179,7 @@ export async function buildAdminSalesStatistics(supabaseAdmin: any, request: Req
     summary: { ...margin, portfolio_count: customers.length, near_blue_count: near.length, sale_requests: activity.sale_requests, sale_value: activity.sale_value, quotes: activity.quotes, quote_value: activity.quote_value },
     previousSummary: { ...previousMargin.totals, sale_requests: previousActivity.sale_requests, sale_value: previousActivity.sale_value, quotes: previousActivity.quotes, quote_value: previousActivity.quote_value },
     comparison: { ...comparisons(margin, previousMargin.totals), sale_requests: pct(activity.sale_requests, previousActivity.sale_requests), sale_value: pct(activity.sale_value, previousActivity.sale_value), quotes: pct(activity.quotes, previousActivity.quotes), quote_value: pct(activity.quote_value, previousActivity.quote_value) },
-    dataQuality: { hasMarginData: currentMargin.hasData, hasPreviousMarginData: previousMargin.hasData, partialWithoutBaseline: currentMargin.partialWithoutBaseline },
+    dataQuality: { hasMarginData: currentMargin.hasData, hasPreviousMarginData: previousMargin.hasData, partialWithoutBaseline: currentMargin.partialWithoutBaseline, websiteSales: websiteCurrent.count, websiteTotal: websiteCurrent.total_venda, unknownWebsiteCosts: websiteCurrent.unknownCostCount },
     annualSeries, comparisonSeries,
     marginReport: sellerCode ? latestReport(reports, from, to) : null,
     clients: customers.map((customer) => ({ id: customer.id, code: customer.codigo, name: customer.cliente, city: customer.cidade, uf: customer.uf, phone: customer.celular || customer.telefone, email: customer.email, lastPurchase: customer.ultima_compra, annualPurchase: n(customer.compra_ano) })).sort((a, b) => a.name.localeCompare(b.name, "pt-BR")),

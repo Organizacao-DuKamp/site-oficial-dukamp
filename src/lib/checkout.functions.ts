@@ -507,6 +507,9 @@ const orderSchema = z.object({
   rua: z.string().max(200),
   numero: z.string().max(20),
   complemento: z.string().max(120).optional().nullable(),
+  referencia_entrega: z.string().max(300).optional().nullable(),
+  pessoa_autorizada: z.string().max(120).optional().nullable(),
+  seller_id: z.string().uuid().nullable().optional(),
   bairro: z.string().max(120),
   cidade: z.string().max(120),
   estado: z.string().max(2),
@@ -549,16 +552,20 @@ export const createPixOrder = createServerFn({ method: "POST" })
     let supa = await getServerSupabase();
 
     let authUserId: string | null = null;
+    let authenticatedUser: any = null;
     const { getRequest } = await import("@tanstack/react-start/server");
     const token = getRequest().headers.get("authorization")?.replace(/^Bearer\s+/i, "");
     if (token) {
       const { data: userData, error: authError } = await supa.auth.getUser(token);
       if (authError || !userData.user) throw new Error("Sessão inválida. Entre novamente.");
       authUserId = userData.user.id;
+      authenticatedUser = userData.user;
     }
 
     const { createAuditedAdminClient } = await import("@/lib/audit.server");
     supa = createAuditedAdminClient(authUserId, getRequest());
+    const { resolveOrderSeller } = await import("@/lib/order-seller.server");
+    const seller = await resolveOrderSeller(supa, authenticatedUser, data.seller_id);
     const shippingCost = data.fulfillment_method === "pickup" ? 0 : data.shipping_cost;
     const shippingService = data.fulfillment_method === "pickup" ? PICKUP_SERVICE : data.shipping_service;
     const ids = data.items.map((item) => item.product_id);
@@ -632,6 +639,11 @@ export const createPixOrder = createServerFn({ method: "POST" })
       .from("orders")
       .insert({
         user_id: authUserId,
+        seller_id: seller?.id ?? null,
+        seller_name: seller?.name ?? null,
+        seller_code: seller?.erp_seller_code?.trim() || null,
+        referencia_entrega: data.referencia_entrega || null,
+        pessoa_autorizada: data.pessoa_autorizada || null,
         customer_name: data.customer_name,
         email: data.email,
         phone: data.phone,

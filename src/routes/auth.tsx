@@ -11,6 +11,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { traduzErroAuth } from "@/lib/auth-errors";
 import { useRegisteredSellers } from "@/lib/sellers";
+import { DeliveryAddressFields } from "@/components/site/DeliveryAddressFields";
+import { consumerAddressError, EMPTY_DELIVERY_ADDRESS, validCpf, type DeliveryAddress } from "@/lib/customer-profile";
+import { lookupCepWithFallback } from "@/lib/cep";
 import logoFixed from "@/assets/dukamp-logo.webp";
 
 export const Route = createFileRoute("/auth")({
@@ -173,6 +176,9 @@ function RegisterForm() {
   const [phone, setPhone] = useState("");
   const [sellerId, setSellerId] = useState("none");
 
+  const [deliveryAddress, setDeliveryAddress] = useState<DeliveryAddress>(EMPTY_DELIVERY_ADDRESS);
+  const [loadingCep, setLoadingCep] = useState(false);
+
   // Produtor/Empresa
   const [cpf, setCpf] = useState("");
   const [fazenda, setFazenda] = useState("");
@@ -268,6 +274,21 @@ function RegisterForm() {
     };
   }, [accountKind, producerDocumentDigits]);
 
+  useEffect(() => {
+    const digits = deliveryAddress.cep.replace(/\D/g, "");
+    if (accountKind !== "cliente" || digits.length !== 8) { setLoadingCep(false); return; }
+    let cancelled = false;
+    setLoadingCep(true);
+    const timer = window.setTimeout(() => {
+      lookupCepWithFallback(digits).then(result => {
+        if (cancelled) return;
+        setDeliveryAddress(current => ({ ...current, rua: result.rua || "", bairro: result.bairro || "", cidade: result.cidade || "", estado: result.estado || "" }));
+      }).catch(() => { if (!cancelled) toast.error("Não foi possível buscar o CEP. Confira o número ou preencha o endereço manualmente."); })
+        .finally(() => { if (!cancelled) setLoadingCep(false); });
+    }, 350);
+    return () => { cancelled = true; window.clearTimeout(timer); };
+  }, [accountKind, deliveryAddress.cep]);
+
   function handleAccountKindChange(value: string) {
     setAccountKind(value as AccountKind);
     setLookupStatus("idle");
@@ -280,6 +301,11 @@ function RegisterForm() {
     if (password.length < 6) return toast.error("A senha deve ter no mínimo 6 caracteres.");
     if (password !== confirm) return toast.error("As senhas não conferem.");
     if (!phone.trim()) return toast.error("Informe o telefone.");
+
+    if (!needsExtra) {
+      const addressError = consumerAddressError(deliveryAddress, cpf);
+      if (addressError) return toast.error(addressError);
+    }
 
     if (needsExtra) {
       if (accountKind === "produtor") {
@@ -317,6 +343,7 @@ function RegisterForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          deliveryAddress: accountKind === "cliente" ? deliveryAddress : undefined,
           accountKind,
           fullName: fullName.trim(),
           email: normalizedEmail,
@@ -464,6 +491,11 @@ function RegisterForm() {
         </div>
       </div>
 
+      {!needsExtra && <>
+        <div><Label htmlFor="r-consumer-cpf">CPF *</Label><Input id="r-consumer-cpf" inputMode="numeric" required value={cpf} maxLength={14} onChange={e => setCpf(formatCpfCnpj(e.target.value).slice(0, 14))} placeholder="000.000.000-00" className={validCpf(cpf) ? "border-green-600" : "border-red-500"} /></div>
+        <DeliveryAddressFields address={deliveryAddress} loadingCep={loadingCep} onChange={(key, value) => setDeliveryAddress(current => ({ ...current, [key]: key === "cep" ? formatCep(value) : value }))} />
+      </>}
+
       {needsExtra && (
         <div className="space-y-4">
           <div className="space-y-3 rounded-md border bg-muted/40 p-3">
@@ -573,7 +605,7 @@ function RegisterForm() {
         <Label htmlFor="r-challenge">Quanto é {challenge.a} + {challenge.b}?</Label>
         <Input id="r-challenge" inputMode="numeric" value={answer} onChange={(e) => setAnswer(onlyDigits(e.target.value, 2))} placeholder="Resposta" required />
       </div>
-      <Button type="submit" className="w-full" disabled={loading || lookupStatus === "loading"}>
+      <Button type="submit" className="w-full" disabled={loading || loadingCep || lookupStatus === "loading"}>
         {loading ? "Enviando..." : needsExtra ? "Enviar solicitação" : "Cadastrar"}
       </Button>
     </form>

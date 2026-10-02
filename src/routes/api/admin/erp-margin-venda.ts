@@ -1,3 +1,4 @@
+import { loadWebSales, normalizeWebSellerCode, webSalesInRange, webSalesTotals } from "@/lib/web-sales.server";
 import { createFileRoute } from "@tanstack/react-router";
 // A tabela nova ainda não consta dos tipos gerados pelo Lovable Cloud.
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -87,7 +88,7 @@ export const Route = createFileRoute("/api/admin/erp-margin-venda")({
           const db = authorization.supabaseAdmin as any;
           const monthStart = `${from.slice(0, 7)}-01`,
             monthEnd = `${to.slice(0, 7)}-01`;
-          const [snapshots, monthly, sellersResult, locationsResult] = await Promise.all([
+          const [snapshots, monthly, sellersResult, locationsResult, websiteData] = await Promise.all([
             allRows(db, "seller_margin_report_snapshots", monthStart, monthEnd),
             allRows(db, "seller_monthly_margin_reports", monthStart, monthEnd),
             db
@@ -95,6 +96,7 @@ export const Route = createFileRoute("/api/admin/erp-margin-venda")({
               .select("name,slug,region,erp_seller_code,active")
               .not("erp_seller_code", "is", null),
             db.from("erp_seller_locations").select("seller_code,location"),
+            loadWebSales(db),
           ]);
           if (sellersResult.error) throw sellersResult.error;
           if (locationsResult.error) throw locationsResult.error;
@@ -146,6 +148,11 @@ export const Route = createFileRoute("/api/admin/erp-margin-venda")({
                 location: null,
                 active: false,
               });
+          const websiteSales = webSalesInRange(websiteData, from, to);
+          for (const sale of websiteSales) {
+            const code = normalizeWebSellerCode(sale.seller_code) || (sale.seller_id ? `site-${sale.seller_id}` : "sem-vendedor");
+            if (!sellers.has(code)) sellers.set(code, { code, name: sale.seller_name || "Vendas do site sem vendedor", region: null, location: null, active: true });
+          }
           const overrides = new Map<string, Location>(
             (locationsResult.data ?? []).map((row: any) => [
               normalizeSellerCode(row.seller_code),
@@ -156,12 +163,19 @@ export const Route = createFileRoute("/api/admin/erp-margin-venda")({
             .map((seller) => {
               const rows = byCode.get(seller.code) ?? [];
               const aggregate = aggregateSeller(rows, from, to);
+              const online = webSalesTotals(websiteSales.filter(sale => (normalizeWebSellerCode(sale.seller_code) || (sale.seller_id ? `site-${sale.seller_id}` : "sem-vendedor")) === seller.code));
+              aggregate.totals.total_venda += online.total_venda;
+              aggregate.totals.total_custo += online.total_custo;
+              aggregate.totals.margem_bruta += online.margem_bruta;
+              aggregate.totals.tonelagem += online.tonelagem;
+              if (online.count) aggregate.covered.push("site");
               const assigned = overrides.get(seller.code) ?? seller.location;
               return {
                 ...seller,
                 location: assigned,
                 locationName: assigned ? cities[assigned] : null,
                 ...aggregate,
+                websiteSales: online.count, websiteTotal: online.total_venda, unknownWebsiteCosts: online.unknownCostCount,
                 lastReport:
                   rows
                     .filter((row) => row.period_end <= to && row.period_end >= from)
@@ -174,10 +188,11 @@ export const Route = createFileRoute("/api/admin/erp-margin-venda")({
             from,
             to,
             weekdays: weekdays(from, to),
+            websiteSales: webSalesTotals(websiteSales),
             sellers: result,
             totals: sumMargins(
               result
-                .filter((row) => row.covered.length && !row.missingBaseline.length)
+                .filter((row) => (row.covered.length && !row.missingBaseline.length) || row.websiteSales > 0)
                 .map((row) => row.totals),
             ),
           });

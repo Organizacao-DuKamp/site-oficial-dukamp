@@ -1,10 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { consumerAddressError, EMPTY_DELIVERY_ADDRESS, type DeliveryAddress } from "@/lib/customer-profile";
+
 type AccountKind = "cliente" | "produtor" | "empresa";
 type RequestedAccountKind = "produtor" | "empresa";
 
 type RegisterPayload = {
   accountKind?: AccountKind;
+  deliveryAddress?: DeliveryAddress;
   fullName?: string;
   email?: string;
   password?: string;
@@ -236,6 +239,13 @@ export const Route = createFileRoute("/api/public/register")({
           }
         }
 
+        const deliveryAddress = Object.fromEntries(Object.keys(EMPTY_DELIVERY_ADDRESS).map(key => [key, text(payload.deliveryAddress?.[key as keyof DeliveryAddress])])) as DeliveryAddress;
+        deliveryAddress.cep = digits(deliveryAddress.cep);
+        deliveryAddress.estado = deliveryAddress.estado.toUpperCase();
+        if (accountKind === "cliente") {
+          const addressError = consumerAddressError(deliveryAddress, extra.cpf);
+          if (addressError) return errorResponse(addressError);
+        }
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
         if (sellerId) {
@@ -276,6 +286,16 @@ export const Route = createFileRoute("/api/public/register")({
 
         const userId = data.user?.id;
         if (!userId) return errorResponse("Não foi possível criar a conta. Tente novamente.", 500);
+
+        const { error: profileError } = await (supabaseAdmin as any).from("profiles").update({
+          full_name: fullName, email, phone, contact_email: email,
+          ...(accountKind === "cliente" ? { cpf: digits(extra.cpf), uf: deliveryAddress.estado, delivery_address: deliveryAddress } : {}),
+        }).eq("id", userId).select("id").single();
+        if (profileError) {
+          console.error("[register] Falha ao salvar os dados da conta:", profileError.message);
+          await supabaseAdmin.auth.admin.deleteUser(userId);
+          return errorResponse("Não foi possível salvar os dados de cadastro. Tente novamente.", 500);
+        }
 
         if (requestedType) {
           const cpfRawDigits = digits(extra.cpf);

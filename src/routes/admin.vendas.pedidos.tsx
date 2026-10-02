@@ -52,6 +52,12 @@ function Pedidos() {
     {!q.isLoading && !rows.length && <p className="rounded-lg border p-6 text-muted-foreground">Nenhum pedido encontrado.</p>}
     {rows.map((o: any) => <div key={o.id} className={`rounded-lg border p-4 space-y-4 ${o.refund_status === "requested" ? "border-red-500 bg-red-50" : "bg-card"}`}>
       <div className="flex flex-wrap justify-between gap-3"><div><h2 className="font-semibold">{o.order_number}</h2><p className="text-xs text-muted-foreground">{o.customer_name} · {o.email}</p><p className="text-xs text-muted-foreground">{new Date(o.created_at).toLocaleString("pt-BR")}</p></div><div className="text-right"><p className="font-bold">{formatBRL(Number(o.total))}</p>{o.refund_status === "requested" && <Badge variant="destructive">Reembolso solicitado</Badge>}</div></div>
+      <div className="grid gap-2 rounded-lg bg-muted/40 p-3 text-sm">
+        <p><strong>Vendedor:</strong> {o.seller_name || "Nenhum vendedor"}</p>
+        {!isPickup(o) && <p><strong>Endereço:</strong> {[o.rua, o.numero, o.complemento, o.bairro, o.cidade, o.estado, o.cep].filter(Boolean).join(", ")}</p>}
+        {o.referencia_entrega && <p><strong>Referência para entrega:</strong> {o.referencia_entrega}</p>}
+        {o.pessoa_autorizada && <p><strong>Pessoa autorizada a receber:</strong> {o.pessoa_autorizada}</p>}
+      </div>
       <OrderFulfillment order={o} />
       <div className="flex flex-wrap gap-3">
         {isPickup(o) && <div className="space-y-1"><p className="text-xs font-medium">Unidade de retirada</p><Select disabled={mutation.isPending} value={o.pickup_location || ""} onValueChange={value => mutation.mutate({ orderId: o.id, pickupLocation: value as PickupLocation })}><SelectTrigger className="w-72 max-w-full"><SelectValue placeholder="Escolha a unidade" /></SelectTrigger><SelectContent>{Object.entries(PICKUP_LOCATIONS).map(([value,label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div>}

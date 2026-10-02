@@ -1,4 +1,5 @@
 export const AUDIT_AREAS: Record<string, string> = {
+  web_order_sales: "Vendas pagas pelo site",
   products: "Produtos do site", erp_products: "Produtos do ERP", orders: "Pedidos", order_items: "Itens dos pedidos",
   dukamp_stock_items: "Estoque DuKamp", admin_access: "Acessos administrativos", profiles: "Contas", user_roles: "Permissões",
   erp_suppliers: "Fornecedores", erp_purchase_orders: "Compras", erp_product_units: "Unidades de medida",
@@ -15,6 +16,9 @@ export const AUDIT_AREAS: Record<string, string> = {
 };
 export const AUDIT_ACTIONS: Record<string, string> = { insert: "Cadastro", update: "Alteração", delete: "Exclusão", admin_login: "Entrada no painel" };
 const FIELDS: Record<string, string> = {
+  delivery_address: "Endereço de entrega", referencia_entrega: "Referência para entrega", pessoa_autorizada: "Pessoa autorizada a receber",
+  seller_id: "Vendedor", seller_record_id: "Vendedor responsável", seller_name: "Nome do vendedor", seller_code: "Código do vendedor",
+  web_registered: "Cliente cadastrado pelo site", payment_total: "Total pago", cost_amount: "Custo dos produtos", weight_kg: "Peso em kg", paid_at: "Pagamento confirmado em", erp_stock_synced_at: "Estoque do ERP atualizado em",
   status: "Situação", closed_at: "Encerrado em", closed_by: "Encerrado por", user_id: "Cliente / titular", actor_id: "Responsável",
   name: "Nome", full_name: "Nome completo", title: "Título", titulo: "Título", descricao: "Descrição", description: "Descrição",
   code: "Código", codigo: "Código", order_number: "Número do pedido", email: "E-mail", phone: "Telefone", message: "Mensagem",
@@ -46,7 +50,7 @@ const FIELDS: Record<string, string> = {
   percentual_margens: "Margens de venda", faixas: "Faixas de preço", produtor: "Preço para produtor", revenda: "Preço para revenda", tabela: "Preço de tabela",
   margem_configurada: "Margem configurada", margem_bruta: "Margem bruta", comissao_interna: "Comissão interna", prazo_dias: "Prazo em dias",
 };
-const MONEY = new Set(["price","consumer_price","producer_price","unit_price","sale_price","cost","total_cost","total_sale","subtotal","total","tax_amount","shipping_cost","payment_fee","payment_base_amount","sale_consumer_price","sale_producer_price","amount","custo_real","custo_final","valor_minimo","produtor","revenda","tabela","base_unit_price"]);
+const MONEY = new Set(["price","consumer_price","producer_price","unit_price","sale_price","cost","total_cost","total_sale","subtotal","total","tax_amount","shipping_cost","payment_fee","payment_base_amount","sale_consumer_price","sale_producer_price","amount","custo_real","custo_final","valor_minimo","produtor","revenda","tabela","base_unit_price","payment_total","cost_amount"]);
 const STATUS: Record<string, string> = {
   open: "Aberto", closed: "Encerrado", pending: "Pendente", approved: "Aprovado", rejected: "Recusado", cancelled: "Cancelado",
   refunded: "Reembolsado", requested: "Solicitado", none: "Sem solicitação", in_process: "Em análise", preparando: "Preparando",

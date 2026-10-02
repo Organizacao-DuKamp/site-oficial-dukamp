@@ -44,6 +44,7 @@ export type FilterDef = {
 type Props = {
   title: string;
   table: string;
+  readTable?: string;
   columns: ColumnDef[];
   fields: FieldDef[];
   orderBy?: { column: string; ascending?: boolean };
@@ -56,7 +57,7 @@ type Props = {
 
 const PAGE_SIZE = 25;
 
-export function ResourceCrud({ title, table, columns, fields, orderBy, searchField, searchFields, searchPlaceholder, filters, renderDetails }: Props) {
+export function ResourceCrud({ title, table, readTable, columns, fields, orderBy, searchField, searchFields, searchPlaceholder, filters, renderDetails }: Props) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any | null>(null);
@@ -73,7 +74,7 @@ export function ResourceCrud({ title, table, columns, fields, orderBy, searchFie
       const to = from + PAGE_SIZE - 1;
       const searchColumns = searchFields?.length ? searchFields : searchField ? [searchField] : [];
       const safeSearch = search.replace(/[(),]/g, " ").trim();
-      let q = supabase.from(table as any).select("*", { count: "exact" });
+      let q = supabase.from((readTable || table) as any).select("*", { count: "exact" });
       if (searchColumns.length === 1 && safeSearch) {
         q = q.ilike(searchColumns[0], `%${safeSearch}%`);
       } else if (searchColumns.length > 1 && safeSearch) {
@@ -219,7 +220,14 @@ export function ResourceCrud({ title, table, columns, fields, orderBy, searchFie
                       <Eye className="mr-1 h-4 w-4" /> Ver ficha
                     </Button>
                   )}
-                  <Button variant="ghost" size="icon" title="Editar cliente" onClick={() => { setEditing(row); setOpen(true); }}>
+                  <Button variant="ghost" size="icon" title="Editar cliente" onClick={async () => {
+                    if (readTable) {
+                      const { data, error } = await supabase.from(table as any).select("*").eq("id", row.id).single();
+                      if (error) { toast.error("Não foi possível carregar os dados para edição."); return; }
+                      setEditing(data);
+                    } else setEditing(row);
+                    setOpen(true);
+                  }}>
                     <Pencil className="h-4 w-4" />
                   </Button>
                   <Button variant="ghost" size="icon" onClick={() => {
