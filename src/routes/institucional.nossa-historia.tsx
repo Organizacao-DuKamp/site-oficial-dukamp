@@ -1,14 +1,10 @@
+import { seoHead } from "@/lib/seo";
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteLayout";
 
 export const Route = createFileRoute("/institucional/nossa-historia")({
   component: NossaHistoriaPage,
-  head: () => ({
-    meta: [
-      { title: "Nossa História | Dukamp" },
-      { name: "description", content: "Conheça a história da Dukamp." },
-    ],
-  }),
+  head: () => seoHead({ title: "Nossa História | DuKamp", description: "DuKamp Saúde Animal.", path: "/institucional/nossa-historia", noindex: true }),
 });
 
 function NossaHistoriaPage() {

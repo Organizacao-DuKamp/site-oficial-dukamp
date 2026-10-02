@@ -1,25 +1,18 @@
+import { seoHead, PUBLIC_PAGES } from "@/lib/seo";
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteLayout";
-import { useActiveSellers } from "@/lib/sellers";
+import { useActiveSellers, loadActiveSellers } from "@/lib/sellers";
 import { SellerCard } from "@/components/sellers/SellerCard";
 import { Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/equipe-de-vendas/")({
-  head: () => ({
-    meta: [
-      { title: "Equipe de Vendas — Dukamp" },
-      { name: "description", content: "Conheça nossa equipe de vendas Dukamp. Fale diretamente com um representante da sua região pelo WhatsApp." },
-      { property: "og:title", content: "Equipe de Vendas — Dukamp" },
-      { property: "og:description", content: "Conheça nossa equipe de vendas Dukamp." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-  }),
+  head: () => seoHead({ title: PUBLIC_PAGES["/equipe-de-vendas"][0], description: PUBLIC_PAGES["/equipe-de-vendas"][1], path: "/equipe-de-vendas" }),
+  loader: loadActiveSellers,
   component: SellersPage,
 });
 
 function SellersPage() {
-  const { data: sellers, isLoading } = useActiveSellers();
+  const { data: sellers, isLoading } = useActiveSellers(Route.useLoaderData());
 
   return (
     <SiteLayout>

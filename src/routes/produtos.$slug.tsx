@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { productSeo, seoHead } from "@/lib/seo";
+import { createFileRoute, notFound, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { SiteLayout } from "@/components/site/SiteLayout";
@@ -50,18 +51,34 @@ function ZoomBox({ children }: { children: React.ReactNode }) {
 
 
 export const Route = createFileRoute("/produtos/$slug")({
+  loader: async ({ params, context }) => {
+    const product = await context.queryClient.ensureQueryData({
+      queryKey: ["product", params.slug],
+      queryFn: async () => {
+        const { data, error } = await supabase.from("products").select("*,catalogs(name,slug)").eq("slug", params.slug).eq("active", true).maybeSingle();
+        if (error) throw error;
+        return data;
+      },
+    });
+    if (!product) throw notFound();
+    return product;
+  },
+  head: ({ loaderData, params }) => loaderData ? productSeo(loaderData) : seoHead({ title: "Produto não encontrado | DuKamp", description: "Este produto não está disponível no catálogo da DuKamp.", path: `/produtos/${encodeURIComponent(params.slug)}`, noindex: true }),
+  notFoundComponent: () => <SiteLayout><h1 className="text-2xl font-bold">Produto não encontrado</h1><p className="mt-2">Este produto não está disponível no catálogo.</p><Link to="/produtos" className="mt-4 inline-block text-primary underline">Ver produtos</Link></SiteLayout>,
   component: Page,
 });
 
 function Page() {
   const { slug } = Route.useParams();
+  const initialProduct = Route.useLoaderData();
   const { add } = useCart();
   const { accountType } = useAuth();
   const [activeImg, setActiveImg] = useState(0);
   const [qty, setQtyState] = useState(1);
   const { data: p, isLoading, isFetched } = useQuery({
+    initialData: initialProduct,
     queryKey: ["product", slug],
-    queryFn: async () => (await supabase.from("products").select("*,catalogs(name,slug)").eq("slug", slug).maybeSingle()).data,
+    queryFn: async () => (await supabase.from("products").select("*,catalogs(name,slug)").eq("slug", slug).eq("active", true).maybeSingle()).data,
   });
   if (isLoading || !isFetched) {
     return (
@@ -86,6 +103,12 @@ function Page() {
   const tierLabel = accountType === "produtor" ? "Produtor Rural" : null;
   return (
     <SiteLayout>
+      <nav aria-label="Navegação do produto" className="mb-5 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+        <Link to="/" className="hover:text-primary">Início</Link><span aria-hidden="true">/</span>
+        <Link to="/produtos" className="hover:text-primary">Produtos</Link>
+        {p.catalogs?.slug && <><span aria-hidden="true">/</span><Link to="/catalogos/$slug" params={{ slug: p.catalogs.slug }} className="hover:text-primary">{p.catalogs.name}</Link></>}
+        <span aria-hidden="true">/</span><span aria-current="page">{p.name}</span>
+      </nav>
       <div className="grid md:grid-cols-2 gap-8">
         <div className="space-y-3">
           {images.length > 1 ? (

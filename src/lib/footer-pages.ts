@@ -26,17 +26,11 @@ export function footerPageKey(slug: string) {
   return `footer_page:${slug}`;
 }
 
-export function useFooterPage(slug: string) {
-  return useQuery({
-    queryKey: ["footer_page", slug],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("site_settings")
-        .select("value")
-        .eq("key", footerPageKey(slug))
-        .maybeSingle();
-      return (data?.value as FooterPageContent | null) ?? null;
-    },
-    staleTime: 60_000,
-  });
+export async function loadFooterPage(slug: string) {
+  const { data, error } = await supabase.from("site_settings").select("value").eq("key", footerPageKey(slug)).maybeSingle();
+  if (error) throw error;
+  return (data?.value as FooterPageContent | null) ?? null;
+}
+export function useFooterPage(slug: string, initialData?: FooterPageContent | null) {
+  return useQuery({ queryKey: ["footer_page", slug], queryFn: () => loadFooterPage(slug), initialData, staleTime: 60_000 });
 }

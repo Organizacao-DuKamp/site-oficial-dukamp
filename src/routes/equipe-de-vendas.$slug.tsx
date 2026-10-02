@@ -1,24 +1,20 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { seoHead } from "@/lib/seo";
+import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteLayout";
-import { useSellerBySlug, useActiveSellers } from "@/lib/sellers";
+import { useSellerBySlug, useActiveSellers, loadSellerBySlug } from "@/lib/sellers";
 import { SellerProfileBanner } from "@/components/sellers/SellerProfileBanner";
 import { SellerCard } from "@/components/sellers/SellerCard";
 import { Loader2, ArrowLeft } from "lucide-react";
 
 export const Route = createFileRoute("/equipe-de-vendas/$slug")({
-  head: ({ params }) => ({
-    meta: [
-      { title: `${params.slug} — Equipe de Vendas Dukamp` },
-      { property: "og:title", content: `Equipe de Vendas Dukamp` },
-      { property: "og:type", content: "profile" },
-    ],
-  }),
+  loader: async ({ params }) => { const seller = await loadSellerBySlug(params.slug); if (!seller) throw notFound(); return seller; },
+  head: ({ params, loaderData }) => seoHead({ title: `${loaderData?.name || "Representante"} | Equipe DuKamp`, description: `Fale com ${loaderData?.name || "a equipe"} da DuKamp${loaderData?.region ? ` na região de ${loaderData.region}` : ""} sobre produtos para saúde e nutrição animal.`, path: `/equipe-de-vendas/${encodeURIComponent(params.slug)}`, image: loaderData?.photo_url || undefined, noindex: !loaderData, type: "profile" }),
   component: SellerDetailPage,
 });
 
 function SellerDetailPage() {
   const { slug } = Route.useParams();
-  const { data: seller, isLoading } = useSellerBySlug(slug);
+  const { data: seller, isLoading } = useSellerBySlug(slug, Route.useLoaderData());
   const { data: allSellers } = useActiveSellers();
 
   const others = (allSellers ?? []).filter((s) => s.slug !== slug);

@@ -1,19 +1,11 @@
+import { seoHead, PUBLIC_PAGES } from "@/lib/seo";
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Button } from "@/components/ui/button";
 import { MapPin, ExternalLink } from "lucide-react";
 
 export const Route = createFileRoute("/unidades")({
-  head: () => ({
-    meta: [
-      { title: "Nossas Unidades — Dukamp Saúde Animal" },
-      {
-        name: "description",
-        content:
-          "Conheça as unidades da Dukamp Saúde Animal em Monte Aprazível e São José do Rio Preto - SP.",
-      },
-    ],
-  }),
+  head: () => seoHead({ title: PUBLIC_PAGES["/unidades"][0], description: PUBLIC_PAGES["/unidades"][1], path: "/unidades" }),
   component: UnidadesPage,
 });
 

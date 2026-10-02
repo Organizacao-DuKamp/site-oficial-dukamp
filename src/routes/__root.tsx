@@ -1,3 +1,4 @@
+import { seoHead, PUBLIC_PAGES, SITE_TITLE, SITE_DESCRIPTION, cleanPath, isPublicPage, ORGANIZATION_SCHEMA } from "@/lib/seo";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -62,26 +63,13 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Dukamp Saúde Animal — Catálogo de Produtos Veterinários" },
-      { name: "description", content: "Catálogo Dukamp Saúde Animal: vermífugos, vacinas, suplementos e rações para bovinos, equinos, ovinos, suínos, aves e pets." },
-      { property: "og:title", content: "Dukamp Saúde Animal — Catálogo de Produtos Veterinários" },
-      { property: "og:description", content: "Catálogo Dukamp Saúde Animal: vermífugos, vacinas, suplementos e rações para bovinos, equinos, ovinos, suínos, aves e pets." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:title", content: "Dukamp Saúde Animal — Catálogo de Produtos Veterinários" },
-      { name: "twitter:description", content: "Catálogo Dukamp Saúde Animal: vermífugos, vacinas, suplementos e rações para bovinos, equinos, ovinos, suínos, aves e pets." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/b26f036f-d15f-46c8-865e-90b622288db4/id-preview-67fc4af5--6b52b98d-d310-4fe8-8ff5-9b90cca8d46a.lovable.app-1782738550431.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/b26f036f-d15f-46c8-865e-90b622288db4/id-preview-67fc4af5--6b52b98d-d310-4fe8-8ff5-9b90cca8d46a.lovable.app-1782738550431.png" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-    links: [
-      { rel: "stylesheet", href: appCss },
-      { rel: "icon", type: "image/png", href: "/favicon.png" },
-    ],
-  }),
+  head: ({ matches }) => {
+    const path = cleanPath(matches.at(-1)?.pathname || "/");
+    const [title, description] = PUBLIC_PAGES[path] || [SITE_TITLE, SITE_DESCRIPTION];
+    const seo = seoHead({ title, description, path, noindex: !isPublicPage(path), schema: ORGANIZATION_SCHEMA });
+    // Canonicals belong to the leaf route; links are not deduplicated like meta tags.
+    return { ...seo, meta: [{ charSet: "utf-8" }, { name: "viewport", content: "width=device-width, initial-scale=1" }, ...seo.meta], links: [{ rel: "stylesheet", href: appCss }, { rel: "icon", type: "image/png", href: "/favicon.png" }] };
+  },
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,

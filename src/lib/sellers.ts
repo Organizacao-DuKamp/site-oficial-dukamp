@@ -56,22 +56,20 @@ export function telHref(number?: string | null): string {
   return `tel:+${digits.startsWith("55") ? digits : `55${digits}`}`;
 }
 
-export function useActiveSellers() {
-  return useQuery({
-    queryKey: ["sellers", "active"],
-    queryFn: async (): Promise<Seller[]> => {
-      const { data, error } = await supabase
-        .from("sellers")
-        .select("*")
-        .eq("active", true)
-        .order("display_order", { ascending: true })
-        .order("name", { ascending: true });
-      if (error) throw error;
-
-      // Registros conta-* existem apenas para vínculo interno de login/chat.
-      return ((data ?? []) as Seller[]).filter((seller) => !seller.slug.startsWith("conta-"));
-    },
-  });
+const PUBLIC_SELLER_FIELDS = "id,slug,name,role,region,phone,whatsapp,photo_url,cutout_url,banner_url,active,display_order";
+export async function loadActiveSellers(): Promise<Seller[]> {
+  const { data, error } = await supabase.from("sellers").select(PUBLIC_SELLER_FIELDS).eq("active", true).order("display_order").order("name");
+  if (error) throw error;
+  return ((data || []) as Seller[]).filter(s => !s.slug.startsWith("conta-"));
+}
+export async function loadSellerBySlug(slug: string): Promise<Seller | null> {
+  if (slug.startsWith("conta-")) return null;
+  const { data, error } = await supabase.from("sellers").select(PUBLIC_SELLER_FIELDS).eq("slug", slug).eq("active", true).maybeSingle();
+  if (error) throw error;
+  return data as Seller | null;
+}
+export function useActiveSellers(initialData?: Seller[]) {
+  return useQuery({ queryKey: ["sellers", "active"], queryFn: loadActiveSellers, initialData });
 }
 
 export type RegisteredSeller = Pick<Seller, "id" | "name">;
@@ -93,18 +91,6 @@ export function useRegisteredSellers() {
   });
 }
 
-export function useSellerBySlug(slug: string) {
-  return useQuery({
-    queryKey: ["sellers", "slug", slug],
-    queryFn: async (): Promise<Seller | null> => {
-      if (slug.startsWith("conta-")) return null;
-      const { data, error } = await supabase
-        .from("sellers")
-        .select("*")
-        .eq("slug", slug)
-        .maybeSingle();
-      if (error) throw error;
-      return (data as Seller) ?? null;
-    },
-  });
+export function useSellerBySlug(slug: string, initialData?: Seller | null) {
+  return useQuery({ queryKey: ["seller", slug], queryFn: () => loadSellerBySlug(slug), initialData });
 }

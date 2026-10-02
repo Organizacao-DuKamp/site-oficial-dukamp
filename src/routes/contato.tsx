@@ -1,3 +1,4 @@
+import { seoHead, PUBLIC_PAGES } from "@/lib/seo";
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Input } from "@/components/ui/input";
@@ -7,7 +8,7 @@ import { toast } from "sonner";
 import { useSiteSettings } from "@/lib/site-settings";
 
 export const Route = createFileRoute("/contato")({
-  head: () => ({ meta: [{ title: "Contato — Dukamp" }] }),
+  head: () => seoHead({ title: PUBLIC_PAGES["/contato"][0], description: PUBLIC_PAGES["/contato"][1], path: "/contato" }),
   component: ContatoPage,
 });
 
