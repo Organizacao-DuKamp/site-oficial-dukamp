@@ -52,12 +52,14 @@ function AtendimentosPage() {
 
   useEffect(() => {
     void load();
+    const polling = window.setInterval(() => void load().catch(() => setLoadError("Não foi possível atualizar os atendimentos.")), 5000);
     const channel = supabase
       .channel("admin_tickets_feed")
       .on("postgres_changes", { event: "*", schema: "public", table: "support_tickets" }, () => void load())
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "support_messages" }, () => void load())
       .subscribe();
     return () => {
+      window.clearInterval(polling);
       void supabase.removeChannel(channel);
     };
   }, []);

@@ -657,8 +657,8 @@ export const createPixOrder = createServerFn({ method: "POST" })
     const [firstName, ...rest] = data.customer_name.trim().split(/\s+/);
     const lastName = rest.join(" ") || firstName;
 
-    const notifBase = process.env.PUBLIC_APP_URL || "https://dukamp.lovable.app";
-    const notificationUrl = `${notifBase.replace(/\/$/, "")}/api/public/mercadopago-webhook`;
+    const { paymentNotificationUrl } = await import("@/lib/mercadopago-notifications.server");
+    const notificationUrl = paymentNotificationUrl(getRequest(), process.env.PUBLIC_APP_URL);
 
     if (paymentMethod === "card") {
       return {
@@ -728,7 +728,7 @@ export const createPixOrder = createServerFn({ method: "POST" })
         transaction_details?: { external_resource_url?: string };
         barcode?: { content?: string };
       };
-      await supa
+      const { error: boletoSaveError } = await supa
         .from("orders")
         .update({
           mp_payment_id: String(mpB.id),
@@ -736,9 +736,11 @@ export const createPixOrder = createServerFn({ method: "POST" })
           mp_qr_code_base64: null,
           mp_ticket_url: mpB.transaction_details?.external_resource_url || null,
           mp_expires_at: expires.toISOString(),
-          payment_status: (mpB.status as "pending" | "approved" | "in_process") || "pending",
         })
         .eq("id", order.id);
+      if (boletoSaveError) throw boletoSaveError;
+      const { applyProviderPayment } = await import("@/lib/mercadopago-payment.server");
+      await applyProviderPayment(mpB as any);
 
       return {
         orderId: order.id,
@@ -799,7 +801,7 @@ export const createPixOrder = createServerFn({ method: "POST" })
     };
     const transactionData = mp.point_of_interaction?.transaction_data;
 
-    await supa
+    const { error: pixSaveError } = await supa
       .from("orders")
       .update({
         mp_payment_id: String(mp.id),
@@ -807,9 +809,11 @@ export const createPixOrder = createServerFn({ method: "POST" })
         mp_qr_code_base64: transactionData?.qr_code_base64 || null,
         mp_ticket_url: transactionData?.ticket_url || null,
         mp_expires_at: expires.toISOString(),
-        payment_status: (mp.status as "pending" | "approved" | "in_process") || "pending",
       })
       .eq("id", order.id);
+    if (pixSaveError) throw pixSaveError;
+    const { applyProviderPayment } = await import("@/lib/mercadopago-payment.server");
+    await applyProviderPayment(mp as any);
 
     return {
       orderId: order.id,
@@ -873,8 +877,9 @@ export const processCardPayment = createServerFn({ method: "POST" })
     const mpToken = process.env.MERCADO_PAGO_ACCESS_TOKEN!;
     if (!mpToken) throw new Error("MERCADO_PAGO_ACCESS_TOKEN ausente");
 
-    const notifBase = process.env.PUBLIC_APP_URL || "https://dukamp.lovable.app";
-    const notificationUrl = `${notifBase.replace(/\/$/, "")}/api/public/mercadopago-webhook`;
+    const { getRequest } = await import("@tanstack/react-start/server");
+    const { paymentNotificationUrl } = await import("@/lib/mercadopago-notifications.server");
+    const notificationUrl = paymentNotificationUrl(getRequest(), process.env.PUBLIC_APP_URL);
 
     const payRes = await fetch("https://api.mercadopago.com/v1/payments", {
       method: "POST",
@@ -916,17 +921,19 @@ export const processCardPayment = createServerFn({ method: "POST" })
     const validStatuses = ["pending", "in_process", "approved", "rejected", "cancelled", "refunded"] as const;
     const rawStatus = String(body.status || "pending");
     const status = (validStatuses as readonly string[]).includes(rawStatus) ? rawStatus : "pending";
-    await supa
+    const { error: cardSaveError } = await supa
       .from("orders")
       .update({
         mp_payment_id: String(body.id),
-        payment_status: status as any,
       })
       .eq("id", order.id);
+    if (cardSaveError) throw cardSaveError;
+    const { applyProviderPayment } = await import("@/lib/mercadopago-payment.server");
+    const confirmed = await applyProviderPayment(body);
 
     return {
       orderId: order.id,
-      status,
+      status: confirmed?.payment_status || status,
       statusDetail: String(body.status_detail || ""),
     };
   });
@@ -938,12 +945,23 @@ export const getOrderPublic = createServerFn({ method: "GET" })
     const { data: order, error } = await supa
       .from("orders")
       .select(
-        "id,order_number,customer_name,email,total,subtotal,tax_amount,tax_destination_uf,shipping_cost,shipping_service,shipping_deadline_days,payment_method,payment_status,mp_qr_code,mp_qr_code_base64,mp_ticket_url,mp_expires_at,created_at,tracking_code,tracking_status,posted_at,label_created_at",
+        "id,order_number,customer_name,email,total,subtotal,tax_amount,tax_destination_uf,shipping_cost,shipping_service,shipping_deadline_days,payment_method,payment_status,mp_qr_code,mp_qr_code_base64,mp_ticket_url,mp_expires_at,mp_payment_id,created_at,tracking_code,tracking_status,posted_at,label_created_at",
       )
       .eq("id", data.id)
       .single();
     if (error || !order) throw new Error("Pedido não encontrado");
 
+    if (order.mp_payment_id && ["pending", "in_process"].includes(order.payment_status)) {
+      try {
+        const { refreshOrderPayment } = await import("@/lib/mercadopago-payment.server");
+        const result = await refreshOrderPayment(order.id, order.mp_payment_id);
+        if (result) order.payment_status = result.payment_status as typeof order.payment_status;
+      } catch (error) {
+        console.error("[MercadoPago] Consulta do pedido falhou", {
+          orderId: order.id, message: (error as Error).message,
+        });
+      }
+    }
     const { data: items } = await supa
       .from("order_items")
       .select("name,quantity,unit_price,subtotal,tax_code,icms_rate,tax_amount")
