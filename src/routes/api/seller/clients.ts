@@ -1,3 +1,4 @@
+import { customerPortfolioFilter, loadWebSales, normalizeWebSellerCode, webSalesInRange, webSalesTotals } from "@/lib/web-sales.server";
 import { createFileRoute } from "@tanstack/react-router";
 
 type PortfolioCustomer = {
@@ -32,11 +33,11 @@ function sixMonthsAgoDate(): string {
 function customerSearchText(customer: PortfolioCustomer): string {
   return [customer.cliente, customer.codigo, customer.cidade, customer.uf, customer.telefone, customer.celular, customer.email, customer.cnpj_cpf].filter(Boolean).join(" ").toLocaleLowerCase("pt-BR");
 }
-async function listPortfolioCustomers(supabaseAdmin: any, sellerCode: string): Promise<PortfolioCustomer[]> {
+async function listPortfolioCustomers(supabaseAdmin: any, sellerCode: string, sellerId: string): Promise<PortfolioCustomer[]> {
   const rows: PortfolioCustomer[] = [];
   const pageSize = 1000;
   for (let from = 0; ; from += pageSize) {
-    const { data, error } = await supabaseAdmin.from("customers").select("id,codigo,cliente,cidade,uf,telefone,celular,email,cnpj_cpf,ultima_compra,compra_ano,vendedor_codigo,vendedor_nome").eq("vendedor_codigo", sellerCode).eq("abc_na_carteira_atual", true).range(from, from + pageSize - 1);
+    const { data, error } = await supabaseAdmin.from("customers_sales_summary").select("id,codigo,cliente,cidade,uf,telefone,celular,email,cnpj_cpf,ultima_compra,compra_ano,vendedor_codigo,vendedor_nome").or(customerPortfolioFilter(sellerId, sellerCode)).range(from, from + pageSize - 1);
     if (error) throw error;
     const batch = (data ?? []) as PortfolioCustomer[];
     rows.push(...batch);
@@ -60,13 +61,13 @@ function parseSaleValue(value: unknown): number {
   const amount = Number(normalized);
   return Number.isFinite(amount) ? amount : 0;
 }
-async function authorizedCustomer(supabaseAdmin: any, user: SellerUser, customerId: string, scope: CustomerScope) {
-  const { data: customer, error } = await supabaseAdmin.from("customers").select("*").eq("id", customerId).maybeSingle();
+async function authorizedCustomer(supabaseAdmin: any, user: SellerUser, customerId: string, scope: CustomerScope, sellerId: string) {
+  const { data: customer, error } = await supabaseAdmin.from("customers_sales_summary").select("*").eq("id", customerId).maybeSingle();
   if (error) throw error;
   if (!customer) return null;
   if (scope === "portfolio") {
     const sellerCode = sellerCodeFromUser(user);
-    if (!sellerCode || customer.abc_na_carteira_atual !== true || String(customer.vendedor_codigo ?? "").trim() !== sellerCode) return null;
+    if (customer.seller_record_id !== sellerId && (!sellerCode || (!customer.abc_na_carteira_atual && !customer.web_registered) || normalizeWebSellerCode(customer.vendedor_codigo) !== normalizeWebSellerCode(sellerCode))) return null;
   } else {
     const cutoff = sixMonthsAgoDate();
     const lastPurchase = customer.ultima_compra ? String(customer.ultima_compra).slice(0, 10) : null;
@@ -94,7 +95,7 @@ export const Route = createFileRoute("/api/seller/clients")({
           const scope = url.searchParams.get("scope") === "blue" ? "blue" : "portfolio";
           if (!customerId) return errorResponse("Cliente inválido.", 400);
           try {
-            const customer = await authorizedCustomer(supabaseAdmin, user, customerId, scope);
+            const customer = await authorizedCustomer(supabaseAdmin, user, customerId, scope, seller.sellerId);
             if (!customer) return errorResponse("Cliente não encontrado ou fora da sua permissão.", 404);
             return Response.json({ customer }, { headers: { "Cache-Control": "no-store" } });
           } catch (error) {
@@ -111,13 +112,9 @@ export const Route = createFileRoute("/api/seller/clients")({
           const year = Number.isInteger(requestedYear) && requestedYear >= 2000 && requestedYear <= 2100 ? requestedYear : nowForSelection.getFullYear();
           const month = Number.isInteger(requestedMonth) && requestedMonth >= 1 && requestedMonth <= 12 ? requestedMonth : nowForSelection.getMonth() + 1;
 
-          if (!sellerCode) {
-            if (source === "dashboard") return Response.json({ sellerCodeMissing: true, seller: { id: seller.sellerId, name: seller.name, code: null }, portfolioCount: 0, nearBlueClients: [], nearBlueCount: 0, topCustomers: [], sales: { year, month, total: 0, hasReport: false } }, { headers: { "Cache-Control": "no-store" } });
-            return Response.json({ associationMissing: true, sellerCodeMissing: true, seller: { id: seller.sellerId, name: seller.name, code: null }, clients: [], count: 0, page: 1, pageSize: 10 }, { headers: { "Cache-Control": "no-store" } });
-          }
 
           let portfolio: PortfolioCustomer[];
-          try { portfolio = await listPortfolioCustomers(supabaseAdmin, sellerCode); }
+          try { portfolio = await listPortfolioCustomers(supabaseAdmin, sellerCode, seller.sellerId); }
           catch (error) { console.error("[seller-portfolio] Falha ao listar clientes:", error); return errorResponse("Não foi possível consultar a carteira de clientes.", 500); }
 
           if (source === "portfolio") {
@@ -160,7 +157,9 @@ export const Route = createFileRoute("/api/seller/clients")({
             if (error) throw error;
             monthlyReport = report;
           } catch (error) { console.error("[seller-dashboard] Falha ao consultar o relatório mensal:", error); }
-          return Response.json({ sellerCodeMissing: false, seller: { id: seller.sellerId, name: seller.name, code: sellerCode }, portfolioCount, nearBlueClients: nearBlueClients.slice(0, 10), nearBlueCount: nearBlueClients.length, topCustomers, sales: { year, month, total: Number(monthlyReport?.total_venda ?? 0), hasReport: Boolean(monthlyReport) } }, { headers: { "Cache-Control": "no-store" } });
+          const websiteSales = webSalesInRange(await loadWebSales(supabaseAdmin, seller.sellerId, sellerCode), `${year}-${String(month).padStart(2, "0")}-01`, new Date(Date.UTC(year, month, 0)).toISOString().slice(0, 10));
+          const websiteTotals = webSalesTotals(websiteSales);
+          return Response.json({ sellerCodeMissing: false, seller: { id: seller.sellerId, name: seller.name, code: sellerCode }, portfolioCount, nearBlueClients: nearBlueClients.slice(0, 10), nearBlueCount: nearBlueClients.length, topCustomers, sales: { year, month, total: Number(monthlyReport?.total_venda ?? 0) + websiteTotals.total_venda, websiteTotal: websiteTotals.total_venda, websiteCount: websiteTotals.count, hasReport: Boolean(monthlyReport) || websiteTotals.count > 0 } }, { headers: { "Cache-Control": "no-store" } });
         }
 
         const search = normalizeSearch(url.searchParams.get("search") ?? "");
@@ -197,7 +196,7 @@ export const Route = createFileRoute("/api/seller/clients")({
           const scope: CustomerScope = payload.scope === "blue" ? "blue" : "portfolio";
           if (!customerId) return errorResponse("Cliente inválido.", 400);
           try {
-            const current = await authorizedCustomer(supabaseAdmin, user, customerId, scope);
+            const current = await authorizedCustomer(supabaseAdmin, user, customerId, scope, seller.sellerId);
             if (!current) return errorResponse("Cliente não encontrado ou fora da sua permissão.", 404);
             const fields = payload.fields && typeof payload.fields === "object" ? payload.fields : {};
             const update = {
