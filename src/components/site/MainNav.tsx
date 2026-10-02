@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { ChevronDown, ChevronRight, Menu } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -266,6 +266,7 @@ function DesktopItem({ item }: { item: NavItem }) {
 
 
 export function MainNav() {
+  const showInstitutional = useRouterState({ select: state => state.location.pathname === "/" });
   const [open, setOpen] = useState(false);
   const [mobileProdOpen, setMobileProdOpen] = useState(false);
   const { data: navItems } = useNavItems();
@@ -376,9 +377,9 @@ export function MainNav() {
 
                 })}
               </ul>
-              <div className="mt-6">
+              {showInstitutional && <div className="mt-6">
                 <InstitutionalSidebar active={open} />
-              </div>
+              </div>}
             </SheetContent>
           </Sheet>
           <span className="text-xs uppercase tracking-wider opacity-80 pr-2">Menu</span>
