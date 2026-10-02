@@ -9,7 +9,7 @@ import {
 } from "./correios-shipping.server";
 
 const ORDER_COLS =
-  "id,order_number,customer_name,email,phone,cpf_cnpj,cep,rua,numero,complemento,bairro,cidade,estado,shipping_service,payment_status,tracking_code,tracking_status,correios_prepostagem_id,shipping_label_url,shipping_service_code,posted_at,label_created_at,tracking_updated_at,shipping_error";
+  "id,order_number,customer_name,email,phone,cpf_cnpj,cep,rua,numero,complemento,bairro,cidade,estado,shipping_service,payment_status,tracking_code,tracking_status,correios_prepostagem_id,shipping_label_url,shipping_service_code,posted_at,label_created_at,tracking_updated_at,shipping_error,fulfillment_method,delivery_status,refund_status";
 
 export type GenerateResult = {
   ok: boolean;
@@ -21,6 +21,8 @@ export async function generateLabelForOrder(supa: any, orderId: string): Promise
   const { data: order, error } = await supa.from("orders").select(ORDER_COLS).eq("id", orderId).single();
   if (error || !order) throw new Error("Pedido não encontrado.");
 
+  if (order.fulfillment_method === "pickup") return { ok: true, trackingCode: null, message: "Retirada na loja não gera etiqueta de envio." };
+  if (order.delivery_status === "cancelada" || order.refund_status !== "none") throw new Error("Pedido cancelado ou com reembolso não pode ser enviado.");
   if (order.tracking_code) {
     return { ok: true, trackingCode: order.tracking_code, message: "Este pedido já possui código de rastreamento." };
   }
@@ -81,10 +83,11 @@ export async function generateLabelForOrder(supa: any, orderId: string): Promise
 export async function refreshTrackingForOrder(supa: any, orderId: string) {
   const { data: order, error } = await supa
     .from("orders")
-    .select("id,tracking_code,delivery_status")
+    .select("id,tracking_code,delivery_status,fulfillment_method,refund_status")
     .eq("id", orderId)
     .single();
   if (error || !order) throw new Error("Pedido não encontrado.");
+  if (order.fulfillment_method === "pickup" || order.delivery_status === "cancelada" || order.refund_status !== "none") throw new Error("Rastreamento indisponível para este pedido.");
   if (!order.tracking_code) throw new Error("Este pedido ainda não possui código de rastreamento.");
 
   const tracking = await fetchTracking(order.tracking_code);
