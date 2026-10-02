@@ -38,6 +38,7 @@ export async function enrichAuditRows(db: any, input: any[], detail = false): Pr
       { field:"category_id",table:"categories",label:"name" },
       { field:"catalog_id",table:"catalogs",label:"name" },
       { field:"seller_id",table:"sellers",label:"name" },
+      { field:"seller_record_id",table:"sellers",label:"name" },
       { field:"customer_id",table:"customers",label:"cliente" },
     ];
     await Promise.all(links.map(async link => {
