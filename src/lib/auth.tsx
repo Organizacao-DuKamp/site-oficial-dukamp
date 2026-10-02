@@ -106,6 +106,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (!isAdmin || !session?.access_token) return;
+    let stopped = false;
+    async function recordLogin() {
+      const response = await fetch("/api/admin/audit", { method: "POST", headers: { Authorization: `Bearer ${session!.access_token}` } });
+      if (!response.ok) throw new Error("Falha ao registrar o acesso administrativo");
+    }
+    void recordLogin().catch(error => { if (!stopped) console.error("[audit]", error); });
+    return () => { stopped = true; };
+  }, [isAdmin, session?.access_token]);
+
   async function loadProfile(authUser: User, accessToken?: string) {
     const [admin, profileResult, sellerRole] = await Promise.all([
       readAdminRole(authUser.id),
