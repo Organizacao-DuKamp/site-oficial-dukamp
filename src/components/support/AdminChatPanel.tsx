@@ -17,72 +17,118 @@ export function AdminChatPanel({ ticket: initial, onClose }: Props) {
   const [ticket, setTicket] = useState<SupportTicket>(initial);
   const [messages, setMessages] = useState<SupportMessage[]>([]);
   const [text, setText] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     setTicket(initial);
   }, [initial.id]);
 
+  async function chatRequest(action?: string, message?: string) {
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) throw new Error("Sessão expirada. Entre novamente.");
+    const response = await fetch(
+      action ? "/api/admin/support-tickets" : `/api/admin/support-tickets?ticketId=${initial.id}`,
+      {
+        method: action ? "POST" : "GET",
+        headers: {
+          Authorization: `Bearer ${data.session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        ...(action ? { body: JSON.stringify({ ticketId: initial.id, action, message }) } : {}),
+        cache: "no-store",
+      },
+    );
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || "Não foi possível atualizar o atendimento.");
+    return payload;
+  }
+
   useEffect(() => {
-    let cancel = false;
-    (async () => {
-      const { data } = await (supabase as any)
-        .from("support_messages")
-        .select("*")
-        .eq("ticket_id", ticket.id)
-        .order("created_at", { ascending: true });
-      if (cancel) return;
-      setMessages((data as SupportMessage[]) ?? []);
-      // mark as read by admin
-      const unreadIds = ((data as SupportMessage[]) ?? [])
-        .filter((m) => (m.sender_role === "user" || m.sender_role === "customer") && !m.read_by_admin)
-        .map((m) => m.id);
-      if (unreadIds.length) {
-        await (supabase as any).from("support_messages").update({ read_by_admin: true }).in("id", unreadIds);
+    let cancelled = false;
+    async function load() {
+      try {
+        const payload = await chatRequest();
+        if (cancelled) return;
+        setTicket(payload.ticket);
+        setMessages(payload.messages || []);
+        setError("");
+        if (
+          payload.messages?.some(
+            (m: SupportMessage) =>
+              (m.sender_role === "user" || m.sender_role === "customer") && !m.read_by_admin,
+          )
+        ) {
+          await chatRequest("read");
+        }
+      } catch (error) {
+        if (!cancelled) setError((error as Error).message);
       }
-    })();
-    const ch = supabase
-      .channel(`admin_ticket_${ticket.id}`)
+    }
+    void load();
+    const polling = window.setInterval(() => void load(), 4000);
+    const channel = supabase
+      .channel(`admin_ticket_${initial.id}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "support_messages", filter: `ticket_id=eq.${ticket.id}` },
-        (p) => {
-          const m = p.new as SupportMessage;
-          setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
-          if (m.sender_role === "user" || m.sender_role === "customer") {
-            (supabase as any).from("support_messages").update({ read_by_admin: true }).eq("id", m.id).then(() => {});
-          }
+        {
+          event: "*",
+          schema: "public",
+          table: "support_messages",
+          filter: `ticket_id=eq.${initial.id}`,
         },
+        () => void load(),
       )
       .on(
         "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "support_tickets", filter: `id=eq.${ticket.id}` },
-        (p) => setTicket(p.new as SupportTicket),
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "support_tickets",
+          filter: `id=eq.${initial.id}`,
+        },
+        () => void load(),
       )
       .subscribe();
     return () => {
-      cancel = true;
-      supabase.removeChannel(ch);
+      cancelled = true;
+      window.clearInterval(polling);
+      void supabase.removeChannel(channel);
     };
-  }, [ticket.id]);
+  }, [initial.id]);
 
   const isClosed = ticket.status === "closed";
 
   async function onSend(e: React.FormEvent) {
     e.preventDefault();
-    if (!text.trim() || !user || isClosed) return;
-    await (supabase as any).from("support_messages").insert({
-      ticket_id: ticket.id,
-      message: text.trim(),
-    });
-    setText("");
+    if (!text.trim() || !user || isClosed || busy) return;
+    setBusy(true);
+    try {
+      await chatRequest("send", text.trim());
+      setText("");
+      const payload = await chatRequest();
+      setMessages(payload.messages || []);
+      setTicket(payload.ticket);
+      setError("");
+    } catch (error) {
+      setError((error as Error).message);
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function onCloseTicket() {
-    if (!user) return;
-    await (supabase as any)
-      .from("support_tickets")
-      .update({ status: "closed", closed_by: user.id, closed_at: new Date().toISOString() })
-      .eq("id", ticket.id);
+    if (!user || busy) return;
+    setBusy(true);
+    try {
+      await chatRequest("close");
+      setTicket((previous) => ({ ...previous, status: "closed" }));
+      setError("");
+    } catch (error) {
+      setError((error as Error).message);
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -91,7 +137,7 @@ export function AdminChatPanel({ ticket: initial, onClose }: Props) {
         <div className="text-sm font-semibold truncate">Ticket #{ticket.id.slice(0, 8)}</div>
         <div className="flex items-center gap-2">
           {!isClosed && (
-            <Button size="sm" variant="outline" onClick={onCloseTicket}>
+            <Button size="sm" variant="outline" onClick={onCloseTicket} disabled={busy}>
               Encerrar
             </Button>
           )}
@@ -100,6 +146,11 @@ export function AdminChatPanel({ ticket: initial, onClose }: Props) {
           </button>
         </div>
       </div>
+      {error && (
+        <p role="alert" className="px-3 py-2 text-sm text-destructive">
+          {error}
+        </p>
+      )}
       <MessageList messages={messages} selfRole="admin" />
       <form onSubmit={onSend} className="border-t p-2 flex gap-2">
         <Input
@@ -108,7 +159,7 @@ export function AdminChatPanel({ ticket: initial, onClose }: Props) {
           placeholder={isClosed ? "Atendimento encerrado" : "Responder..."}
           disabled={isClosed}
         />
-        <Button type="submit" size="sm" disabled={isClosed || !text.trim()}>
+        <Button type="submit" size="sm" disabled={busy || isClosed || !text.trim()}>
           Enviar
         </Button>
       </form>
