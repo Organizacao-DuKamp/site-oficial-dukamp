@@ -29,7 +29,8 @@ async function authorize(request: Request) {
   const { data, error } = await supabaseAdmin.auth.getUser(token);
   if (error || !data.user) return { response: errorResponse("Sessão inválida.", 401) } as const;
 
-  return { supabaseAdmin, user: data.user } as const;
+  const { createAuditedAdminClient } = await import("@/lib/audit.server");
+  return { supabaseAdmin: createAuditedAdminClient(data.user.id, request), user: data.user } as const;
 }
 
 async function findSelectableSeller(
