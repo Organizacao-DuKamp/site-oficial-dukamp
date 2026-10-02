@@ -1,17 +1,9 @@
+import { seoHead, PUBLIC_PAGES } from "@/lib/seo";
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteLayout";
 
 export const Route = createFileRoute("/sobre")({
-  head: () => ({
-    meta: [
-      { title: "Sobre nós — Dukamp Saúde Animal" },
-      {
-        name: "description",
-        content:
-          "Fundada em 1998, a Dukamp Saúde Animal industrializa suplementos minerais, rações, núcleos e aditivos para a pecuária brasileira.",
-      },
-    ],
-  }),
+  head: () => seoHead({ title: PUBLIC_PAGES["/sobre"][0], description: PUBLIC_PAGES["/sobre"][1], path: "/sobre" }),
   component: SobrePage,
 });
 

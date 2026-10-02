@@ -1,20 +1,20 @@
+import { seoHead, PUBLIC_PAGES } from "@/lib/seo";
+import { activeCatalogs } from "@/lib/catalog-queries";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { SiteLayout } from "@/components/site/SiteLayout";
-import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/catalogos/")({
-  head: () => ({ meta: [{ title: "Catálogos — Dukamp" }, { name: "description", content: "Todos os catálogos da Dukamp." }] }),
+  loader: activeCatalogs,
+  head: () => seoHead({ title: PUBLIC_PAGES["/catalogos"][0], description: PUBLIC_PAGES["/catalogos"][1], path: "/catalogos" }),
   component: Page,
 });
 
 function Page() {
   const { data } = useQuery({
+    initialData: Route.useLoaderData(),
     queryKey: ["catalogs", "page"],
-    queryFn: async () => {
-      const { data } = await supabase.from("catalogs").select("*").eq("active", true).order("sort_order");
-      return data ?? [];
-    },
+    queryFn: activeCatalogs,
   });
   return (
     <SiteLayout>

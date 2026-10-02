@@ -1,14 +1,10 @@
+import { seoHead } from "@/lib/seo";
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteLayout";
 
 export const Route = createFileRoute("/institucional/nossos-produtos")({
   component: NossosProdutosPage,
-  head: () => ({
-    meta: [
-      { title: "Nossos Produtos | Dukamp" },
-      { name: "description", content: "Conheça a linha de produtos Dukamp." },
-    ],
-  }),
+  head: () => seoHead({ title: "Nossos Produtos | DuKamp", description: "DuKamp Saúde Animal.", path: "/institucional/nossos-produtos", noindex: true }),
 });
 
 function NossosProdutosPage() {

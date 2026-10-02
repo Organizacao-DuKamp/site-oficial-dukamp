@@ -1,3 +1,5 @@
+import { seoHead, SITE_TITLE, SITE_DESCRIPTION } from "@/lib/seo";
+import { activeCatalogs } from "@/lib/catalog-queries";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -18,16 +20,18 @@ import {
 } from "@/components/ui/carousel";
 
 export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "Dukamp Saúde Animal — Catálogo de Produtos Veterinários" },
-      {
-        name: "description",
-        content:
-          "Catálogo Dukamp Saúde Animal: vermífugos, vacinas, suplementos e rações para bovinos, equinos, ovinos, suínos, aves e pets.",
-      },
-    ],
-  }),
+  head: () => seoHead({ title: SITE_TITLE, description: SITE_DESCRIPTION, path: "/" }),
+  loader: async () => {
+    const [catalogs, featured] = await Promise.all([
+      activeCatalogs(),
+      supabase.from("products").select(PRODUCT_COLS).eq("active", true).eq("featured", true).gt("stock", 0).limit(20),
+    ]);
+    if (featured.error) throw featured.error;
+    const ids = catalogs.map(c => c.id);
+    const { data, error } = ids.length ? await supabase.from("products").select(PRODUCT_COLS).eq("active", true).gt("stock", 0).in("catalog_id", ids).order("created_at", { ascending: false }) : { data: [], error: null };
+    if (error) throw error;
+    return { catalogs, featured: featured.data || [], products: data || [] };
+  },
   component: Home,
 });
 
@@ -136,10 +140,12 @@ function FeaturedCarousel({
 }
 
 function Home() {
+  const initial = Route.useLoaderData();
   const [visibleRows, setVisibleRows] = useState<number>(INITIAL_ROWS);
   const [showMobileQuotes, setShowMobileQuotes] = useState(false);
 
   const featured = useQuery({
+    initialData: initial.featured,
     queryKey: ["products", "featured"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -154,6 +160,7 @@ function Home() {
     },
   });
   const categories = useQuery({
+    initialData: initial.catalogs,
     queryKey: ["catalogs", "active"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -168,6 +175,7 @@ function Home() {
   });
   const catIds = (categories.data ?? []).map((c) => c.id).sort().join(",");
   const allProducts = useQuery({
+    initialData: initial.products,
     enabled: !!categories.data && categories.data.length > 0,
     queryKey: ["products", "home-by-cat", catIds],
     queryFn: async () => {
@@ -214,15 +222,19 @@ function Home() {
 
   return (
     <SiteLayout>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold">DuKamp Saúde Animal</h1>
+        <p className="mt-2 text-sm text-muted-foreground">Rações, suplementos e produtos veterinários para a pecuária e seus animais. Atendimento em Monte Aprazível e São José do Rio Preto.</p>
+      </div>
       <section className="lg:pb-8">
         <div className="flex items-center justify-between mb-3">
           <Link
             to="/produtos"
             className="group/title inline-flex items-center gap-1 border-l-4 border-primary pl-3 hover:text-primary transition-colors"
           >
-            <h1 className="text-lg md:text-xl font-bold uppercase tracking-wide">
+            <h2 className="text-lg md:text-xl font-bold uppercase tracking-wide">
               Produtos em destaque
-            </h1>
+            </h2>
             <ChevronRight className="h-5 w-5 opacity-60 group-hover/title:opacity-100 group-hover/title:translate-x-0.5 transition-all" />
           </Link>
           <Button asChild variant="ghost" size="sm" className="hidden md:inline-flex">
@@ -285,8 +297,8 @@ function Home() {
           <section className="mt-10 min-w-0">
             <div className="flex items-center justify-between mb-3 gap-2">
               <Link
-                to="/produtos"
-                search={{ categoria: s.cat.slug } as any}
+                to="/catalogos/$slug"
+                params={{ slug: s.cat.slug }}
                 className="group/title inline-flex items-center gap-1 border-l-4 border-primary pl-3 hover:text-primary transition-colors min-w-0"
               >
                 <h2 className="text-lg md:text-xl font-bold uppercase tracking-wide truncate">
@@ -295,7 +307,7 @@ function Home() {
                 <ChevronRight className="h-5 w-5 shrink-0 opacity-60 group-hover/title:opacity-100 group-hover/title:translate-x-0.5 transition-all" />
               </Link>
               <Button asChild variant="ghost" size="sm" className="shrink-0">
-                <Link to="/produtos" search={{ categoria: s.cat.slug } as any}>
+                <Link to="/catalogos/$slug" params={{ slug: s.cat.slug }}>
                   Ver todos <ChevronRight className="h-4 w-4" />
                 </Link>
               </Button>
@@ -311,6 +323,9 @@ function Home() {
         );
       })}
 
+      <nav aria-label="Categorias de produtos" className="mt-8 flex flex-wrap gap-3 text-sm">
+        {(categories.data || []).map(cat => <Link key={cat.id} to="/catalogos/$slug" params={{ slug: cat.slug }} className="text-primary underline">{cat.name}</Link>)}
+      </nav>
       {hasMoreRows && (
         <div className="mt-10 flex justify-center">
           <Button

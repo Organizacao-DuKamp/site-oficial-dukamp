@@ -1,55 +1,52 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { seoHead, PUBLIC_PAGES } from "@/lib/seo";
+import { activeCatalogs, listedProducts } from "@/lib/catalog-queries";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { ProductCard } from "@/components/site/ProductCard";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 
 type Search = { q?: string; categoria?: string; page?: number };
 const PAGE_SIZE = 24;
 
 export const Route = createFileRoute("/produtos/")({
-  head: () => ({ meta: [{ title: "Produtos — Dukamp" }] }),
+  loaderDeps: ({ search }) => search,
+  loader: async ({ deps }) => {
+    const catalogs = await activeCatalogs();
+    const category = catalogs.find(c => c.slug === deps.categoria);
+    const products = deps.categoria && !category ? { rows: [], count: 0 } : await listedProducts({ q: deps.q, catId: category?.id, page: deps.page });
+    return { catalogs, products, category };
+  },
+  head: ({ loaderData, match }) => {
+    const search = match.loaderDeps;
+    const [baseTitle, description] = PUBLIC_PAGES["/produtos"];
+    const page = search.page || 1;
+    return seoHead({ title: page > 1 ? `Produtos — Página ${page} | DuKamp` : baseTitle, description, path: page > 1 ? `/produtos?page=${page}` : "/produtos", noindex: Boolean(search.q || search.categoria || (page > 1 && !loaderData?.products.rows.length)) });
+  },
   validateSearch: (s: Record<string, unknown>): Search => ({
     q: typeof s.q === "string" ? s.q : undefined,
     categoria: typeof s.categoria === "string" ? s.categoria : undefined,
-    page: typeof s.page === "number" ? s.page : s.page ? Number(s.page) || 1 : 1,
+    page: Number.isSafeInteger(Number(s.page)) && Number(s.page) > 0 ? Math.min(Number(s.page), 100000) : 1,
   }),
   component: Page,
 });
 
 function Page() {
   const { q, categoria, page = 1 } = Route.useSearch();
-  const navigate = useNavigate({ from: "/produtos/" });
-  const cats = useQuery({
-    queryKey: ["catalogs"],
-    queryFn: async () => (await supabase.from("catalogs").select("*").eq("active", true).order("name")).data ?? [],
-  });
-  const catId = cats.data?.find((c) => c.slug === categoria)?.id;
+  const initial = Route.useLoaderData();
+  const cats = useQuery({ queryKey: ["catalogs"], queryFn: activeCatalogs, initialData: initial.catalogs });
+  const catId = cats.data?.find(c => c.slug === categoria)?.id;
   const prods = useQuery({
     queryKey: ["products", { q, catId, page }],
-    queryFn: async () => {
-      const from = (page - 1) * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
-      let qy = supabase.from("products").select("*,catalogs(name,slug)", { count: "exact" }).eq("active", true).gt("stock", 0);
-      if (catId) qy = qy.eq("catalog_id", catId);
-      if (q) qy = qy.ilike("name", `%${q}%`);
-      const { data, count } = await qy
-        .order("category_position", { ascending: true, nullsFirst: false })
-        .order("created_at", { ascending: false })
-        .range(from, to);
-      return { rows: data ?? [], count: count ?? 0 };
-    },
+    initialData: initial.products,
+    queryFn: () => categoria && !catId ? Promise.resolve({ rows: [], count: 0 }) : listedProducts({ q, catId, page }),
   });
   const total = prods.data?.count ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
-  const goto = (p: number) =>
-    navigate({ search: (prev: Search) => ({ ...prev, page: p }) });
-
   return (
     <SiteLayout>
-      <h1 className="text-2xl font-bold mb-2">Produtos</h1>
+      <h1 className="text-2xl font-bold mb-2">{initial.category?.name || "Produtos Veterinários, Rações e Suplementos"}</h1>
       {q && <p className="text-sm text-muted-foreground mb-4">Resultados para "{q}"</p>}
       {categoria && <p className="text-sm text-muted-foreground mb-4">Categoria: {categoria}</p>}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
@@ -60,15 +57,11 @@ function Page() {
       )}
       {totalPages > 1 && (
         <div className="mt-8 flex items-center justify-center gap-2">
-          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => goto(page - 1)}>
-            Anterior
-          </Button>
+          {page > 1 ? <Button asChild variant="outline" size="sm"><Link to="/produtos" search={{ q, categoria, page: page - 1 }} rel="prev">Anterior</Link></Button> : <Button variant="outline" size="sm" disabled>Anterior</Button>}
           <span className="text-sm text-muted-foreground">
             Página {page} de {totalPages} · {total} produtos
           </span>
-          <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => goto(page + 1)}>
-            Próxima
-          </Button>
+          {page < totalPages ? <Button asChild variant="outline" size="sm"><Link to="/produtos" search={{ q, categoria, page: page + 1 }} rel="next">Próxima</Link></Button> : <Button variant="outline" size="sm" disabled>Próxima</Button>}
         </div>
       )}
     </SiteLayout>

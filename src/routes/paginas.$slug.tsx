@@ -1,14 +1,16 @@
+import { seoHead, descriptionText, plainText } from "@/lib/seo";
 import { createFileRoute, notFound, Link } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { RichContent } from "@/components/site/RichContent";
-import { FOOTER_PAGES, useFooterPage } from "@/lib/footer-pages";
+import { FOOTER_PAGES, useFooterPage, loadFooterPage } from "@/lib/footer-pages";
 
 export const Route = createFileRoute("/paginas/$slug")({
   component: DynamicPage,
-  head: ({ params }) => {
-    const p = FOOTER_PAGES.find((x) => x.slug === params.slug);
-    return { meta: [{ title: `${p?.title ?? "Página"} — Dukamp` }] };
+  loader: async ({ params }) => {
+    if (!FOOTER_PAGES.some(p => p.slug === params.slug)) throw notFound();
+    return loadFooterPage(params.slug);
   },
+  head: ({ params, loaderData }) => seoHead({ title: `${loaderData?.title || FOOTER_PAGES.find(p => p.slug === params.slug)?.title || "Página"} | DuKamp`, description: descriptionText(loaderData?.html, "Informações da DuKamp Saúde Animal."), path: `/paginas/${encodeURIComponent(params.slug)}`, noindex: !plainText(loaderData?.html) }),
   notFoundComponent: () => (
     <SiteLayout>
       <h1 className="text-2xl font-bold">Página não encontrada</h1>
@@ -22,7 +24,7 @@ function DynamicPage() {
   const meta = FOOTER_PAGES.find((p) => p.slug === slug);
   if (!meta) throw notFound();
 
-  const { data, isLoading } = useFooterPage(slug);
+  const { data, isLoading } = useFooterPage(slug, Route.useLoaderData());
   const title = data?.title || meta.title;
   const html = data?.html?.trim();
 
