@@ -58,7 +58,8 @@ async function authorizeMasterAdmin(request: Request) {
     } as const;
   }
 
-  return { supabaseAdmin } as const;
+  const { createAuditedAdminClient } = await import("@/lib/audit.server");
+  return { supabaseAdmin: createAuditedAdminClient(data.user.id, request) } as const;
 }
 
 function effectiveAccountType(
