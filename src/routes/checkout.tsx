@@ -1,4 +1,8 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { lookupCepWithFallback, type CepLookupResult } from "@/lib/cep";
+import { checkoutPrefill } from "@/lib/customer-profile";
+import { supabase } from "@/integrations/supabase/client";
+import { SellerAttribution } from "@/components/site/SellerAttribution";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { PICKUP_SERVICE, checkoutFieldValid } from "@/lib/order-fulfillment";
 import { useCart, formatBRL } from "@/lib/cart";
@@ -64,6 +68,8 @@ type Form = {
   bairro: string;
   cidade: string;
   estado: string;
+  referencia_entrega: string;
+  pessoa_autorizada: string;
 };
 
 type ShippingOption = {
@@ -89,14 +95,6 @@ type DeliveryCoordinates = {
   longitude: number;
 };
 
-type CepLookupResult = {
-  cep: string;
-  rua?: string;
-  bairro?: string;
-  cidade?: string;
-  estado?: string;
-  coordinates?: DeliveryCoordinates;
-};
 
 const emptyForm: Form = {
   customer_name: "",
@@ -110,6 +108,8 @@ const emptyForm: Form = {
   bairro: "",
   cidade: "",
   estado: "",
+  referencia_entrega: "",
+  pessoa_autorizada: "",
 };
 
 function validCoordinates(latitude: number, longitude: number): DeliveryCoordinates | null {
@@ -153,75 +153,34 @@ function formatCoordinatePair(coordinates: DeliveryCoordinates) {
   return `${coordinates.latitude.toFixed(6)}, ${coordinates.longitude.toFixed(6)}`;
 }
 
-async function lookupCepWithFallback(digits: string): Promise<CepLookupResult> {
-  const brasilApiRequest = fetch(`https://brasilapi.com.br/api/cep/v2/${digits}`, {
-    headers: { Accept: "application/json" },
-  }).then(async (response) => {
-    if (!response.ok) throw new Error(`BrasilAPI HTTP ${response.status}`);
-    const data = (await response.json()) as {
-      cep?: string;
-      state?: string;
-      city?: string;
-      neighborhood?: string;
-      street?: string;
-      location?: { coordinates?: { latitude?: string | number; longitude?: string | number } };
-    };
-    const latitude = Number(data.location?.coordinates?.latitude);
-    const longitude = Number(data.location?.coordinates?.longitude);
-    return {
-      cep: String(data.cep || digits).replace(/\D/g, ""),
-      rua: data.street || "",
-      bairro: data.neighborhood || "",
-      cidade: data.city || "",
-      estado: data.state || "",
-      coordinates: validCoordinates(latitude, longitude) || undefined,
-    } satisfies CepLookupResult;
-  });
-
-  const viaCepRequest = fetch(`https://viacep.com.br/ws/${digits}/json/`, {
-    headers: { Accept: "application/json" },
-  }).then(async (response) => {
-    if (!response.ok) throw new Error(`ViaCEP HTTP ${response.status}`);
-    const data = (await response.json()) as {
-      erro?: boolean;
-      cep?: string;
-      logradouro?: string;
-      bairro?: string;
-      localidade?: string;
-      uf?: string;
-    };
-    if (data.erro) throw new Error("CEP não encontrado no ViaCEP");
-    return {
-      cep: String(data.cep || digits).replace(/\D/g, ""),
-      rua: data.logradouro || "",
-      bairro: data.bairro || "",
-      cidade: data.localidade || "",
-      estado: data.uf || "",
-    } satisfies CepLookupResult;
-  });
-
-  const [brasilApiResult, viaCepResult] = await Promise.allSettled([brasilApiRequest, viaCepRequest]);
-  const brasilApi = brasilApiResult.status === "fulfilled" ? brasilApiResult.value : null;
-  const viaCep = viaCepResult.status === "fulfilled" ? viaCepResult.value : null;
-
-  if (!brasilApi && !viaCep) throw new Error("CEP não encontrado nas bases consultadas");
-
-  return {
-    cep: brasilApi?.cep || viaCep?.cep || digits,
-    rua: brasilApi?.rua || viaCep?.rua || "",
-    bairro: brasilApi?.bairro || viaCep?.bairro || "",
-    cidade: brasilApi?.cidade || viaCep?.cidade || "",
-    estado: brasilApi?.estado || viaCep?.estado || "",
-    coordinates: brasilApi?.coordinates,
-  };
-}
 
 function CheckoutPage() {
   const { items, total: subtotal, clear, pricingReady } = useCart();
   const { data: settings } = useSiteSettings();
-  const { accountType } = useAuth();
+  const { accountType, user, loading: authLoading } = useAuth();
   const nav = useNavigate();
   const [form, setForm] = useState<Form>(emptyForm);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [sellerChoice, setSellerChoice] = useState<string | null | undefined>(undefined);
+  const [sellerReady, setSellerReady] = useState(false);
+  const touchedFields = useRef(new Set<keyof Form>());
+  const profileUserId = useRef<string | null>(null);
+  useEffect(() => {
+    if (authLoading) return;
+    let cancelled = false;
+    const previousId = profileUserId.current;
+    profileUserId.current = user?.id ?? null;
+    if (previousId && previousId !== user?.id) { touchedFields.current.clear(); setForm(emptyForm); resetDeliveryCalculation(); }
+    if (!user) { setProfileLoading(false); return; }
+    setProfileLoading(true);
+    (supabase as any).from("profiles").select("*").eq("id", user.id).maybeSingle().then(({ data, error }: any) => {
+      if (cancelled) return;
+      if (error) { toast.error("Não foi possível carregar seus dados. Você pode preencher os campos manualmente."); return; }
+      const prefill = checkoutPrefill(data, user);
+      setForm(current => Object.fromEntries(Object.keys(current).map(key => [key, touchedFields.current.has(key as keyof Form) ? current[key as keyof Form] : prefill[key as keyof typeof prefill] || current[key as keyof Form]])) as Form);
+    }).finally(() => { if (!cancelled) setProfileLoading(false); });
+    return () => { cancelled = true; };
+  }, [user?.id, authLoading]);
   const [deliveryCoordinates, setDeliveryCoordinates] = useState("");
   const [dukampFreightStatus, setDukampFreightStatus] = useState<DukampFreightStatus | null>(null);
   const [loadingCep, setLoadingCep] = useState(false);
@@ -262,6 +221,8 @@ function CheckoutPage() {
   }
 
   function set<K extends keyof Form>(k: K, v: string) {
+    touchedFields.current.add(k);
+    if (k === "cep") for (const field of ["rua", "bairro", "cidade", "estado"] as const) touchedFields.current.add(field);
     setForm((f) => ({ ...f, [k]: v }));
     if (fulfillmentMethod === "delivery" && (k === "cep" || k === "estado")) resetDeliveryCalculation();
   }
@@ -442,7 +403,7 @@ function CheckoutPage() {
   }
 
   function fieldProps(key: keyof Form) {
-    const optional = key === "complemento" || (fulfillmentMethod === "pickup" && method !== "boleto" && ["cep","rua","numero","bairro","cidade","estado"].includes(key));
+    const optional = ["complemento", "referencia_entrega", "pessoa_autorizada"].includes(key) || (fulfillmentMethod === "pickup" && method !== "boleto" && ["cep","rua","numero","bairro","cidade","estado"].includes(key));
     const valid = checkoutFieldValid(key, form[key]);
     return {
       "aria-invalid": !optional && !valid,
@@ -455,6 +416,8 @@ function CheckoutPage() {
   }
 
   function validateDelivery(): string | null {
+    if (authLoading || profileLoading || !sellerReady) return "Aguarde o carregamento dos dados da sua conta.";
+    if (sellerChoice === undefined) return "Selecione o vendedor que ajudou você ou escolha Nenhum vendedor.";
     if (!pricingReady) return "Aguarde a atualização dos preços ou recarregue a página.";
     const labels: Record<keyof Form, string> = {
       customer_name: "Nome completo",
@@ -468,6 +431,8 @@ function CheckoutPage() {
       bairro: "Bairro",
       cidade: "Cidade",
       estado: "UF",
+      referencia_entrega: "Referência para entrega",
+      pessoa_autorizada: "Pessoa autorizada a receber a entrega",
     };
     const fields = fulfillmentMethod === "pickup" && method !== "boleto"
       ? ["customer_name", "email", "phone", "cpf_cnpj"] as const
@@ -481,6 +446,7 @@ function CheckoutPage() {
     const r = await createOrder({
       data: {
         ...form,
+        seller_id: sellerChoice ?? null,
         items: items.map((i) => ({ product_id: i.id, quantity: i.quantity, unit_price: i.price })),
         shipping_cost: frete?.valor ?? 0,
         shipping_service: frete?.servico ?? "A combinar",
@@ -607,7 +573,7 @@ function CheckoutPage() {
   }, [method, mpPublicKey, fetchMpKey]);
 
   useEffect(() => {
-    if (method !== "card" || !mpSdkReady || !mpPublicKey || taxAmount == null) return;
+    if (method !== "card" || !mpSdkReady || !mpPublicKey || taxAmount == null || !sellerReady || sellerChoice === undefined) return;
     if (typeof window === "undefined") return;
     const MP = (window as any).MercadoPago;
     if (!MP) return;
@@ -683,7 +649,7 @@ function CheckoutPage() {
     // E-mail não entra nas dependências para não recriar Secure Fields durante digitação.
     // Frete/imposto/subtotal entram porque alteram o valor real a ser cobrado.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [method, mpSdkReady, mpPublicKey, installments, subtotal, frete?.valor, taxAmount]);
+  }, [method, mpSdkReady, mpPublicKey, installments, subtotal, frete?.valor, taxAmount, sellerReady, sellerChoice]);
 
   useEffect(() => {
     return () => {
@@ -930,7 +896,7 @@ function CheckoutPage() {
                     <Input {...fieldProps("numero")} value={form.numero} onChange={(e) => set("numero", e.target.value)} placeholder="500" />
                   </Field>
                   <Field className="sm:col-span-4" label="Complemento (opcional)">
-                    <Input {...fieldProps("complemento")} value={form.complemento} onChange={(e) => set("complemento", e.target.value)} placeholder="Ponto de referência" />
+                    <Input {...fieldProps("complemento")} value={form.complemento} onChange={(e) => set("complemento", e.target.value)} placeholder="Ex.: casa dos fundos, bloco A" />
                   </Field>
                   <Field className="sm:col-span-2" label="Bairro">
                     <Input {...fieldProps("bairro")} value={form.bairro} onChange={(e) => set("bairro", e.target.value)} placeholder="Zona Rural" />
@@ -966,6 +932,13 @@ function CheckoutPage() {
                 </div>
               </div>
             </Section>
+
+            {fulfillmentMethod === "delivery" && <div className="grid gap-3 rounded-lg border bg-card p-4 sm:grid-cols-2">
+              <Field label="Referência para entrega (opcional)"><Input value={form.referencia_entrega} maxLength={300} onChange={e => set("referencia_entrega", e.target.value)} placeholder="Ex.: portão azul, próximo à praça" /></Field>
+              <Field label="Pessoa autorizada a receber (opcional)"><Input value={form.pessoa_autorizada} maxLength={120} onChange={e => set("pessoa_autorizada", e.target.value)} placeholder="Nome de quem pode receber" /></Field>
+            </div>}
+            {profileLoading && <p role="status" className="text-sm text-muted-foreground">Preenchendo seus dados de cadastro…</p>}
+            <SellerAttribution value={sellerChoice} onChange={setSellerChoice} onReady={setSellerReady} />
 
             <Section number={3} icon={<Wallet className="h-4 w-4" />} title="Pagamento">
               <div className="space-y-3">
