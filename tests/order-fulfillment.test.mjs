@@ -12,6 +12,7 @@ const pricingUrl = moduleUrl(source('src/lib/pricing.ts').replace('"./tax"',JSON
 const requestUrl = moduleUrl('export const getRequest = () => globalThis.__fulfillmentRequest;');
 const auditUrl = moduleUrl('export function createAuditedAdminClient(actor) { globalThis.__fulfillmentActor=actor; return globalThis.__fulfillmentDb; }');
 const notifyUrl = moduleUrl('export function paymentNotificationUrl() { return "https://fixture.invalid/webhook"; }');
+const sellerUrl = moduleUrl(source('src/lib/order-seller.server.ts'));
 const checkout = source('src/lib/checkout.functions.ts');
 const checkoutSource = `
 const z = globalThis.__fulfillmentZ;
@@ -23,11 +24,11 @@ const getServerSupabase = async () => globalThis.__fulfillmentDb;
 const createServerFn = () => { let validate; return { inputValidator(fn) { validate=fn; return this; }, handler(fn) { return async data => fn({data:validate(data)}); } }; };
 `+checkout.slice(checkout.indexOf('export const CARD_FEE_TABLE'),checkout.indexOf('export const getMpPublicKey'));
 globalThis.__fulfillmentZ = z;
-const { createPixOrder } = await import(moduleUrl(checkoutSource.replaceAll('@/lib/audit.server',auditUrl).replaceAll('@tanstack/react-start/server',requestUrl).replaceAll('@/lib/mercadopago-notifications.server',notifyUrl)));
+const { createPixOrder } = await import(moduleUrl(checkoutSource.replaceAll('@/lib/order-seller.server',sellerUrl).replaceAll('@/lib/audit.server',auditUrl).replaceAll('@tanstack/react-start/server',requestUrl).replaceAll('@/lib/mercadopago-notifications.server',notifyUrl)));
 const fixture = {
  customer_name:'Test Customer',email:'fixture@example.invalid',phone:'17999999999',cpf_cnpj:'12345678901',
  cep:'',rua:'',numero:'',bairro:'',cidade:'',estado:'',items:[{product_id:'00000000-0000-4000-8000-000000000001',quantity:2,unit_price:1}],
- shipping_cost:999,shipping_service:'forged shipping',shipping_deadline_days:30,fulfillment_method:'pickup',payment_method:'card',card_installments:1,
+ seller_id:null,shipping_cost:999,shipping_service:'forged shipping',shipping_deadline_days:30,fulfillment_method:'pickup',payment_method:'card',card_installments:1,
 };
 function setupDb(validToken=true) {
  globalThis.__fulfillmentRequest = new Request('https://fixture.invalid/checkout',{headers:{authorization:'Bearer fixture-token'}});
