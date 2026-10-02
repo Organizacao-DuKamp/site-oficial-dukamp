@@ -19,6 +19,7 @@ type SellerMargin = {
   covered: string[];
   missingBaseline: string[];
   lastReport: string | null;
+  websiteSales?: number; websiteTotal?: number; unknownWebsiteCosts?: number;
 };
 type Result = { from: string; to: string; weekdays: number; sellers: SellerMargin[] };
 const cities: Record<Location, string> = {
@@ -151,14 +152,17 @@ export function ErpSalesMargin() {
   );
   const included = sellers.filter(
     (seller) =>
-      !excluded.includes(seller.code) && seller.covered.length && !seller.missingBaseline.length,
+      !excluded.includes(seller.code) && ((seller.covered.length && !seller.missingBaseline.length) || (seller.websiteSales ?? 0) > 0),
   );
   const totals = sumMargins(included.map((seller) => seller.totals));
+  const unknownWebsiteCosts = sellers.reduce((sum, seller) => sum + (seller.unknownWebsiteCosts ?? 0), 0);
   const incomplete = sellers.filter((seller) => seller.missingBaseline.length);
   const unassigned = (query.data?.sellers ?? []).filter((seller) => !seller.location);
 
   return (
     <div className="space-y-5">
+      <p className="rounded-lg border bg-green-50 p-3 text-sm text-green-900">Os totais incluem os produtos das vendas pagas pelo site, sem frete e taxas. Reembolsos são descontados automaticamente. Comissões seguem os relatórios importados do ERP.</p>
+      {unknownWebsiteCosts > 0 && <p className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">{unknownWebsiteCosts} venda(s) do site ainda não têm custo completo no ERP. Elas entram no total de vendas; a margem exibida considera os custos disponíveis.</p>}
       <form
         className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4"
         onSubmit={(event) => {
@@ -325,7 +329,7 @@ export function ErpSalesMargin() {
                         aria-label={`Local de ${seller.name}`}
                         className="max-w-48 rounded-md border bg-background p-1 text-xs"
                         value={seller.location ?? ""}
-                        disabled={saveLocation.isPending}
+                        disabled={saveLocation.isPending || !/^\d+$/.test(seller.code)}
                         onChange={(event) =>
                           saveLocation.mutate({
                             sellerCode: seller.code,
@@ -343,32 +347,32 @@ export function ErpSalesMargin() {
                     </td>
                     <td className="p-3 text-muted-foreground">{seller.region || "—"}</td>
                     <td className="p-3 text-right font-medium">
-                      {seller.covered.length && !seller.missingBaseline.length
+                      {(seller.covered.length && !seller.missingBaseline.length) || (seller.websiteSales ?? 0) > 0
                         ? money(seller.totals.total_venda)
                         : "—"}
                     </td>
                     <td className="p-3 text-right">
-                      {seller.covered.length && !seller.missingBaseline.length
+                      {(seller.covered.length && !seller.missingBaseline.length) || (seller.websiteSales ?? 0) > 0
                         ? money(seller.totals.devolucao)
                         : "—"}
                     </td>
                     <td className="p-3 text-right">
-                      {seller.covered.length && !seller.missingBaseline.length
+                      {(seller.covered.length && !seller.missingBaseline.length) || (seller.websiteSales ?? 0) > 0
                         ? money(seller.totals.total_custo)
                         : "—"}
                     </td>
                     <td className="p-3 text-right">
-                      {seller.covered.length && !seller.missingBaseline.length
+                      {(seller.covered.length && !seller.missingBaseline.length) || (seller.websiteSales ?? 0) > 0
                         ? money(seller.totals.margem_bruta)
                         : "—"}
                     </td>
                     <td className="p-3 text-right">
-                      {seller.covered.length && !seller.missingBaseline.length
+                      {(seller.covered.length && !seller.missingBaseline.length) || (seller.websiteSales ?? 0) > 0
                         ? `${numeric(marginPercent(seller.totals))}%`
                         : "—"}
                     </td>
                     <td className="p-3 text-right">
-                      {seller.covered.length && !seller.missingBaseline.length
+                      {(seller.covered.length && !seller.missingBaseline.length) || (seller.websiteSales ?? 0) > 0
                         ? numeric(seller.totals.tonelagem, 3)
                         : "—"}
                     </td>
@@ -377,7 +381,7 @@ export function ErpSalesMargin() {
                         ? "Falta base anterior"
                         : seller.lastReport
                           ? seller.lastReport.split("-").reverse().join("/")
-                          : "Sem dados"}
+                          : (seller.websiteSales ?? 0) > 0 ? "Vendas do site" : "Sem dados"}
                     </td>
                   </tr>
                 ))}
@@ -390,7 +394,7 @@ export function ErpSalesMargin() {
             )}
           </div>
           <p className="text-xs text-muted-foreground">
-            Fonte: relatórios de margem importados. Os valores seguem a data de fechamento
+            Fonte: relatórios de margem importados e vendas pagas pelo site. Os relatórios seguem a data de fechamento
             disponível; relatórios acumulados não são somados entre si. A margem percentual usa
             margem bruta ÷ venda total.
           </p>
