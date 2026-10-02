@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { normalizeTaxCode, roundMoney } from "@/lib/tax";
+import { PICKUP_SERVICE, checkoutFieldValid } from "@/lib/order-fulfillment";
 import { priceForAccount } from "@/lib/pricing";
 
 const CEP_ORIGEM = (process.env.CORREIOS_CEP_ORIGEM || "15150104").replace(/\D/g, "");
@@ -502,13 +503,13 @@ const orderSchema = z.object({
   cpf_cnpj: z.string().refine((value) => [11, 14].includes(onlyDigits(value).length), {
     message: "Informe um CPF com 11 dígitos ou um CNPJ com 14 dígitos.",
   }),
-  cep: z.string().min(8),
-  rua: z.string().min(2).max(200),
-  numero: z.string().min(1).max(20),
+  cep: z.string(),
+  rua: z.string().max(200),
+  numero: z.string().max(20),
   complemento: z.string().max(120).optional().nullable(),
-  bairro: z.string().min(2).max(120),
-  cidade: z.string().min(2).max(120),
-  estado: z.string().length(2),
+  bairro: z.string().max(120),
+  cidade: z.string().max(120),
+  estado: z.string().max(2),
   items: z
     .array(
       z.object({
@@ -521,8 +522,17 @@ const orderSchema = z.object({
   shipping_cost: z.number().nonnegative(),
   shipping_service: z.string().min(1),
   shipping_deadline_days: z.number().int().nonnegative(),
+  fulfillment_method: z.enum(["delivery", "pickup"]).default("delivery"),
   payment_method: z.enum(["pix", "card", "boleto"]).default("pix"),
   card_installments: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional(),
+}).superRefine((data, context) => {
+  const keys = data.fulfillment_method === "pickup" && data.payment_method !== "boleto"
+    ? ["customer_name", "email", "phone", "cpf_cnpj"] as const
+    : ["customer_name", "email", "phone", "cpf_cnpj", "cep", "rua", "numero", "bairro", "cidade", "estado"] as const;
+  for (const key of keys) if (!checkoutFieldValid(key, data[key])) {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: [key], message: `Preencha corretamente: ${key}` });
+  }
+
 });
 
 export const createPixOrder = createServerFn({ method: "POST" })
@@ -536,7 +546,7 @@ export const createPixOrder = createServerFn({ method: "POST" })
     return result.data;
   })
   .handler(async ({ data }) => {
-    const supa = await getServerSupabase();
+    let supa = await getServerSupabase();
 
     let authUserId: string | null = null;
     const { getRequest } = await import("@tanstack/react-start/server");
@@ -547,6 +557,10 @@ export const createPixOrder = createServerFn({ method: "POST" })
       authUserId = userData.user.id;
     }
 
+    const { createAuditedAdminClient } = await import("@/lib/audit.server");
+    supa = createAuditedAdminClient(authUserId, getRequest());
+    const shippingCost = data.fulfillment_method === "pickup" ? 0 : data.shipping_cost;
+    const shippingService = data.fulfillment_method === "pickup" ? PICKUP_SERVICE : data.shipping_service;
     const ids = data.items.map((item) => item.product_id);
     const { data: prods, error: productError } = await supa
       .from("products")
@@ -568,7 +582,7 @@ export const createPixOrder = createServerFn({ method: "POST" })
       accountType = profile?.account_type ?? "cliente";
     }
 
-    const destinationUf = data.estado.trim().toUpperCase();
+    const destinationUf = data.fulfillment_method === "pickup" ? "SP" : data.estado.trim().toUpperCase();
     let subtotal = 0;
     let taxAmount = 0;
 
@@ -604,7 +618,7 @@ export const createPixOrder = createServerFn({ method: "POST" })
       };
     });
 
-    const baseAmount = roundMoney(subtotal + taxAmount + data.shipping_cost);
+    const baseAmount = roundMoney(subtotal + taxAmount + shippingCost);
     const paymentMethod = data.payment_method ?? "pix";
     const installments =
       paymentMethod === "card" ? ((data.card_installments ?? 1) as CardInstallments) : null;
@@ -632,9 +646,11 @@ export const createPixOrder = createServerFn({ method: "POST" })
         subtotal,
         tax_amount: taxAmount,
         tax_destination_uf: destinationUf,
-        shipping_cost: data.shipping_cost,
-        shipping_service: data.shipping_service,
-        shipping_deadline_days: data.shipping_deadline_days,
+        shipping_cost: shippingCost,
+        shipping_service: shippingService,
+        fulfillment_method: data.fulfillment_method,
+        delivery_status: "preparando",
+        shipping_deadline_days: data.fulfillment_method === "pickup" ? 0 : data.shipping_deadline_days,
         total,
         payment_method: paymentMethod,
         payment_status: "pending",
@@ -668,7 +684,7 @@ export const createPixOrder = createServerFn({ method: "POST" })
         amount: total,
         merchandiseAmount: subtotal,
         taxAmount,
-        shippingAmount: data.shipping_cost,
+        shippingAmount: shippingCost,
       };
     }
 
@@ -703,7 +719,7 @@ export const createPixOrder = createServerFn({ method: "POST" })
               street_number: String(streetNumber),
               neighborhood: data.bairro,
               city: data.cidade,
-              federal_unit: destinationUf,
+              federal_unit: data.estado.trim().toUpperCase(),
             },
           },
         }),
@@ -749,7 +765,7 @@ export const createPixOrder = createServerFn({ method: "POST" })
         amount: total,
         merchandiseAmount: subtotal,
         taxAmount,
-        shippingAmount: data.shipping_cost,
+        shippingAmount: shippingCost,
       };
     }
 
@@ -822,7 +838,7 @@ export const createPixOrder = createServerFn({ method: "POST" })
       amount: total,
       merchandiseAmount: subtotal,
       taxAmount,
-      shippingAmount: data.shipping_cost,
+      shippingAmount: shippingCost,
     };
   });
 
@@ -942,10 +958,10 @@ export const getOrderPublic = createServerFn({ method: "GET" })
   .inputValidator((data: { id: string }) => z.object({ id: z.string().uuid() }).parse(data))
   .handler(async ({ data }) => {
     const supa = await getServerSupabase();
-    const { data: order, error } = await supa
+    const { data: order, error } = await (supa as any)
       .from("orders")
       .select(
-        "id,order_number,customer_name,email,total,subtotal,tax_amount,tax_destination_uf,shipping_cost,shipping_service,shipping_deadline_days,payment_method,payment_status,mp_qr_code,mp_qr_code_base64,mp_ticket_url,mp_expires_at,mp_payment_id,created_at,tracking_code,tracking_status,posted_at,label_created_at",
+        "id,user_id,order_number,customer_name,email,total,subtotal,tax_amount,tax_destination_uf,shipping_cost,shipping_service,shipping_deadline_days,payment_method,payment_status,mp_qr_code,mp_qr_code_base64,mp_ticket_url,mp_expires_at,mp_payment_id,created_at,delivery_status,fulfillment_method,pickup_location,pickup_ready_at,pickup_deadline_at,refund_status,cancellation_reason,tracking_code,tracking_status,posted_at,label_created_at",
       )
       .eq("id", data.id)
       .single();
