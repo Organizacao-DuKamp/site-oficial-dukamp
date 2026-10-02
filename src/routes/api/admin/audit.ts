@@ -5,9 +5,16 @@ export const Route = createFileRoute("/api/admin/audit")({ server: { handlers: {
     const auth = await authenticateSupportAdmin(request);
     if ("response" in auth) return auth.response;
     const query = new URL(request.url).searchParams;
+    const id = query.get("id");
+    if (id) {
+      if (!/^[0-9a-f-]{36}$/i.test(id)) return Response.json({ error:"Registro inválido" }, { status:400 });
+      const { data, error } = await auth.supabaseAdmin.from("audit_logs").select("*").eq("id",id).maybeSingle();
+      if (error || !data) return Response.json({ error:"Registro não encontrado" }, { status:404 });
+      return Response.json(data, { headers:{ "Cache-Control":"no-store" } });
+    }
     const page = Math.max(0, Math.min(100000, Number(query.get("page")) || 0));
     const table = query.get("table"); const action = query.get("action");
-    let builder = auth.supabaseAdmin.from("audit_logs").select("*", { count: "exact" })
+    let builder = auth.supabaseAdmin.from("audit_logs").select("id,created_at,actor_id,actor_name,actor_email,actor_ip,action,entity_table,entity_id,changed_fields,source", { count: "exact" })
       .order("created_at", { ascending: false }).order("id").range(page * 50, page * 50 + 49);
     if (table && /^[a-z_]+$/.test(table)) builder = builder.eq("entity_table", table);
     if (action && ["insert","update","delete","admin_login"].includes(action)) builder = builder.eq("action", action);
