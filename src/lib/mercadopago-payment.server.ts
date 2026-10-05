@@ -67,3 +67,25 @@ export async function refreshOrderPayment(orderId: string, paymentId: string) {
   if (payment.external_reference !== orderId) throw new Error("Pagamento não pertence ao pedido");
   return applyProviderPayment(payment);
 }
+
+// Only call with rows already authorized for the current customer/admin.
+export async function refreshPendingOrderPayments<T extends {
+  id: string; mp_payment_id: string | null; payment_status: string;
+}>(orders: T[]): Promise<T[]> {
+  const rows = orders.map((order) => ({ ...order }));
+  const pending = rows.filter((order) => order.mp_payment_id &&
+    ["pending", "in_process"].includes(order.payment_status));
+  for (let offset = 0; offset < pending.length; offset += 5) {
+    await Promise.all(pending.slice(offset, offset + 5).map(async (order) => {
+      try {
+        const result = await refreshOrderPayment(order.id, order.mp_payment_id!);
+        if (result) order.payment_status = result.payment_status;
+      } catch (error) {
+        console.error("[MercadoPago] Consulta da lista de pedidos falhou", {
+          orderId: order.id, message: (error as Error).message,
+        });
+      }
+    }));
+  }
+  return rows;
+}
