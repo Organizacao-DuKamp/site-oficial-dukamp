@@ -14,10 +14,11 @@ export const listMyOrders = createServerFn({ method: "GET" })
         "*",
       )
       .eq("user_id", userId)
-      .in("payment_status", ["approved", "in_process", "refunded", "cancelled"])
+      .or("payment_status.in.(approved,in_process,refunded,cancelled),and(payment_method.eq.boleto,payment_status.eq.pending,mp_payment_id.not.is.null)")
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return data ?? [];
+    const { refreshPendingOrderPayments } = await import("@/lib/mercadopago-payment.server");
+    return refreshPendingOrderPayments(data ?? []);
   });
 
 export const getMyDeliveryNotices = createServerFn({ method: "GET" })
@@ -91,15 +92,15 @@ export const adminListOrders = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false })
       .limit(500);
     if (data.orderId) q = q.eq("id", data.orderId);
-    if (data.onlyOpen) {
-      q = q.eq("payment_status", "approved").neq("delivery_status", "entregue");
-    } else {
-      // Só mostra pedidos com pagamento confirmado (esconde pendentes/qr abertos)
-      q = q.in("payment_status", ["approved", "in_process", "rejected", "cancelled", "refunded"]);
-    }
+    // Include issued boletos so they can be reconciled before filtering paid orders.
+    q = q.or("payment_status.in.(approved,in_process,rejected,cancelled,refunded),and(payment_method.eq.boleto,payment_status.eq.pending,mp_payment_id.not.is.null)");
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    return rows ?? [];
+    const { refreshPendingOrderPayments } = await import("@/lib/mercadopago-payment.server");
+    const refreshed = await refreshPendingOrderPayments(rows ?? []);
+    return data.onlyOpen
+      ? refreshed.filter((order: any) => order.payment_status === "approved" && order.delivery_status !== "entregue")
+      : refreshed;
   });
 
 export const adminUpdateDeliveryStatus = createServerFn({ method: "POST" })

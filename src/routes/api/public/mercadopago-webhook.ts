@@ -6,7 +6,8 @@ export const Route = createFileRoute("/api/public/mercadopago-webhook")({
       POST: async ({ request }) => {
         let payload: unknown;
         try {
-          payload = await request.json();
+          const body = await request.text();
+          payload = body.trim() ? JSON.parse(body) : {};
         } catch {
           return new Response("Invalid JSON", { status: 400 });
         }

@@ -9,8 +9,12 @@ export function paymentNotificationUrl(request: Request, configuredUrl?: string)
 
 export function paymentNotification(request: Request, payload: any) {
   const query = new URL(request.url).searchParams;
-  const id = query.get("data.id") || (payload?.data?.id != null ? String(payload.data.id) : null);
-  const type = query.get("type") || payload?.type || payload?.action || "";
+  const type = query.get("type") || query.get("topic") || payload?.type || payload?.topic || payload?.action || "";
+  const resource = typeof payload?.resource === "string" ? payload.resource : "";
+  const resourceId = resource.match(/^(?:https:\/\/api\.mercadopago\.com)?\/v1\/payments\/(\d+)\/?$/)?.[1];
+  const id = query.get("data.id") || query.get("id") ||
+    (payload?.data?.id != null ? String(payload.data.id) : null) ||
+    resourceId || (typeof payload?.resource === "number" || /^\d+$/.test(resource) ? String(payload.resource) : null);
   return { id, isPayment: type === "payment" || type.startsWith("payment.") };
 }
 

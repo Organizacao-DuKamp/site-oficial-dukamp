@@ -768,7 +768,15 @@ export const createPixOrder = createServerFn({ method: "POST" })
         .eq("id", order.id);
       if (boletoSaveError) throw boletoSaveError;
       const { applyProviderPayment } = await import("@/lib/mercadopago-payment.server");
-      await applyProviderPayment(mpB as any);
+      try {
+        await applyProviderPayment(mpB as any);
+      } catch (error) {
+        // The boleto and its order are already saved. Let the customer open them;
+        // webhook/list/detail reconciliation will retry the provider status.
+        console.error("[MercadoPago] Confirmação inicial do boleto falhou", {
+          orderId: order.id, message: (error as Error).message,
+        });
+      }
 
       return {
         orderId: order.id,
