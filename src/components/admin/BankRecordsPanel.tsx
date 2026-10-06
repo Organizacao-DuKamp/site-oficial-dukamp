@@ -15,6 +15,7 @@ import {
 } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { useExpensePeriod } from "@/hooks/use-expense-period";
 import {
   BANK_MONTHS,
   bankAnnualSeries,
@@ -38,7 +39,7 @@ const chartTooltipStyle = {
 
 export function BankRecordsPanel() {
   const { isMasterAdmin } = useAuth();
-  const [period, setPeriod] = useState<{ year: number; month: number } | null>(null);
+  const [period, setPeriod] = useExpensePeriod("dukamp-bank-records-period");
   const [search, setSearch] = useState("");
   const query = useQuery({
     queryKey: ["admin", "bank-records"],
@@ -68,7 +69,9 @@ export function BankRecordsPanel() {
     );
   const reports = query.data;
   if (!reports.length) return <div className={panel}>Nenhum relatório bancário importado.</div>;
-  const selected = period ?? reports[reports.length - 1];
+  const selected = period === null
+    ? reports[reports.length - 1]
+    : { year: Math.floor(period / 100), month: period % 100 };
   const current = reports.find((r) => r.year === selected.year && r.month === selected.month);
   const previousKey = previousBankPeriod(selected.year, selected.month);
   const previous = reports.find(
@@ -125,7 +128,7 @@ export function BankRecordsPanel() {
               aria-label="Ano dos registros"
               className="h-10 rounded-lg border bg-background px-3 text-sm"
               value={selected.year}
-              onChange={(e) => setPeriod({ year: Number(e.target.value), month: selected.month })}
+              onChange={(e) => setPeriod(Number(e.target.value) * 100 + selected.month)}
             >
               {years.map((y) => (
                 <option key={y}>{y}</option>
@@ -138,7 +141,7 @@ export function BankRecordsPanel() {
               aria-label="Mês dos registros"
               className="h-10 w-full min-w-0 rounded-lg border bg-background px-3 text-sm"
               value={selected.month}
-              onChange={(e) => setPeriod({ year: selected.year, month: Number(e.target.value) })}
+              onChange={(e) => setPeriod(selected.year * 100 + Number(e.target.value))}
             >
               {BANK_MONTHS.map((m, i) => (
                 <option key={m} value={i + 1}>
