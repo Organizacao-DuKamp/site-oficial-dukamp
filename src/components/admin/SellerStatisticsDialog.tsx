@@ -41,6 +41,8 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import type { Seller } from "@/lib/sellers";
+import { useAuth } from "@/lib/auth";
+import { loadStatisticsExpenses, statisticsExpensesInRange } from "@/lib/statistics-expenses";
 
 type PeriodMode = "month" | "day" | "year" | "custom";
 
@@ -298,6 +300,7 @@ function SectionTitle({
 }
 
 export function SellerStatisticsDialog({ seller }: { seller?: Seller | null }) {
+  const { isMasterAdmin } = useAuth();
   const today = new Date().toISOString().slice(0, 10);
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<PeriodMode>("month");
@@ -317,6 +320,31 @@ export function SellerStatisticsDialog({ seller }: { seller?: Seller | null }) {
     enabled: open && Boolean(period.from && period.to && period.from <= period.to),
     queryFn: () => loadStatistics(seller?.id ?? null, mode, period.from, period.to),
   });
+
+  const expensesQuery = useQuery({
+    queryKey: ["admin", "dukamp-statistics-expenses"],
+    enabled: open && !seller && isMasterAdmin,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    queryFn: () => loadStatisticsExpenses(supabase),
+  });
+  const expenseTotals = expensesQuery.data
+    ? statisticsExpensesInRange(expensesQuery.data, period.from, period.to)
+    : null;
+  const previousExpenseTotals = expensesQuery.data && query.data?.period?.previousFrom && query.data?.period?.previousTo
+    ? statisticsExpensesInRange(expensesQuery.data, query.data.period.previousFrom, query.data.period.previousTo)
+    : null;
+  const expenseTrend = expenseTotals?.complete && previousExpenseTotals?.complete && previousExpenseTotals.amount
+    ? ((expenseTotals.amount! - previousExpenseTotals.amount) / Math.abs(previousExpenseTotals.amount)) * 100
+    : null;
+  const expenseHelper = !isMasterAdmin ? "Acesso financeiro restrito"
+    : expensesQuery.isError ? "Não foi possível consultar as despesas"
+    : expensesQuery.isPending ? "Consultando relatórios mensais"
+    : expenseTotals?.amount === null ? "Relatório mensal ainda não disponível"
+    : !expenseTotals?.complete ? `${expenseTotals?.availableMonths ?? 0} de ${expenseTotals?.expectedMonths ?? 0} meses disponíveis`
+    : mode === "day" || mode === "custom" ? "Total dos meses incluídos; sem rateio diário"
+    : undefined;
 
   const filteredClients = useMemo(() => {
     const clients = query.data?.clients ?? [];
@@ -381,7 +409,10 @@ export function SellerStatisticsDialog({ seller }: { seller?: Seller | null }) {
                 <p className="mt-0.5 text-xs text-muted-foreground">Escolha como os dados devem ser comparados.</p>
               </div>
               <div className="flex flex-wrap items-center gap-1 rounded-xl bg-muted/50 p-1">
-                <Button type="button" size="sm" variant="ghost" onClick={() => void query.refetch()} disabled={query.isFetching}>
+                <Button type="button" size="sm" variant="ghost" onClick={() => {
+                  void query.refetch();
+                  if (isDukamp && isMasterAdmin) void expensesQuery.refetch();
+                }} disabled={query.isFetching || (isDukamp && expensesQuery.isFetching)}>
                   <RefreshCw className="mr-1.5 h-4 w-4" /> Atualizar
                 </Button>
                 {(["month", "day", "year", "custom"] as PeriodMode[]).map((item) => (
@@ -443,10 +474,17 @@ export function SellerStatisticsDialog({ seller }: { seller?: Seller | null }) {
               <TabsContent value="overview" className="space-y-6">
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                   <MetricCard label="Vendas" value={money(summary.total_venda)} trend={comparison.total_venda} />
+                  <MetricCard label="Custo total" value={money(summary.total_custo)} trend={comparison.total_custo} inverse />
                   <MetricCard label="Margem bruta" value={money(summary.margem_bruta)} trend={comparison.margem_bruta} />
+                  {isDukamp && <MetricCard
+                    label="Despesas"
+                    value={!isMasterAdmin ? "Restrito" : expensesQuery.isPending ? "Carregando..." : expensesQuery.isError ? "Indisponível" : expenseTotals?.amount == null ? "Não disponível" : money(expenseTotals.amount)}
+                    trend={expenseTrend}
+                    inverse
+                    helper={expenseHelper}
+                  />}
                   <MetricCard label="Margem" value={`${number(summary.margem_percentual)}%`} trend={comparison.margem_percentual} />
                   <MetricCard label="Tonelagem" value={`${number(summary.tonelagem, 3)} t`} trend={comparison.tonelagem} />
-                  <MetricCard label="Custo total" value={money(summary.total_custo)} trend={comparison.total_custo} inverse />
                   <MetricCard label="Devoluções" value={money(summary.devolucao)} trend={comparison.devolucao} inverse />
                   <MetricCard label="Sacarias" value={money(summary.sacarias)} trend={comparison.sacarias} />
                   <MetricCard label="Balcão" value={money(summary.balcao)} trend={comparison.balcao} />
@@ -455,6 +493,10 @@ export function SellerStatisticsDialog({ seller }: { seller?: Seller | null }) {
                   <MetricCard label="Orçamentos" value={number(summary.quotes, 0)} trend={comparison.quotes} />
                   <MetricCard label="Registros de venda" value={number(summary.sale_requests, 0)} trend={comparison.sale_requests} />
                 </div>
+
+                {isDukamp && isMasterAdmin && <p className="text-xs text-muted-foreground">
+                  Despesas dos relatórios mensais de Despesas DuKamp, sem Fornecedores (Fornecedor, Frete Repassado e Embalagens) e sem Não é despesa.
+                </p>}
 
                 <div className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
                   <SectionTitle
