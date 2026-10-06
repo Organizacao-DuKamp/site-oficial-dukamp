@@ -41,6 +41,7 @@ type ReportHistoryRow = {
 };
 
 type ImportResult = {
+  totalVenda: number;
   periodStart: string;
   periodEnd: string;
   sourceFile: string;
@@ -135,6 +136,7 @@ async function importReport(file: File, report: ParsedSellerMarginReport): Promi
       fileName: file.name,
       periodStart: report.periodStart,
       periodEnd: report.periodEnd,
+      reportTotal: report.reportTotal,
       rows: report.rows,
     }),
   });
@@ -230,7 +232,12 @@ function AtualizarValoresVendedores() {
     try {
       const imported = await importReport(file, parsed);
       setResult(imported);
-      await queryClient.invalidateQueries({ queryKey: ["admin-seller-margin-reports"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["admin-seller-margin-reports"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-sales-statistics"] }),
+        queryClient.invalidateQueries({ queryKey: ["seller-dashboard"] }),
+        queryClient.invalidateQueries({ queryKey: ["erp-margin-venda"] }),
+      ]);
       toast.success(
         imported.updatedRows > 0
           ? imported.updatedRows + " vendedor(es) atualizado(s) no período."
@@ -401,6 +408,10 @@ function AtualizarValoresVendedores() {
           <h2 className="flex items-center gap-2 font-semibold text-emerald-900">
             <CheckCircle2 className="h-5 w-5" /> Atualização concluída
           </h2>
+          <p className="text-sm text-emerald-900">
+            Total importado: <strong>{money(result.totalVenda)}</strong>. Inclui todos os vendedores,
+            mesmo os que ainda não têm conta vinculada.
+          </p>
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="rounded-lg bg-background/80 p-3 text-sm">
               <div className="text-muted-foreground">Linhas processadas</div>

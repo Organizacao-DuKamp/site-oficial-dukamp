@@ -29,6 +29,17 @@ export type ParsedSellerMarginReport = {
 const NUMERIC_FIELD_COUNT = 16;
 const numberToken = /^-?[\d.,]+$/;
 
+export function validateSellerMarginTotal(rows: Array<{ totalVenda: number }>, reportTotal: unknown): number {
+  if (typeof reportTotal !== "number" || !Number.isFinite(reportTotal)) {
+    throw new Error("O TOTAL do PDF não foi identificado. Importe novamente o relatório completo.");
+  }
+  const cents = rows.reduce((total, row) => total + Math.round(row.totalVenda * 100), 0);
+  if (Math.abs(cents - Math.round(reportTotal * 100)) > 1) {
+    throw new Error("A soma dos vendedores não confere com o TOTAL do PDF. Nenhum valor foi atualizado.");
+  }
+  return cents / 100;
+}
+
 function decodePdfString(value: string): string {
   const escapes: Record<string, string> = {
     "\\": "\\",
@@ -254,6 +265,8 @@ export async function parseSellerMarginPdf(file: Blob): Promise<ParsedSellerMarg
     totalTokens[1] && numberToken.test(totalTokens[1])
       ? parseNumber(totalTokens[1], "amount")
       : null;
+
+  if (reportTotal === null) throw new Error("O TOTAL do PDF não pôde ser lido. Confira o relatório completo.");
 
   return { periodStart, periodEnd, reportTotal, rows };
 }
