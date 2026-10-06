@@ -18,7 +18,7 @@ function difference(current: number | null, prior: number | null) {
 
 export function BankOverviewMetrics({ year, month }: { year: number; month: number }) {
   const reports = useQuery({
-    queryKey: ["admin", "dukamp-bank-overview", "separate-summary"],
+    queryKey: ["admin", "dukamp-bank-overview", "statement-summary"],
     queryFn: async (): Promise<BankOverviewReport[]> => {
       const { data, error } = await (supabase as any)
         .from("dukamp_bank_reports")
@@ -74,7 +74,7 @@ export function BankOverviewMetrics({ year, month }: { year: number; month: numb
           </p>
         </div>
       </div>
-      {current?.payload.bank_totals && (
+      {(current?.payload.bank_totals || current?.payload.bank_credits_total !== undefined) && (
         <p className="mt-2 text-xs text-muted-foreground">
           Valores do registro bancário; os saques sem conciliação não foram somados novamente às despesas.
         </p>
