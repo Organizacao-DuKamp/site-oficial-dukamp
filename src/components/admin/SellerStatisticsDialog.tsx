@@ -10,6 +10,7 @@ import {
   MapPin,
   PackageOpen,
   Percent,
+  RefreshCw,
   Search,
   ShoppingCart,
   Trophy,
@@ -310,6 +311,9 @@ export function SellerStatisticsDialog({ seller }: { seller?: Seller | null }) {
 
   const query = useQuery({
     queryKey: ["admin-sales-statistics", seller?.id ?? "dukamp", mode, period.from, period.to],
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
     enabled: open && Boolean(period.from && period.to && period.from <= period.to),
     queryFn: () => loadStatistics(seller?.id ?? null, mode, period.from, period.to),
   });
@@ -377,6 +381,9 @@ export function SellerStatisticsDialog({ seller }: { seller?: Seller | null }) {
                 <p className="mt-0.5 text-xs text-muted-foreground">Escolha como os dados devem ser comparados.</p>
               </div>
               <div className="flex flex-wrap items-center gap-1 rounded-xl bg-muted/50 p-1">
+                <Button type="button" size="sm" variant="ghost" onClick={() => void query.refetch()} disabled={query.isFetching}>
+                  <RefreshCw className="mr-1.5 h-4 w-4" /> Atualizar
+                </Button>
                 {(["month", "day", "year", "custom"] as PeriodMode[]).map((item) => (
                   <Button
                     key={item}
@@ -404,7 +411,7 @@ export function SellerStatisticsDialog({ seller }: { seller?: Seller | null }) {
             </div>
           </div>
 
-          {query.isPending ? (
+          {query.isPending || query.isFetching ? (
             <div className="flex min-h-72 items-center justify-center gap-2 text-muted-foreground">
               <Loader2 className="h-5 w-5 animate-spin" /> Consolidando dados...
             </div>

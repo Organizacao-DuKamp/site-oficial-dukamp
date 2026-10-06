@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type { User } from "@supabase/supabase-js";
+import { validateSellerMarginTotal } from "@/lib/seller-margin-report";
 
 type IncomingReportRow = Record<string, unknown>;
 type ValidatedReportRow = {
@@ -100,12 +101,13 @@ export const Route = createFileRoute("/api/admin/seller-margin-reports")({
       try { payload = (await request.json()) as Record<string, unknown>; }
       catch { return response({ error: "Dados da importação inválidos." }, { status: 400 }); }
 
-      let periodStart: string, periodEnd: string, rows: ValidatedReportRow[], sourceFile: string;
+      let periodStart: string, periodEnd: string, rows: ValidatedReportRow[], sourceFile: string, totalVenda: number;
       try {
         periodStart = readIsoDate(payload.periodStart, "Data inicial");
         periodEnd = readIsoDate(payload.periodEnd, "Data final");
         if (periodEnd < periodStart) throw new Error("O período final não pode ser anterior ao inicial.");
         rows = validateRows(payload.rows);
+        totalVenda = validateSellerMarginTotal(rows, payload.reportTotal);
         sourceFile = safeSourceFile(payload.fileName);
       } catch (error) {
         return response({ error: error instanceof Error ? error.message : "Dados da importação inválidos." }, { status: 400 });
@@ -175,7 +177,7 @@ export const Route = createFileRoute("/api/admin/seller-margin-reports")({
       }
 
       return response({
-        ok: true, periodStart, periodEnd, sourceFile, totalRows: rows.length, linkedRows: linked, unlinkedRows,
+        ok: true, periodStart, periodEnd, sourceFile, totalVenda, totalRows: rows.length, linkedRows: linked, unlinkedRows,
         updatedRows: (existingReports ?? []).length ? rows.filter((row) => previousByCode.has(row.code)).length : 0,
         insertedRows: rows.filter((row) => !previousByCode.has(row.code)).length, warnings,
         mappings: rows.map((row) => {

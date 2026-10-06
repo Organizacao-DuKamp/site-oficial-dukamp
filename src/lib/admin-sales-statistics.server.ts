@@ -113,6 +113,33 @@ async function loadSales(supabaseAdmin: any, sellerCode: string | null, sellerId
 }
 function quoteTotal(quote: any) { return (quote.items ?? []).reduce((sum: number, item: any) => sum + n(item.unit_price_snapshot) * n(item.quantity), 0); }
 
+async function loadMarginReports(db: any, table: string): Promise<MarginRow[]> {
+  const rows: MarginRow[] = [];
+  // Advance by the returned count: the API can cap a page below the requested size.
+  // Account linkage must never filter DuKamp's imported revenue.
+  for (let offset = 0; ; ) {
+    const { data, error } = await db.from(table).select("*")
+      .order("period_end", { ascending: true }).order("id", { ascending: true })
+      .range(offset, offset + 999);
+    if (error) throw error;
+    if (!data?.length) return rows;
+    rows.push(...data);
+    offset += data.length;
+  }
+}
+
+function mergeMarginReports(monthly: MarginRow[], snapshots: MarginRow[]): MarginRow[] {
+  const merged = new Map<string, MarginRow>();
+  // Prefer the most recently imported version of the same seller/period.
+  // Monthly wins a timestamp tie; older snapshots still supply daily baselines.
+  for (const row of [...snapshots, ...monthly]) {
+    const key = `${normalizeCode(row.report_seller_code)}:${row.period_start}:${row.period_end}`;
+    const previous = merged.get(key);
+    if (!previous || row.updated_at >= previous.updated_at) merged.set(key, row);
+  }
+  return [...merged.values()];
+}
+
 export async function buildAdminSalesStatistics(supabaseAdmin: any, request: Request) {
   const url = new URL(request.url); const today = new Date().toISOString().slice(0, 10);
   const from = validIso(url.searchParams.get("from")) ?? `${today.slice(0, 7)}-01`; const to = validIso(url.searchParams.get("to")) ?? today; const preset = url.searchParams.get("preset");
@@ -121,24 +148,12 @@ export async function buildAdminSalesStatistics(supabaseAdmin: any, request: Req
   let seller: { id: string; name: string; erp_seller_code: string | null } | null = null; let sellerCode: string | null = null;
   if (sellerId) { const result = await supabaseAdmin.from("sellers").select("id,name,erp_seller_code").eq("id", sellerId).maybeSingle(); if (result.error) throw result.error; if (!result.data) throw new Error("Vendedor não encontrado."); seller = result.data; sellerCode = result.data.erp_seller_code?.trim() || null; }
 
-  const [{ data: snapshotData, error: snapshotError }, { data: monthlyData, error: monthlyError }, customers, saleRequests, websiteSales] = await Promise.all([
-    supabaseAdmin.from("seller_margin_report_snapshots").select("*").order("period_end", { ascending: true }).limit(20000),
-    supabaseAdmin.from("seller_monthly_margin_reports").select("*").order("period_end", { ascending: true }).limit(20000),
+  const [snapshotData, monthlyData, customers, saleRequests, websiteSales] = await Promise.all([
+    loadMarginReports(supabaseAdmin, "seller_margin_report_snapshots"),
+    loadMarginReports(supabaseAdmin, "seller_monthly_margin_reports"),
     loadCustomers(supabaseAdmin, sellerCode, sellerId), loadSales(supabaseAdmin, sellerCode, sellerId), loadWebSales(supabaseAdmin, sellerId, sellerCode),
   ]);
-  if (snapshotError) throw snapshotError; if (monthlyError) throw monthlyError;
-
-  // O histórico mensal é a fonte histórica oficial (inclusive 2025). Snapshots diários complementam
-  // os meses recentes sem apagar o histórico antigo que já existia no painel do vendedor.
-  const merged = new Map<string, MarginRow>();
-  for (const row of (monthlyData ?? []) as MarginRow[]) merged.set(`monthly:${normalizeCode(row.report_seller_code)}:${row.report_year}-${row.report_month}`, row);
-  for (const row of (snapshotData ?? []) as MarginRow[]) {
-    const monthlyKey = `monthly:${normalizeCode(row.report_seller_code)}:${row.report_year}-${row.report_month}`;
-    const monthly = merged.get(monthlyKey);
-    if (monthly && monthly.period_end === row.period_end) merged.delete(monthlyKey);
-    merged.set(`snapshot:${normalizeCode(row.report_seller_code)}:${row.period_start}:${row.period_end}`, row);
-  }
-  let reports = [...merged.values()];
+  let reports = mergeMarginReports(monthlyData, snapshotData);
   if (sellerId && !sellerCode) reports = [];
   if (sellerCode) reports = reports.filter((row) => normalizeCode(row.report_seller_code) === normalizeCode(sellerCode));
 
