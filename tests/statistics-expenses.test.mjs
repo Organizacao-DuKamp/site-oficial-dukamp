@@ -9,9 +9,15 @@ const { statisticsExpensesInRange, loadStatisticsExpenses } = await import(modul
 const categories = [{code:1,category_code:9010},{code:8,category_code:9010},{code:111,category_code:9010},{code:79,category_code:9011},{code:224,category_code:9011},{code:13,category_code:9001},{code:116,category_code:9021}];
 const value = (code, amount, month = 9, year = 2026) => ({ year, month, subcategory_code:code, amount });
 
-test('excludes all supplier fields and Não é despesa, retaining other expenses and negative receipts', () => {
+test('excludes all supplier fields, Não é despesa and Outras receitas, retaining other expenses', () => {
   const data = {subcategories:categories,values:[value(1,500),value(8,100),value(111,20),value(79,30),value(224,50),value(13,40),value(116,-10)]};
-  assert.deepEqual(statisticsExpensesInRange(data,'2026-09-01','2026-09-30'), {amount:80,availableMonths:1,expectedMonths:1,complete:true});
+  assert.deepEqual(statisticsExpensesInRange(data,'2026-09-01','2026-09-30'), {amount:90,availableMonths:1,expectedMonths:1,complete:true});
+});
+
+test('code 116 is excluded in all years regardless of its sign', () => {
+  const data = {subcategories:categories,values:[value(116,-100,3,2025),value(116,-150,4,2025),value(13,50,3,2025),value(13,50,4,2025),value(116,200,1,2026),value(13,50,1,2026)]};
+  assert.equal(statisticsExpensesInRange(data,'2025-01-01','2025-12-31').amount,100);
+  assert.equal(statisticsExpensesInRange(data,'2026-01-01','2026-12-31').amount,50);
 });
 
 test('the five additional exclusions apply only to 2025, including periods spanning years', () => {
