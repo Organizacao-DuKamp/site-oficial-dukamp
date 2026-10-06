@@ -4,12 +4,13 @@ export type BankOverviewReport = {
   payload: {
     // Independent bank summary, in cents. Expense report totals belong to the lower cards.
     bank_expense_total?: number;
+    bank_credits_total?: number;
     bank_totals?: { credits: number };
   };
 };
 
 export function bankOverviewAmounts(report: BankOverviewReport | undefined) {
-  const credits = report?.payload.bank_totals?.credits ?? null;
+  const credits = report?.payload.bank_credits_total ?? report?.payload.bank_totals?.credits ?? null;
   const expenses = report?.payload.bank_expense_total ?? null;
   return {
     credits,

@@ -22,3 +22,11 @@ test('zero bank expenses and negative bank results remain valid amounts', () => 
   assert.deepEqual(bankOverviewAmounts({ payload: { bank_totals: { credits: 0 }, bank_expense_total: 0 } }), { credits: 0, expenses: 0, result: 0 });
   assert.equal(bankOverviewAmounts({ payload: { bank_totals: { credits: 500 }, bank_expense_total: 800 } }).result, -300);
 });
+
+test('statement credits and debits feed the upper cards without replacing expense or bank records', () => {
+  const report = { payload: { bank_credits_total: 25000, bank_expense_total: 18000, total: 30000, bank_totals: { credits: 20000 } } };
+  assert.deepEqual(bankOverviewAmounts(report), { credits: 25000, expenses: 18000, result: 7000 });
+  assert.equal(report.payload.total, 30000);
+  assert.equal(report.payload.bank_totals.credits, 20000);
+  assert.equal(bankOverviewAmounts({ payload: { bank_credits_total: 0, bank_expense_total: 100, bank_totals: { credits: 20000 } } }).result, -100);
+});
