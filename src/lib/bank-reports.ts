@@ -28,6 +28,7 @@ export type BankReport = {
     adjustment: number;
     total: number;
     detail_total: number;
+    bank_expense_total?: number;
     groups: BankGroup[];
     reconciliation: {
       reference: string;

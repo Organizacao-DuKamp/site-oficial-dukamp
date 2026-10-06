@@ -1,14 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-
-type BankSummary = {
-  year: number;
-  month: number;
-  payload: {
-    total: number;
-    bank_totals?: { credits: number };
-  };
-};
+import { bankOverviewAmounts, type BankOverviewReport } from "@/lib/bank-overview";
 
 const currency = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 const money = (cents: number) => currency.format(cents / 100);
@@ -26,8 +18,8 @@ function difference(current: number | null, prior: number | null) {
 
 export function BankOverviewMetrics({ year, month }: { year: number; month: number }) {
   const reports = useQuery({
-    queryKey: ["admin", "dukamp-bank-overview"],
-    queryFn: async (): Promise<BankSummary[]> => {
+    queryKey: ["admin", "dukamp-bank-overview", "separate-summary"],
+    queryFn: async (): Promise<BankOverviewReport[]> => {
       const { data, error } = await (supabase as any)
         .from("dukamp_bank_reports")
         .select("year,month,payload")
@@ -48,20 +40,15 @@ export function BankOverviewMetrics({ year, month }: { year: number; month: numb
   const prior = reports.data.find(
     (r) => r.year === previousPeriod.year && r.month === previousPeriod.month,
   );
-  const credits = current?.payload.bank_totals?.credits ?? null;
-  const expenses = current?.payload.total ?? null;
-  const result = credits !== null && expenses !== null ? credits - expenses : null;
-  const priorCredits = prior?.payload.bank_totals?.credits ?? null;
-  const priorExpenses = prior?.payload.total ?? null;
-  const priorResult = priorCredits !== null && priorExpenses !== null
-    ? priorCredits - priorExpenses : null;
+  const { credits, expenses, result } = bankOverviewAmounts(current);
+  const { credits: priorCredits, expenses: priorExpenses, result: priorResult } = bankOverviewAmounts(prior);
 
   return (
     <section aria-label="Resultado dos registros bancários" className="mb-5">
       <div className="mb-3">
         <h2 className="text-lg font-semibold">Resultado dos registros bancários</h2>
         <p className="text-xs text-muted-foreground">
-          Entradas do extrato menos despesas do resumo mensal. Os créditos bancários podem incluir
+          Entradas do extrato menos despesas do resumo bancário. Os créditos bancários podem incluir
           valores que não são vendas; este resultado não substitui o lucro contábil.
         </p>
       </div>
