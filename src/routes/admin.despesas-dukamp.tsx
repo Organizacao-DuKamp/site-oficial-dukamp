@@ -36,6 +36,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { BankRecordsPanel } from "@/components/admin/BankRecordsPanel";
 import { BankOverviewMetrics } from "@/components/admin/BankOverviewMetrics";
 import { BANK_RECORDS_CODE } from "@/lib/bank-reports";
+import { loadAllExpenseValues } from "@/lib/expense-values";
 
 export const Route = createFileRoute("/admin/despesas-dukamp")({
   ssr: false,
@@ -139,11 +140,7 @@ async function loadExpensesData(): Promise<ExpensesData> {
       .from("dukamp_expense_subcategories")
       .select("code,category_code,name,sort_order")
       .order("sort_order", { ascending: true }),
-    (supabase as any)
-      .from("dukamp_expense_monthly_values")
-      .select("year,month,subcategory_code,amount")
-      .order("year", { ascending: true })
-      .order("month", { ascending: true }),
+    loadAllExpenseValues(supabase),
   ]);
 
   const error = categoriesResult.error || subcategoriesResult.error || valuesResult.error;
