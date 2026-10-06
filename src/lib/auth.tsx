@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { isMasterAdminUserId } from "@/lib/constants";
+import { createAuthSessionHandler } from "@/lib/auth-session";
 export { regularPriceForAccount, priceForAccount, isOnSaleForAccount, pixPriceForAccount } from "@/lib/pricing";
 
 export type AccountType = "cliente" | "revendedor" | "produtor" | "empresa" | "vendedor" | "admin";
@@ -74,36 +75,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { data: subscription } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
-      setUser(nextSession?.user ?? null);
-
-      if (nextSession?.user) {
-        setLoading(true);
-        setTimeout(() => {
-          void loadProfile(nextSession.user, nextSession.access_token)
-            .catch((error) => console.error("[auth] Falha ao carregar permissões:", error))
-            .finally(() => setLoading(false));
-        }, 0);
-      } else {
+    let authEventReceived = false;
+    let stopped = false;
+    const handler = createAuthSessionHandler({
+      setSession: nextSession => {
+        setSession(nextSession);
+        setUser(nextSession?.user ?? null);
+      },
+      setLoading,
+      clearProfile: () => {
         setIsAdmin(false);
         setAccountType("cliente");
         setApprovalNotice(null);
-        setLoading(false);
-      }
+      },
+      loadProfile: (nextSession, isCurrent) => loadProfile(nextSession.user, nextSession.access_token, isCurrent),
+      onError: error => console.error("[auth] Falha ao carregar permissões:", error),
+    });
+    const { data: subscription } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      authEventReceived = true;
+      handler.handle(nextSession);
     });
 
-    void supabase.auth.getSession().then(async ({ data }) => {
-      setSession(data.session);
-      setUser(data.session?.user ?? null);
-      if (data.session?.user) {
-        await loadProfile(data.session.user, data.session.access_token);
-      }
+    void supabase.auth.getSession().then(({ data }) => {
+      if (!stopped && !authEventReceived) handler.handle(data.session);
     }).catch((error) => {
       console.error("[auth] Falha ao carregar sessão:", error);
-    }).finally(() => setLoading(false));
+      if (!stopped && !authEventReceived) setLoading(false);
+    });
 
-    return () => subscription.subscription.unsubscribe();
+    return () => {
+      stopped = true;
+      handler.dispose();
+      subscription.subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -117,7 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => { stopped = true; };
   }, [isAdmin, session?.access_token]);
 
-  async function loadProfile(authUser: User, accessToken?: string) {
+  async function loadProfile(authUser: User, accessToken?: string, isCurrent: () => boolean = () => true) {
     const [admin, profileResult, sellerRole] = await Promise.all([
       readAdminRole(authUser.id),
       (supabase as any)
@@ -128,6 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       hasProtectedSellerRole(accessToken),
     ]);
 
+    if (!isCurrent()) return;
     setIsAdmin(admin);
 
     const profile: any = profileResult.data ?? {};
