@@ -14,6 +14,18 @@ test('excludes all supplier fields and Não é despesa, retaining other expenses
   assert.deepEqual(statisticsExpensesInRange(data,'2026-09-01','2026-09-30'), {amount:80,availableMonths:1,expectedMonths:1,complete:true});
 });
 
+test('the five additional exclusions apply only to 2025, including periods spanning years', () => {
+  const additionalCodes = [31,109,180,224,187];
+  const data = {
+    subcategories: [...categories, ...additionalCodes.filter(code => code !== 224).map(code => ({code,category_code:9011}))],
+    values: [2024,2025,2026].flatMap(year => [value(13,10,12,year), ...additionalCodes.map(code => value(code,5,12,year)), value(1,100,12,year), value(79,100,12,year)]),
+  };
+  assert.equal(statisticsExpensesInRange(data,'2025-01-01','2025-12-31').amount,10);
+  assert.equal(statisticsExpensesInRange(data,'2026-01-01','2026-12-31').amount,35);
+  assert.equal(statisticsExpensesInRange(data,'2024-01-01','2024-12-31').amount,35);
+  assert.equal(statisticsExpensesInRange(data,'2025-12-01','2026-12-31').amount,45);
+});
+
 test('missing months differ from a reported zero and partial years sum only available reports', () => {
   const data = {subcategories:categories,values:[value(13,0,1),value(13,10.25,2)]};
   assert.equal(statisticsExpensesInRange(data,'2026-01-01','2026-01-31').amount,0);

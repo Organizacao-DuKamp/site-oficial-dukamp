@@ -36,6 +36,7 @@ export function statisticsExpensesInRange(data: StatisticsExpensesData, from: st
     if (category === undefined) throw new Error("Categoria de despesa não encontrada.");
     // Exclude the entire supplier group plus the explicitly named fields.
     if (category === 9010 || [1, 8, 111, 79].includes(code)) continue;
+    if (Number(row.year) === 2025 && [31, 109, 180, 224, 187].includes(code)) continue;
     const amount = Number(row.amount);
     if (!Number.isFinite(amount)) throw new Error("Valor de despesa inválido.");
     cents += Math.round(amount * 100);

@@ -496,6 +496,7 @@ export function SellerStatisticsDialog({ seller }: { seller?: Seller | null }) {
 
                 {isDukamp && isMasterAdmin && <p className="text-xs text-muted-foreground">
                   Despesas dos relatórios mensais de Despesas DuKamp, sem Fornecedores (Fornecedor, Frete Repassado e Embalagens) e sem Não é despesa.
+                  {Number(period.from.slice(0, 4)) <= 2025 && Number(period.to.slice(0, 4)) >= 2025 && " Em 2025, também são excluídos Fazenda Tartaruga, Chácara Flaboyan, Eunice, Mútuo Eloy e Despesa Eloy Agro."}
                 </p>}
 
                 <div className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
