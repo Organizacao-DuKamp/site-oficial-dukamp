@@ -30,3 +30,19 @@ test('statement credits and debits feed the upper cards without replacing expens
   assert.equal(report.payload.bank_totals.credits, 20000);
   assert.equal(bankOverviewAmounts({ payload: { bank_credits_total: 0, bank_expense_total: 100, bank_totals: { credits: 20000 } } }).result, -100);
 });
+
+const { bankOverviewRangeAmounts } = await import('data:text/javascript;base64,' + Buffer.from(code).toString('base64'));
+test('bank ranges use bank summaries, preserve zero, and report missing months', () => {
+  const reports = [
+    { year: 2025, month: 1, payload: { bank_credits_total: 500, bank_expense_total: 800, total: 99999 } },
+    { year: 2025, month: 2, payload: { bank_credits_total: 0, bank_expense_total: 0 } },
+  ];
+  assert.deepEqual(bankOverviewRangeAmounts(reports, [202501, 202502, 202503]), { credits: 500, expenses: 800, result: -300, availableMonths: 2 });
+  assert.deepEqual(bankOverviewRangeAmounts(reports, [202504]), { credits: null, expenses: null, result: null, availableMonths: 0 });
+});
+test('bank ranges never calculate a result from different month coverage', () => {
+  assert.equal(bankOverviewRangeAmounts([
+    { year: 2025, month: 1, payload: { bank_credits_total: 500 } },
+    { year: 2025, month: 2, payload: { bank_expense_total: 800 } },
+  ], [202501, 202502]).result, null);
+});

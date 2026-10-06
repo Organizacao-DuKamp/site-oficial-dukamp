@@ -38,6 +38,8 @@ import { BankOverviewMetrics } from "@/components/admin/BankOverviewMetrics";
 import { BANK_RECORDS_CODE } from "@/lib/bank-reports";
 import { loadAllExpenseValues } from "@/lib/expense-values";
 import { useExpensePeriod } from "@/hooks/use-expense-period";
+import { useExpenseAnalysis } from "@/hooks/use-expense-analysis";
+import { expenseAnalysisRange } from "@/lib/expense-analysis-period";
 
 export const Route = createFileRoute("/admin/despesas-dukamp")({
   ssr: false,
@@ -123,12 +125,6 @@ function periodLabel(key: number) {
   const year = Math.floor(key / 100);
   const month = key % 100;
   return `${MONTHS[month - 1]} ${year}`;
-}
-
-function previousPeriod(key: number) {
-  const year = Math.floor(key / 100);
-  const month = key % 100;
-  return month === 1 ? (year - 1) * 100 + 12 : year * 100 + month - 1;
 }
 
 async function loadExpensesData(): Promise<ExpensesData> {
@@ -320,6 +316,7 @@ function DukampExpensesPage() {
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<number | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useExpensePeriod("dukamp-expenses-period");
+  const [analysis, setAnalysis] = useExpenseAnalysis();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const expenses = useQuery({
@@ -339,7 +336,15 @@ function DukampExpensesPage() {
     ).sort((a, b) => a - b);
     const latestPeriod = periods.at(-1) ?? 202601;
     const activePeriod = selectedPeriod && periods.includes(selectedPeriod) ? selectedPeriod : latestPeriod;
-    const previous = previousPeriod(activePeriod);
+    const range = expenseAnalysisRange(analysis, activePeriod);
+    const currentPeriods = range?.periods ?? [];
+    const previousPeriods = range?.previousPeriods ?? [];
+    const comparisonLabel = analysis.mode === "month" ? "mês anterior" : analysis.mode === "year" ? "ano anterior" : "período anterior";
+    const rangeLabel = analysis.mode === "month" ? periodLabel(activePeriod) : analysis.mode === "year" ? String(analysis.year || Math.floor(activePeriod / 100)) : range ? `${range.from.split("-").reverse().join("/")} a ${range.to.split("-").reverse().join("/")}` : "Intervalo inválido";
+    const previousLabel = previousPeriods.length ? previousPeriods.length === 1 ? periodLabel(previousPeriods[0]) : `${periodLabel(previousPeriods[0])} a ${periodLabel(previousPeriods.at(-1)!)}` : "—";
+    const availableMonths = currentPeriods.filter(key => periods.includes(key)).length;
+    const coverage = `${availableMonths} de ${currentPeriods.length} meses com relatório`;
+    const previousAvailable = previousPeriods.some(key => periods.includes(key));
 
     const scopeValues = data.values.filter((item) => {
       if (selectedSubcategory != null) return item.subcategory_code === selectedSubcategory;
@@ -347,9 +352,10 @@ function DukampExpensesPage() {
       return subcategoryByCode.get(item.subcategory_code)?.category_code === selectedCategory;
     });
 
-    const monthlyTrend = periods.map((key) => ({
+    const trendPeriods = analysis.mode === "month" ? periods : currentPeriods.filter(key => periods.includes(key));
+    const monthlyTrend = trendPeriods.map((key) => ({
       key,
-      period: periodLabel(key).replace(" 2026", ""),
+      period: periodLabel(key),
       total: scopeValues
         .filter((item) => periodKey(item.year, item.month) === key)
         .reduce((sum, item) => sum + item.amount, 0),
@@ -357,11 +363,11 @@ function DukampExpensesPage() {
     const monthsWithValues = monthlyTrend.filter((item) => item.total !== 0).length;
     const hasTrendData = monthsWithValues > 0;
 
-    const currentValues = scopeValues.filter((item) => periodKey(item.year, item.month) === activePeriod);
-    const previousValues = scopeValues.filter((item) => periodKey(item.year, item.month) === previous);
+    const currentValues = scopeValues.filter((item) => currentPeriods.includes(periodKey(item.year, item.month)));
+    const previousValues = scopeValues.filter((item) => previousPeriods.includes(periodKey(item.year, item.month)));
     const currentTotal = currentValues.reduce((sum, item) => sum + item.amount, 0);
     const previousTotal = previousValues.reduce((sum, item) => sum + item.amount, 0);
-    const change = previousTotal !== 0 ? ((currentTotal - previousTotal) / Math.abs(previousTotal)) * 100 : null;
+    const change = previousAvailable && previousTotal !== 0 ? ((currentTotal - previousTotal) / Math.abs(previousTotal)) * 100 : null;
     const average = monthsWithValues
       ? monthlyTrend.reduce((sum, item) => sum + item.total, 0) / monthsWithValues
       : 0;
@@ -413,7 +419,12 @@ function DukampExpensesPage() {
         name: item.name.length > 22 ? `${item.name.slice(0, 22)}…` : item.name,
       }));
 
-    const detailRows = currentValues
+    const detailTotals = new Map<number, ExpenseValue>();
+    for (const item of currentValues) {
+      const existing = detailTotals.get(item.subcategory_code);
+      detailTotals.set(item.subcategory_code, { ...item, amount: (existing?.amount ?? 0) + item.amount });
+    }
+    const detailRows = [...detailTotals.values()]
       .map((item) => {
         const sub = subcategoryByCode.get(item.subcategory_code);
         const category = sub ? categoryByCode.get(sub.category_code) : undefined;
@@ -437,7 +448,7 @@ function DukampExpensesPage() {
     return {
       periods,
       activePeriod,
-      previous,
+      range, rangeLabel, previousLabel, comparisonLabel, coverage, availableMonths, previousAvailable,
       monthlyTrend,
       monthsWithValues,
       hasTrendData,
@@ -452,7 +463,7 @@ function DukampExpensesPage() {
       selectedCategoryName,
       selectedSubcategoryName,
     };
-  }, [data, selectedCategory, selectedSubcategory, selectedPeriod]);
+  }, [data, selectedCategory, selectedSubcategory, selectedPeriod, analysis]);
 
   if (authLoading) {
     return <div className="grid min-h-screen place-items-center text-muted-foreground">Carregando...</div>;
@@ -554,34 +565,47 @@ function DukampExpensesPage() {
               </p>
             </div>
 
-            <label className="flex min-w-52 flex-col gap-1.5 text-xs font-medium text-muted-foreground">
-              Período analisado
-              <select
-                value={computed.activePeriod}
-                onChange={(event) => setSelectedPeriod(Number(event.target.value))}
-                className="h-10 rounded-lg border bg-background px-3 text-sm font-medium text-foreground outline-none ring-offset-background focus:ring-2 focus:ring-ring"
-              >
-                {[...computed.periods].reverse().map((key) => (
-                  <option key={key} value={key}>
-                    {periodLabel(key)}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <div className="flex flex-wrap items-end gap-3">
+              <label className="flex flex-col gap-1.5 text-xs font-medium text-muted-foreground">
+                Analisar por
+                <select aria-label="Tipo de período" value={analysis.mode} onChange={event => setAnalysis({ mode: event.target.value as typeof analysis.mode, year: analysis.year || Math.floor(computed.activePeriod / 100), from: analysis.from || computed.range?.from || "", to: analysis.to || computed.range?.to || "" })} className="h-10 rounded-lg border bg-background px-3 text-sm text-foreground">
+                  <option value="month">Mês</option><option value="year">Ano</option><option value="custom">Data específica</option>
+                </select>
+              </label>
+              {analysis.mode === "month" && <label className="flex min-w-52 flex-col gap-1.5 text-xs font-medium text-muted-foreground">
+                Período analisado
+                <select value={computed.activePeriod} onChange={event => setSelectedPeriod(Number(event.target.value))} className="h-10 rounded-lg border bg-background px-3 text-sm text-foreground">
+                  {[...computed.periods].reverse().map(key => <option key={key} value={key}>{periodLabel(key)}</option>)}
+                </select>
+              </label>}
+              {analysis.mode === "year" && <label className="flex flex-col gap-1.5 text-xs font-medium text-muted-foreground">
+                Ano
+                <select aria-label="Ano analisado" value={analysis.year || Math.floor(computed.activePeriod / 100)} onChange={event => setAnalysis({ year: Number(event.target.value) })} className="h-10 rounded-lg border bg-background px-3 text-sm text-foreground">
+                  {[...new Set(computed.periods.map(key => Math.floor(key / 100)))].reverse().map(year => <option key={year} value={year}>{year}</option>)}
+                </select>
+              </label>}
+              {analysis.mode === "custom" && <>
+                <label className="flex flex-col gap-1.5 text-xs font-medium text-muted-foreground">De<input aria-label="Data inicial" type="date" value={analysis.from} onChange={event => setAnalysis({ from: event.target.value })} className="h-10 rounded-lg border bg-background px-3 text-sm text-foreground" /></label>
+                <label className="flex flex-col gap-1.5 text-xs font-medium text-muted-foreground">Até<input aria-label="Data final" type="date" value={analysis.to} min={analysis.from || undefined} onChange={event => setAnalysis({ to: event.target.value })} className="h-10 rounded-lg border bg-background px-3 text-sm text-foreground" /></label>
+              </>}
+            </div>
           </div>
 
-          {selectedCategory == null && selectedSubcategory == null && (
+          {!computed.range && <p role="alert" className="mb-4 text-sm text-red-600">Informe duas datas válidas, com a data final igual ou posterior à inicial.</p>}
+          {analysis.mode !== "month" && computed.range && <p className="mb-4 text-xs text-muted-foreground">{computed.coverage}. {analysis.mode === "custom" && "A base contém totais mensais: são somados os meses abrangidos pelas datas, sem rateio diário."}</p>}
+          {selectedCategory == null && selectedSubcategory == null && computed.range && (
             <BankOverviewMetrics
-              year={Math.floor(computed.activePeriod / 100)}
-              month={computed.activePeriod % 100}
+              periods={computed.range.periods}
+              previousPeriods={computed.range.previousPeriods}
+              comparisonLabel={computed.comparisonLabel}
             />
           )}
 
           <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <MetricCard
               icon={<CircleDollarSign className="h-4 w-4" />}
-              label={`Total · ${periodLabel(computed.activePeriod)}`}
-              value={money.format(computed.currentTotal)}
+              label={`Total · ${computed.rangeLabel}`}
+              value={computed.range ? money.format(computed.currentTotal) : "—"}
               helper="Soma do filtro selecionado"
             />
             <MetricCard
@@ -592,9 +616,9 @@ function DukampExpensesPage() {
                   <ArrowUpRight className="h-4 w-4" />
                 )
               }
-              label="Vs. mês anterior"
+              label={`Vs. ${computed.comparisonLabel}`}
               value={computed.change == null ? "Sem base" : `${computed.change >= 0 ? "+" : ""}${computed.change.toFixed(1)}%`}
-              helper={money.format(computed.previousTotal)}
+              helper={computed.previousAvailable ? money.format(computed.previousTotal) : "Sem relatório no período anterior"}
               tone={computed.change != null && computed.change > 0 ? "warning" : "positive"}
             />
             <MetricCard
@@ -612,7 +636,7 @@ function DukampExpensesPage() {
           </section>
 
           <section className="mt-4 grid gap-4 2xl:grid-cols-[1.35fr_1fr]">
-            <Panel title="Evolução mensal" subtitle="Como o total do filtro se comportou ao longo de 2026">
+            <Panel title="Evolução mensal" subtitle={analysis.mode === "month" ? "Histórico dos relatórios mensais" : `Evolução em ${computed.rangeLabel}`}>
               <div className="h-[310px] w-full">
                 {computed.hasTrendData ? (
                   <ResponsiveContainer width="100%" height="100%">
@@ -636,7 +660,7 @@ function DukampExpensesPage() {
                 ) : (
                   <EmptyChartState
                     title="Sem lançamentos para exibir"
-                    description={`Não há valores registrados em 2026 para ${activeFilterName}.`}
+                    description={`Não há valores registrados para ${activeFilterName}.`}
                   />
                 )}
               </div>
@@ -644,7 +668,7 @@ function DukampExpensesPage() {
 
             <Panel
               title={selectedCategory == null ? "Distribuição por categoria" : "Distribuição por subcategoria"}
-              subtitle={periodLabel(computed.activePeriod)}
+              subtitle={computed.rangeLabel}
             >
               <div className="h-[310px] w-full">
                 {computed.breakdown.length > 0 && computed.currentTotal !== 0 ? (
@@ -678,7 +702,7 @@ function DukampExpensesPage() {
                   </ResponsiveContainer>
                 ) : (
                   <EmptyChartState
-                    title={`Sem lançamentos em ${periodLabel(computed.activePeriod)}`}
+                    title={`Sem lançamentos em ${computed.rangeLabel}`}
                     description={`Este filtro está zerado no período selecionado. A evolução mensal continua mostrando os meses em que houve valor.`}
                   />
                 )}
@@ -688,8 +712,8 @@ function DukampExpensesPage() {
 
           <section className="mt-4">
             <Panel
-              title="Comparação com o mês anterior"
-              subtitle={`${periodLabel(computed.previous)} × ${periodLabel(computed.activePeriod)} · maiores itens do período`}
+              title={`Comparação com o ${computed.comparisonLabel}`}
+              subtitle={`${computed.previousLabel} × ${computed.rangeLabel} · maiores itens do período`}
             >
               <div className="h-[360px] w-full">
                 {computed.comparison.length > 0 ? (
@@ -700,14 +724,14 @@ function DukampExpensesPage() {
                       <YAxis tickFormatter={(value) => compactMoney.format(Number(value))} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} width={72} />
                       <Tooltip formatter={(value: any) => money.format(Number(value))} />
                       <Legend />
-                      <Bar dataKey="anterior" name="Mês anterior" fill={PREVIOUS_COLOR} radius={[5, 5, 0, 0]} />
+                      <Bar dataKey="anterior" name={computed.comparisonLabel} fill={PREVIOUS_COLOR} radius={[5, 5, 0, 0]} />
                       <Bar dataKey="atual" name="Período atual" fill={CURRENT_COLOR} radius={[5, 5, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
                   <EmptyChartState
                     title="Sem valores para comparar"
-                    description={`Não há lançamentos em ${periodLabel(computed.previous)} nem em ${periodLabel(computed.activePeriod)} para este filtro.`}
+                    description={`Não há lançamentos em ${computed.previousLabel} nem em ${computed.rangeLabel} para este filtro.`}
                   />
                 )}
               </div>

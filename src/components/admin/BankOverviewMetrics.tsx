@@ -1,22 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { bankOverviewAmounts, type BankOverviewReport } from "@/lib/bank-overview";
+import { bankOverviewRangeAmounts, type BankOverviewReport } from "@/lib/bank-overview";
 
 const currency = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 const money = (cents: number) => currency.format(cents / 100);
 const card = "rounded-2xl border bg-card p-5 shadow-sm";
 
-function previous(year: number, month: number) {
-  return month === 1 ? { year: year - 1, month: 12 } : { year, month: month - 1 };
-}
-
-function difference(current: number | null, prior: number | null) {
-  if (current === null || prior === null) return "Sem base no mês anterior";
+function difference(current: number | null, prior: number | null, label: string) {
+  if (current === null || prior === null) return `Sem base no ${label}`;
   const delta = current - prior;
-  return `${delta > 0 ? "+" : ""}${money(delta)} vs. mês anterior`;
+  return `${delta > 0 ? "+" : ""}${money(delta)} vs. ${label}`;
 }
 
-export function BankOverviewMetrics({ year, month }: { year: number; month: number }) {
+export function BankOverviewMetrics({ periods, previousPeriods, comparisonLabel }: { periods: number[]; previousPeriods: number[]; comparisonLabel: string }) {
   const reports = useQuery({
     queryKey: ["admin", "dukamp-bank-overview", "statement-summary"],
     queryFn: async (): Promise<BankOverviewReport[]> => {
@@ -35,13 +31,8 @@ export function BankOverviewMetrics({ year, month }: { year: number; month: numb
   if (reports.isError)
     return <p role="alert" className={card}>Não foi possível consultar os registros bancários.</p>;
 
-  const current = reports.data.find((r) => r.year === year && r.month === month);
-  const previousPeriod = previous(year, month);
-  const prior = reports.data.find(
-    (r) => r.year === previousPeriod.year && r.month === previousPeriod.month,
-  );
-  const { credits, expenses, result } = bankOverviewAmounts(current);
-  const { credits: priorCredits, expenses: priorExpenses, result: priorResult } = bankOverviewAmounts(prior);
+  const { credits, expenses, result, availableMonths } = bankOverviewRangeAmounts(reports.data, periods);
+  const { credits: priorCredits, expenses: priorExpenses, result: priorResult } = bankOverviewRangeAmounts(reports.data, previousPeriods);
 
   return (
     <section aria-label="Resultado dos registros bancários" className="mb-5">
@@ -56,12 +47,12 @@ export function BankOverviewMetrics({ year, month }: { year: number; month: numb
         <div className={card}>
           <p className="text-sm text-muted-foreground">Lucro bruto · entradas bancárias</p>
           <p className="mt-3 text-2xl font-bold tabular-nums">{credits === null ? "Sem dados" : money(credits)}</p>
-          <p className="mt-2 text-xs text-muted-foreground">{difference(credits, priorCredits)}</p>
+          <p className="mt-2 text-xs text-muted-foreground">{difference(credits, priorCredits, comparisonLabel)}</p>
         </div>
         <div className={card}>
           <p className="text-sm text-muted-foreground">Despesas DuKamp · resumo bancário</p>
           <p className="mt-3 text-2xl font-bold tabular-nums">{expenses === null ? "Sem relatório" : money(expenses)}</p>
-          <p className="mt-2 text-xs text-muted-foreground">{difference(expenses, priorExpenses)}</p>
+          <p className="mt-2 text-xs text-muted-foreground">{difference(expenses, priorExpenses, comparisonLabel)}</p>
         </div>
         <div className={`${card} ${result === null ? "" : result < 0 ? "border-red-300" : "border-emerald-300"}`}>
           <p className="text-sm text-muted-foreground">Resultado · entradas − despesas</p>
@@ -69,14 +60,14 @@ export function BankOverviewMetrics({ year, month }: { year: number; month: numb
             {result === null ? "Sem dados suficientes" : money(result)}
           </p>
           <p className="mt-2 text-xs text-muted-foreground">
-            {result === null ? "Extrato de entradas indisponível para este mês" : result < 0 ? "Negativo" : "Positivo"}
-            {result !== null ? ` · ${difference(result, priorResult)}` : ""}
+            {result === null ? "Extrato de entradas indisponível para este período" : result < 0 ? "Negativo" : "Positivo"}
+            {result !== null ? ` · ${difference(result, priorResult, comparisonLabel)}` : ""}
           </p>
         </div>
       </div>
-      {(current?.payload.bank_totals || current?.payload.bank_credits_total !== undefined) && (
+      {availableMonths > 0 && (
         <p className="mt-2 text-xs text-muted-foreground">
-          Valores do registro bancário; os saques sem conciliação não foram somados novamente às despesas.
+          {periods.length > 1 && `${availableMonths} de ${periods.length} meses com dados bancários completos. `}Valores do registro bancário; os saques sem conciliação não foram somados novamente às despesas.
         </p>
       )}
     </section>
