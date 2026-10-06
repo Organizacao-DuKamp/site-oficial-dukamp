@@ -37,6 +37,7 @@ import { BankRecordsPanel } from "@/components/admin/BankRecordsPanel";
 import { BankOverviewMetrics } from "@/components/admin/BankOverviewMetrics";
 import { BANK_RECORDS_CODE } from "@/lib/bank-reports";
 import { loadAllExpenseValues } from "@/lib/expense-values";
+import { useExpensePeriod } from "@/hooks/use-expense-period";
 
 export const Route = createFileRoute("/admin/despesas-dukamp")({
   ssr: false,
@@ -318,7 +319,7 @@ function DukampExpensesPage() {
   const { isMasterAdmin, loading: authLoading } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<number | null>(null);
-  const [selectedPeriod, setSelectedPeriod] = useState<number | null>(null);
+  const [selectedPeriod, setSelectedPeriod] = useExpensePeriod("dukamp-expenses-period");
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const expenses = useQuery({
