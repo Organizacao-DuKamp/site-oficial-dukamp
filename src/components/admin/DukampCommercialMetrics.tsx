@@ -1,4 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { loadStatisticsExpenses, statisticsExpensesInRange } from "@/lib/statistics-expenses";
+import { netProfit } from "@/lib/net-profit";
 import { BarChart3 } from "lucide-react";
 import { loadStatistics, StatisticsMetricCard } from "@/components/admin/SellerStatisticsDialog";
 
@@ -12,6 +15,20 @@ export function DukampCommercialMetrics({ mode, from, to }: { mode: "month" | "y
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
   });
+  const expensesQuery = useQuery({
+    queryKey: ["admin", "dukamp-statistics-expenses"],
+    queryFn: () => loadStatisticsExpenses(supabase),
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+  });
+  const expenses = expensesQuery.data ? statisticsExpensesInRange(expensesQuery.data, from, to) : null;
+  const pending = query.isPending || expensesQuery.isPending;
+  const failed = query.isError || expensesQuery.isError;
+  const profit = pending || failed ? null : netProfit(query.data?.summary?.margem_bruta, expenses?.amount);
+  const expenseValue = expensesQuery.isPending ? "Carregando..." : expensesQuery.isError ? "Indisponível" : expenses?.amount == null ? "Não disponível" : money(expenses.amount);
+  const profitValue = pending ? "Carregando..." : failed ? "Indisponível" : profit === null ? "Não disponível" : money(profit);
+  const expenseHelper = expensesQuery.isPending ? "Consultando relatórios mensais" : expensesQuery.isError ? "Não foi possível consultar as despesas" : expenses?.amount == null ? "Relatório mensal ainda não disponível" : !expenses.complete ? `${expenses.availableMonths} de ${expenses.expectedMonths} meses disponíveis` : mode === "custom" ? "Total dos meses incluídos; sem rateio diário" : undefined;
   const summary = query.data?.summary;
   const comparison = query.data?.comparison;
   const helper = query.isPending ? "Consultando estatísticas" : query.isError ? "Não foi possível consultar as estatísticas" : undefined;
@@ -31,6 +48,13 @@ export function DukampCommercialMetrics({ mode, from, to }: { mode: "month" | "y
         <StatisticsMetricCard label="Vendas" value={value("total_venda")} trend={comparison?.total_venda} helper={helper} />
         <StatisticsMetricCard label="Custo total" value={value("total_custo")} trend={comparison?.total_custo} inverse helper={helper} />
         <StatisticsMetricCard label="Margem bruta" value={value("margem_bruta")} trend={comparison?.margem_bruta} helper={helper} />
+      </div>
+      <div className="mt-4 border-t border-primary/15 pt-4">
+        <p className="mb-3 text-xs leading-relaxed text-muted-foreground">Faturamento → custo total (mercadoria) → margem bruta recebida → despesas → lucro líquido</p>
+        <div className="grid gap-3 md:grid-cols-2">
+          <StatisticsMetricCard label="Despesas" value={expenseValue} helper={expenseHelper ?? "Mesmas despesas filtradas das Estatísticas DuKamp"} />
+          <StatisticsMetricCard label="Lucro líquido" value={profitValue} valueTone={profit === null ? undefined : profit < 0 ? "negative" : "positive"} helper={expenseHelper ?? "Margem bruta − despesas"} />
+        </div>
       </div>
       {query.data?.dataQuality?.partialWithoutBaseline && <p className="mt-3 text-xs text-muted-foreground">O relatório de vendas não permite separar exatamente todos os dias desse intervalo.</p>}
     </section>

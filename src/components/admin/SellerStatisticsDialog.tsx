@@ -42,6 +42,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import type { Seller } from "@/lib/sellers";
 import { useAuth } from "@/lib/auth";
+import { netProfit } from "@/lib/net-profit";
 import { loadStatisticsExpenses, statisticsExpensesInRange } from "@/lib/statistics-expenses";
 
 type PeriodMode = "month" | "day" | "year" | "custom";
@@ -206,18 +207,20 @@ export function StatisticsMetricCard({
   trend,
   inverse,
   helper,
+  valueTone,
 }: {
   label: string;
   value: string;
   trend?: number | null;
   inverse?: boolean;
   helper?: string;
+  valueTone?: "positive" | "negative";
 }) {
   return (
     <div className="group relative overflow-hidden rounded-2xl border border-border/70 bg-card p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-md">
       <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-transparent via-primary/45 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
       <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">{label}</p>
-      <p className="mt-2 text-2xl font-bold tracking-tight text-foreground">{value}</p>
+      <p className={`mt-2 text-2xl font-bold tracking-tight ${valueTone === "negative" ? "text-red-600 dark:text-red-400" : valueTone === "positive" ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"}`}>{value}</p>
       <div className="mt-3 min-h-6">
         {helper ? <span className="text-xs text-muted-foreground">{helper}</span> : <Trend value={trend} inverse={inverse} />}
       </div>
@@ -360,6 +363,9 @@ export function SellerStatisticsDialog({ seller, embedded = false }: { seller?: 
   }, [query.data?.clients, clientSearch]);
 
   const summary = query.data?.summary ?? {};
+  const profit = isMasterAdmin && !expensesQuery.isPending && !expensesQuery.isError
+    ? netProfit(query.data?.summary?.margem_bruta, expenseTotals?.amount)
+    : null;
   const comparison = query.data?.comparison ?? {};
   const isDukamp = !seller;
   const currentYear = Number(period.to.slice(0, 4));
@@ -487,6 +493,12 @@ export function SellerStatisticsDialog({ seller, embedded = false }: { seller?: 
                     trend={expenseTrend}
                     inverse
                     helper={expenseHelper}
+                  />}
+                  {isDukamp && <StatisticsMetricCard
+                    label="Lucro líquido"
+                    value={!isMasterAdmin ? "Restrito" : expensesQuery.isPending ? "Carregando..." : expensesQuery.isError ? "Indisponível" : profit === null ? "Não disponível" : money(profit)}
+                    valueTone={profit === null ? undefined : profit < 0 ? "negative" : "positive"}
+                    helper={expenseHelper ?? "Margem bruta − despesas"}
                   />}
                   <StatisticsMetricCard label="Margem" value={`${number(summary.margem_percentual)}%`} trend={comparison.margem_percentual} />
                   <StatisticsMetricCard label="Tonelagem" value={`${number(summary.tonelagem, 3)} t`} trend={comparison.tonelagem} />
