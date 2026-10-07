@@ -35,6 +35,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { BankRecordsPanel } from "@/components/admin/BankRecordsPanel";
 import { BankOverviewMetrics } from "@/components/admin/BankOverviewMetrics";
+import { DukampCommercialMetrics } from "@/components/admin/DukampCommercialMetrics";
 import { BANK_RECORDS_CODE } from "@/lib/bank-reports";
 import { loadAllExpenseValues } from "@/lib/expense-values";
 import { useExpensePeriod } from "@/hooks/use-expense-period";
@@ -598,12 +599,9 @@ function DukampExpensesPage() {
           {!computed.range && <p role="alert" className="mb-4 text-sm text-red-600">Informe duas datas válidas, com a data final igual ou posterior à inicial.</p>}
           {analysis.mode !== "month" && computed.range && <p className="mb-4 text-xs text-muted-foreground">{computed.coverage}. {analysis.mode === "custom" && "A base contém totais mensais: são somados os meses abrangidos pelas datas, sem rateio diário."}</p>}
           {selectedCategory == null && selectedSubcategory == null && computed.range && (
-            <BankOverviewMetrics
-              periods={computed.range.periods}
-              previousPeriods={computed.range.previousPeriods}
-              comparisonLabel={computed.comparisonLabel}
-            />
+            <DukampCommercialMetrics mode={analysis.mode} from={computed.range.from} to={computed.range.to} />
           )}
+          {selectedCategory == null && selectedSubcategory == null && <h2 className="mb-3 mt-6 text-lg font-semibold">Despesas do período</h2>}
 
           <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <MetricCard
@@ -638,6 +636,17 @@ function DukampExpensesPage() {
               helper={computed.top?.name ?? "Sem lançamentos no período"}
             />
           </section>
+
+          <div className="mt-6">
+          {selectedCategory == null && selectedSubcategory == null && computed.range && (
+            <BankOverviewMetrics
+              periods={computed.range.periods}
+              previousPeriods={computed.range.previousPeriods}
+              comparisonLabel={computed.comparisonLabel}
+            />
+          )}
+
+          </div>
 
           <section className="mt-4 grid gap-4 2xl:grid-cols-[1.35fr_1fr]">
             <Panel title="Evolução mensal" subtitle={analysis.mode === "month" ? "Histórico dos relatórios mensais" : `Evolução em ${computed.rangeLabel}`}>

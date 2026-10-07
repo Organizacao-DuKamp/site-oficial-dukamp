@@ -164,7 +164,7 @@ function resolvePeriod(
   return { from: values.customFrom, to: values.customTo };
 }
 
-async function loadStatistics(sellerId: string | null, mode: PeriodMode, from: string, to: string) {
+export async function loadStatistics(sellerId: string | null, mode: PeriodMode, from: string, to: string) {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
   if (!token) throw new Error("Sessão expirada. Entre novamente.");
@@ -200,7 +200,7 @@ function Trend({ value, inverse = false }: { value: number | null | undefined; i
   );
 }
 
-function MetricCard({
+export function StatisticsMetricCard({
   label,
   value,
   trend,
@@ -478,25 +478,25 @@ export function SellerStatisticsDialog({ seller, embedded = false }: { seller?: 
 
               <TabsContent value="overview" className="space-y-6">
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                  <MetricCard label="Vendas" value={money(summary.total_venda)} trend={comparison.total_venda} />
-                  <MetricCard label="Custo total" value={money(summary.total_custo)} trend={comparison.total_custo} inverse />
-                  <MetricCard label="Margem bruta" value={money(summary.margem_bruta)} trend={comparison.margem_bruta} />
-                  {isDukamp && <MetricCard
+                  <StatisticsMetricCard label="Vendas" value={money(summary.total_venda)} trend={comparison.total_venda} />
+                  <StatisticsMetricCard label="Custo total" value={money(summary.total_custo)} trend={comparison.total_custo} inverse />
+                  <StatisticsMetricCard label="Margem bruta" value={money(summary.margem_bruta)} trend={comparison.margem_bruta} />
+                  {isDukamp && <StatisticsMetricCard
                     label="Despesas"
                     value={!isMasterAdmin ? "Restrito" : expensesQuery.isPending ? "Carregando..." : expensesQuery.isError ? "Indisponível" : expenseTotals?.amount == null ? "Não disponível" : money(expenseTotals.amount)}
                     trend={expenseTrend}
                     inverse
                     helper={expenseHelper}
                   />}
-                  <MetricCard label="Margem" value={`${number(summary.margem_percentual)}%`} trend={comparison.margem_percentual} />
-                  <MetricCard label="Tonelagem" value={`${number(summary.tonelagem, 3)} t`} trend={comparison.tonelagem} />
-                  <MetricCard label="Devoluções" value={money(summary.devolucao)} trend={comparison.devolucao} inverse />
-                  <MetricCard label="Sacarias" value={money(summary.sacarias)} trend={comparison.sacarias} />
-                  <MetricCard label="Balcão" value={money(summary.balcao)} trend={comparison.balcao} />
-                  <MetricCard label="Aditivos" value={money(summary.aditivos)} trend={comparison.aditivos} />
-                  <MetricCard label="Comissão representante" value={money(summary.comissao_representante)} trend={comparison.comissao_representante} />
-                  <MetricCard label="Orçamentos" value={number(summary.quotes, 0)} trend={comparison.quotes} />
-                  <MetricCard label="Registros de venda" value={number(summary.sale_requests, 0)} trend={comparison.sale_requests} />
+                  <StatisticsMetricCard label="Margem" value={`${number(summary.margem_percentual)}%`} trend={comparison.margem_percentual} />
+                  <StatisticsMetricCard label="Tonelagem" value={`${number(summary.tonelagem, 3)} t`} trend={comparison.tonelagem} />
+                  <StatisticsMetricCard label="Devoluções" value={money(summary.devolucao)} trend={comparison.devolucao} inverse />
+                  <StatisticsMetricCard label="Sacarias" value={money(summary.sacarias)} trend={comparison.sacarias} />
+                  <StatisticsMetricCard label="Balcão" value={money(summary.balcao)} trend={comparison.balcao} />
+                  <StatisticsMetricCard label="Aditivos" value={money(summary.aditivos)} trend={comparison.aditivos} />
+                  <StatisticsMetricCard label="Comissão representante" value={money(summary.comissao_representante)} trend={comparison.comissao_representante} />
+                  <StatisticsMetricCard label="Orçamentos" value={number(summary.quotes, 0)} trend={comparison.quotes} />
+                  <StatisticsMetricCard label="Registros de venda" value={number(summary.sale_requests, 0)} trend={comparison.sale_requests} />
                 </div>
 
                 {isDukamp && isMasterAdmin && <p className="text-xs text-muted-foreground">
@@ -791,10 +791,10 @@ export function SellerStatisticsDialog({ seller, embedded = false }: { seller?: 
 
               <TabsContent value="actions" className="space-y-5">
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  <MetricCard label="Orçamentos" value={number(summary.quotes, 0)} trend={comparison.quotes} />
-                  <MetricCard label="Valor orçado" value={money(summary.quote_value)} trend={comparison.quote_value} />
-                  <MetricCard label="Registros de venda" value={number(summary.sale_requests, 0)} trend={comparison.sale_requests} />
-                  <MetricCard label="Valor registrado" value={money(summary.sale_value)} trend={comparison.sale_value} />
+                  <StatisticsMetricCard label="Orçamentos" value={number(summary.quotes, 0)} trend={comparison.quotes} />
+                  <StatisticsMetricCard label="Valor orçado" value={money(summary.quote_value)} trend={comparison.quote_value} />
+                  <StatisticsMetricCard label="Registros de venda" value={number(summary.sale_requests, 0)} trend={comparison.sale_requests} />
+                  <StatisticsMetricCard label="Valor registrado" value={money(summary.sale_value)} trend={comparison.sale_value} />
                 </div>
 
                 <div className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
