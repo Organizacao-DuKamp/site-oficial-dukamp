@@ -62,6 +62,10 @@ export function DukampAnnualFinancialChart({ year }: { year: number }) {
     month: new Intl.DateTimeFormat("pt-BR", { month: "short" }).format(new Date(year, i, 1)),
     atual: mode === "expenses" ? expense(year, i + 1) : profit(i + 1),
     anterior: mode === "expenses" ? expense(i ? year : year - 1, i || 12) : profit(i),
+  })).map((row) => ({
+    ...row,
+    atualMagnitude: row.atual === null ? null : Math.abs(row.atual),
+    anteriorMagnitude: row.anterior === null ? null : Math.abs(row.anterior),
   }));
   const pending =
     expenses.isPending || (mode === "profit" && (statistics.isPending || december.isPending));
@@ -114,33 +118,34 @@ export function DukampAnnualFinancialChart({ year }: { year: number }) {
               <XAxis dataKey="month" />
               <YAxis
                 width={75}
-                domain={[
-                  (minimum: number) => Math.min(0, minimum),
-                  (maximum: number) => Math.max(0, maximum),
-                ]}
+                domain={[0, "auto"]}
                 tickFormatter={(v) => Number(v).toLocaleString("pt-BR", { notation: "compact" })}
               />
               <ReferenceLine y={0} stroke="#64748B" />
               <Tooltip
-                formatter={(value, name) => [
-                  <span
-                    style={{
-                      color:
-                        name === "Mês anterior"
-                          ? "#64748B"
-                          : Number(value) < 0
-                            ? "#DC2626"
-                            : "#159447",
-                    }}
-                  >
-                    {money(value)}
-                  </span>,
-                  name,
-                ]}
+                formatter={(_value, name, item) => {
+                  const original =
+                    item.dataKey === "atualMagnitude" ? item.payload.atual : item.payload.anterior;
+                  return [
+                    <span
+                      style={{
+                        color:
+                          name === "Mês anterior"
+                            ? "#64748B"
+                            : original < 0
+                              ? "#DC2626"
+                              : "#159447",
+                      }}
+                    >
+                      {money(original)}
+                    </span>,
+                    name,
+                  ];
+                }}
               />
               <Legend />
               <Bar
-                dataKey="atual"
+                dataKey="atualMagnitude"
                 name={mode === "expenses" ? "Despesas do mês" : "Lucro líquido do mês"}
                 fill="#159447"
                 radius={[5, 5, 0, 0]}
@@ -152,14 +157,20 @@ export function DukampAnnualFinancialChart({ year }: { year: number }) {
                   />
                 ))}
               </Bar>
-              <Bar dataKey="anterior" name="Mês anterior" fill="#94A3B8" radius={[5, 5, 0, 0]} />
+              <Bar
+                dataKey="anteriorMagnitude"
+                name="Mês anterior"
+                fill="#94A3B8"
+                radius={[5, 5, 0, 0]}
+              />
             </BarChart>
           </ResponsiveContainer>
         )}
       </div>
       <p className="mt-2 text-xs text-muted-foreground">
         Meses sem relatório ficam sem valor; lucro líquido exige margem bruta e despesas
-        disponíveis. Valores negativos em vermelho; zero ou positivos em verde.
+        disponíveis. As barras crescem para cima pela magnitude do valor. O sinal original aparece
+        ao passar o cursor: negativos em vermelho; zero ou positivos em verde.
       </p>
     </section>
   );
