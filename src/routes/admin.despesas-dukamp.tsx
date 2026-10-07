@@ -410,6 +410,10 @@ function DukampExpensesPage() {
       }))
       .sort((a, b) => Math.abs(b.total) - Math.abs(a.total));
 
+    const distribution = breakdown
+      .filter(item => (selectedCategory == null ? item.code : subcategoryByCode.get(item.code)?.category_code) !== 9010)
+      .slice(0, 8);
+
     const comparisonCodes = Array.from(
       new Set([...groupCurrent.keys(), ...groupPrevious.keys()]),
     );
@@ -465,6 +469,7 @@ function DukampExpensesPage() {
       change,
       average,
       breakdown,
+      distribution,
       comparison,
       detailRows,
       top,
@@ -686,21 +691,21 @@ function DukampExpensesPage() {
 
             <Panel
               title={selectedCategory == null ? "Distribuição por categoria" : "Distribuição por subcategoria"}
-              subtitle={computed.rangeLabel}
+              subtitle={`${computed.rangeLabel} · sem fornecedores`}
             >
               <div className="h-[310px] w-full">
-                {computed.breakdown.length > 0 && computed.currentTotal !== 0 ? (
+                {computed.distribution.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={computed.breakdown.slice(0, 8)}
+                        data={computed.distribution}
                         dataKey="total"
                         nameKey="name"
                         innerRadius="54%"
                         outerRadius="82%"
                         paddingAngle={2}
                       >
-                        {computed.breakdown.slice(0, 8).map((entry, index) => (
+                        {computed.distribution.map((entry, index) => (
                           <Cell
                             key={entry.code}
                             fill={CHART_COLORS[index % CHART_COLORS.length]}
@@ -720,8 +725,8 @@ function DukampExpensesPage() {
                   </ResponsiveContainer>
                 ) : (
                   <EmptyChartState
-                    title={`Sem lançamentos em ${computed.rangeLabel}`}
-                    description={`Este filtro está zerado no período selecionado. A evolução mensal continua mostrando os meses em que houve valor.`}
+                    title="Sem categorias para exibir"
+                    description="Não há valores para exibir neste filtro após retirar o grupo Fornecedores."
                   />
                 )}
               </div>
