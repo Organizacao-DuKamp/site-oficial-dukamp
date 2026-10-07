@@ -61,6 +61,7 @@ import { Route as VendedorClientesRouteImport } from './routes/vendedor.clientes
 import { Route as VendedorMinhaContaRouteImport } from './routes/vendedor.minha-conta'
 import { Route as AdminContasIndexRouteImport } from './routes/admin.contas.index'
 import { Route as AdminContasIdRouteImport } from './routes/admin.contas.$id'
+import { Route as AdminDukampAtualizarValoresRouteImport } from './routes/admin.dukamp.atualizar-valores'
 import { Route as AdminDukampEstatisticasRouteImport } from './routes/admin.dukamp.estatisticas'
 import { Route as AdminVendasAtualizarValoresRouteImport } from './routes/admin.vendas.atualizar-valores'
 import { Route as AdminVendasClientesRouteImport } from './routes/admin.vendas.clientes'
@@ -74,6 +75,7 @@ import { Route as ApiAccountSellerLinkRouteImport } from './routes/api/account/s
 import { Route as ApiAdminAccountTypeRouteImport } from './routes/api/admin/account-type'
 import { Route as ApiAdminAuditRouteImport } from './routes/api/admin/audit'
 import { Route as ApiAdminErpMarginVendaRouteImport } from './routes/api/admin/erp-margin-venda'
+import { Route as ApiAdminFinancialReportsRouteImport } from './routes/api/admin/financial-reports'
 import { Route as ApiAdminPasswordRecoveryRouteImport } from './routes/api/admin/password-recovery'
 import { Route as ApiAdminSellerMarginReportRouteImport } from './routes/api/admin/seller-margin-report'
 import { Route as ApiAdminSellerMarginReportsRouteImport } from './routes/api/admin/seller-margin-reports'
@@ -354,6 +356,12 @@ const AdminContasIdRoute = AdminContasIdRouteImport.update({
   path: '/contas/$id',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminDukampAtualizarValoresRoute =
+  AdminDukampAtualizarValoresRouteImport.update({
+    id: '/dukamp/atualizar-valores',
+    path: '/dukamp/atualizar-valores',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const AdminDukampEstatisticasRoute = AdminDukampEstatisticasRouteImport.update({
   id: '/dukamp/estatisticas',
   path: '/dukamp/estatisticas',
@@ -420,6 +428,12 @@ const ApiAdminErpMarginVendaRoute = ApiAdminErpMarginVendaRouteImport.update({
   path: '/api/admin/erp-margin-venda',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminFinancialReportsRoute =
+  ApiAdminFinancialReportsRouteImport.update({
+    id: '/api/admin/financial-reports',
+    path: '/api/admin/financial-reports',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminPasswordRecoveryRoute =
   ApiAdminPasswordRecoveryRouteImport.update({
     id: '/api/admin/password-recovery',
@@ -565,6 +579,7 @@ export interface FileRoutesByFullPath {
   '/produtos/': typeof ProdutosIndexRoute
   '/vendedor/': typeof VendedorIndexRoute
   '/admin/contas/$id': typeof AdminContasIdRoute
+  '/admin/dukamp/atualizar-valores': typeof AdminDukampAtualizarValoresRoute
   '/admin/dukamp/estatisticas': typeof AdminDukampEstatisticasRoute
   '/admin/vendas/atualizar-valores': typeof AdminVendasAtualizarValoresRoute
   '/admin/vendas/clientes': typeof AdminVendasClientesRoute
@@ -578,6 +593,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/account-type': typeof ApiAdminAccountTypeRoute
   '/api/admin/audit': typeof ApiAdminAuditRoute
   '/api/admin/erp-margin-venda': typeof ApiAdminErpMarginVendaRoute
+  '/api/admin/financial-reports': typeof ApiAdminFinancialReportsRoute
   '/api/admin/password-recovery': typeof ApiAdminPasswordRecoveryRoute
   '/api/admin/seller-margin-report': typeof ApiAdminSellerMarginReportRoute
   '/api/admin/seller-margin-reports': typeof ApiAdminSellerMarginReportsRoute
@@ -645,6 +661,7 @@ export interface FileRoutesByTo {
   '/produtos': typeof ProdutosIndexRoute
   '/vendedor': typeof VendedorIndexRoute
   '/admin/contas/$id': typeof AdminContasIdRoute
+  '/admin/dukamp/atualizar-valores': typeof AdminDukampAtualizarValoresRoute
   '/admin/dukamp/estatisticas': typeof AdminDukampEstatisticasRoute
   '/admin/vendas/atualizar-valores': typeof AdminVendasAtualizarValoresRoute
   '/admin/vendas/clientes': typeof AdminVendasClientesRoute
@@ -658,6 +675,7 @@ export interface FileRoutesByTo {
   '/api/admin/account-type': typeof ApiAdminAccountTypeRoute
   '/api/admin/audit': typeof ApiAdminAuditRoute
   '/api/admin/erp-margin-venda': typeof ApiAdminErpMarginVendaRoute
+  '/api/admin/financial-reports': typeof ApiAdminFinancialReportsRoute
   '/api/admin/password-recovery': typeof ApiAdminPasswordRecoveryRoute
   '/api/admin/seller-margin-report': typeof ApiAdminSellerMarginReportRoute
   '/api/admin/seller-margin-reports': typeof ApiAdminSellerMarginReportsRoute
@@ -730,6 +748,7 @@ export interface FileRoutesById {
   '/produtos/': typeof ProdutosIndexRoute
   '/vendedor/': typeof VendedorIndexRoute
   '/admin/contas/$id': typeof AdminContasIdRoute
+  '/admin/dukamp/atualizar-valores': typeof AdminDukampAtualizarValoresRoute
   '/admin/dukamp/estatisticas': typeof AdminDukampEstatisticasRoute
   '/admin/vendas/atualizar-valores': typeof AdminVendasAtualizarValoresRoute
   '/admin/vendas/clientes': typeof AdminVendasClientesRoute
@@ -743,6 +762,7 @@ export interface FileRoutesById {
   '/api/admin/account-type': typeof ApiAdminAccountTypeRoute
   '/api/admin/audit': typeof ApiAdminAuditRoute
   '/api/admin/erp-margin-venda': typeof ApiAdminErpMarginVendaRoute
+  '/api/admin/financial-reports': typeof ApiAdminFinancialReportsRoute
   '/api/admin/password-recovery': typeof ApiAdminPasswordRecoveryRoute
   '/api/admin/seller-margin-report': typeof ApiAdminSellerMarginReportRoute
   '/api/admin/seller-margin-reports': typeof ApiAdminSellerMarginReportsRoute
@@ -816,6 +836,7 @@ export interface FileRouteTypes {
     | '/produtos/'
     | '/vendedor/'
     | '/admin/contas/$id'
+    | '/admin/dukamp/atualizar-valores'
     | '/admin/dukamp/estatisticas'
     | '/admin/vendas/atualizar-valores'
     | '/admin/vendas/clientes'
@@ -829,6 +850,7 @@ export interface FileRouteTypes {
     | '/api/admin/account-type'
     | '/api/admin/audit'
     | '/api/admin/erp-margin-venda'
+    | '/api/admin/financial-reports'
     | '/api/admin/password-recovery'
     | '/api/admin/seller-margin-report'
     | '/api/admin/seller-margin-reports'
@@ -896,6 +918,7 @@ export interface FileRouteTypes {
     | '/produtos'
     | '/vendedor'
     | '/admin/contas/$id'
+    | '/admin/dukamp/atualizar-valores'
     | '/admin/dukamp/estatisticas'
     | '/admin/vendas/atualizar-valores'
     | '/admin/vendas/clientes'
@@ -909,6 +932,7 @@ export interface FileRouteTypes {
     | '/api/admin/account-type'
     | '/api/admin/audit'
     | '/api/admin/erp-margin-venda'
+    | '/api/admin/financial-reports'
     | '/api/admin/password-recovery'
     | '/api/admin/seller-margin-report'
     | '/api/admin/seller-margin-reports'
@@ -980,6 +1004,7 @@ export interface FileRouteTypes {
     | '/produtos/'
     | '/vendedor/'
     | '/admin/contas/$id'
+    | '/admin/dukamp/atualizar-valores'
     | '/admin/dukamp/estatisticas'
     | '/admin/vendas/atualizar-valores'
     | '/admin/vendas/clientes'
@@ -993,6 +1018,7 @@ export interface FileRouteTypes {
     | '/api/admin/account-type'
     | '/api/admin/audit'
     | '/api/admin/erp-margin-venda'
+    | '/api/admin/financial-reports'
     | '/api/admin/password-recovery'
     | '/api/admin/seller-margin-report'
     | '/api/admin/seller-margin-reports'
@@ -1044,6 +1070,7 @@ export interface RootRouteChildren {
   ApiAdminAccountTypeRoute: typeof ApiAdminAccountTypeRoute
   ApiAdminAuditRoute: typeof ApiAdminAuditRoute
   ApiAdminErpMarginVendaRoute: typeof ApiAdminErpMarginVendaRoute
+  ApiAdminFinancialReportsRoute: typeof ApiAdminFinancialReportsRoute
   ApiAdminPasswordRecoveryRoute: typeof ApiAdminPasswordRecoveryRoute
   ApiAdminSellerMarginReportRoute: typeof ApiAdminSellerMarginReportRoute
   ApiAdminSellerMarginReportsRoute: typeof ApiAdminSellerMarginReportsRoute
@@ -1426,6 +1453,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminContasIdRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/dukamp/atualizar-valores': {
+      id: '/admin/dukamp/atualizar-valores'
+      path: '/dukamp/atualizar-valores'
+      fullPath: '/admin/dukamp/atualizar-valores'
+      preLoaderRoute: typeof AdminDukampAtualizarValoresRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/dukamp/estatisticas': {
       id: '/admin/dukamp/estatisticas'
       path: '/dukamp/estatisticas'
@@ -1515,6 +1549,13 @@ declare module '@tanstack/react-router' {
       path: '/api/admin/erp-margin-venda'
       fullPath: '/api/admin/erp-margin-venda'
       preLoaderRoute: typeof ApiAdminErpMarginVendaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/financial-reports': {
+      id: '/api/admin/financial-reports'
+      path: '/api/admin/financial-reports'
+      fullPath: '/api/admin/financial-reports'
+      preLoaderRoute: typeof ApiAdminFinancialReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admin/password-recovery': {
@@ -1659,6 +1700,7 @@ interface AdminRouteChildren {
   AdminSolicitacoesRoute: typeof AdminSolicitacoesRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminContasIdRoute: typeof AdminContasIdRoute
+  AdminDukampAtualizarValoresRoute: typeof AdminDukampAtualizarValoresRoute
   AdminDukampEstatisticasRoute: typeof AdminDukampEstatisticasRoute
   AdminVendasAtualizarValoresRoute: typeof AdminVendasAtualizarValoresRoute
   AdminVendasClientesRoute: typeof AdminVendasClientesRoute
@@ -1688,6 +1730,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminSolicitacoesRoute: AdminSolicitacoesRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminContasIdRoute: AdminContasIdRoute,
+  AdminDukampAtualizarValoresRoute: AdminDukampAtualizarValoresRoute,
   AdminDukampEstatisticasRoute: AdminDukampEstatisticasRoute,
   AdminVendasAtualizarValoresRoute: AdminVendasAtualizarValoresRoute,
   AdminVendasClientesRoute: AdminVendasClientesRoute,
@@ -1784,6 +1827,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminAccountTypeRoute: ApiAdminAccountTypeRoute,
   ApiAdminAuditRoute: ApiAdminAuditRoute,
   ApiAdminErpMarginVendaRoute: ApiAdminErpMarginVendaRoute,
+  ApiAdminFinancialReportsRoute: ApiAdminFinancialReportsRoute,
   ApiAdminPasswordRecoveryRoute: ApiAdminPasswordRecoveryRoute,
   ApiAdminSellerMarginReportRoute: ApiAdminSellerMarginReportRoute,
   ApiAdminSellerMarginReportsRoute: ApiAdminSellerMarginReportsRoute,

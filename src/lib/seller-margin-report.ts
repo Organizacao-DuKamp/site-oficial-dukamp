@@ -70,7 +70,7 @@ async function inflatePdfStream(data: Uint8Array): Promise<Uint8Array> {
   return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 
-async function extractPdfText(file: Blob): Promise<string> {
+export async function extractPdfText(file: Blob): Promise<string> {
   const bytes = new Uint8Array(await file.arrayBuffer());
   const source = new TextDecoder("windows-1252").decode(bytes);
   const textStreams: string[] = [];

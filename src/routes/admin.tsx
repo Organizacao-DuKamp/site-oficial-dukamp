@@ -63,6 +63,7 @@ const NAV: NavEntry[] = [
     children: [
       { to: "/admin/despesas-dukamp", label: "Despesas", icon: WalletCards },
       { to: "/admin/dukamp/estatisticas", label: "Estatísticas", icon: BarChart3 },
+      { to: "/admin/dukamp/atualizar-valores", label: "Atualizar valores", icon: WalletCards },
     ],
   },
   { to: "/admin/equipe-vendas", label: "Equipe de Vendas", icon: UserSquare2 },

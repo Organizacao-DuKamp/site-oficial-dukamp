@@ -31,10 +31,13 @@ import {
 } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { PROTECTED_ADMIN_EMAIL } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { BankRecordsPanel } from "@/components/admin/BankRecordsPanel";
 import { BankOverviewMetrics } from "@/components/admin/BankOverviewMetrics";
+import { DukampAnnualFinancialChart } from "@/components/admin/DukampAnnualFinancialChart";
+import { statisticsExpensesInRange } from "@/lib/statistics-expenses";
 import { DukampCommercialMetrics } from "@/components/admin/DukampCommercialMetrics";
 import { BANK_RECORDS_CODE } from "@/lib/bank-reports";
 import { loadAllExpenseValues } from "@/lib/expense-values";
@@ -180,6 +183,7 @@ function ExpensesSidebar({
   onSelectSubcategory: (categoryCode: number, subcategoryCode: number) => void;
   onNavigate?: () => void;
 }) {
+  const { user, isMasterAdmin } = useAuth();
   const [query, setQuery] = useState("");
   const normalizedQuery = query.trim().toLocaleLowerCase("pt-BR");
 
@@ -233,6 +237,7 @@ function ExpensesSidebar({
       </div>
 
       <nav className="flex-1 overflow-y-auto p-2">
+        {isMasterAdmin && user?.email?.toLowerCase() === PROTECTED_ADMIN_EMAIL && <Link to="/admin/dukamp/atualizar-valores" onClick={onNavigate} className="mb-1 flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-accent"><WalletCards className="h-4 w-4" />Atualizar valores</Link>}
         <button
           onClick={() => {
             onSelectCategory(null);
@@ -361,9 +366,7 @@ function DukampExpensesPage() {
     const monthlyTrend = trendPeriods.map((key) => ({
       key,
       period: periodLabel(key),
-      total: scopeValues
-        .filter((item) => periodKey(item.year, item.month) === key)
-        .reduce((sum, item) => sum + item.amount, 0),
+      total: statisticsExpensesInRange({ values: scopeValues, subcategories: data.subcategories }, `${Math.floor(key / 100)}-${String(key % 100).padStart(2, "0")}-01`, `${Math.floor(key / 100)}-${String(key % 100).padStart(2, "0")}-28`).amount ?? 0,
     }));
     const monthsWithValues = monthlyTrend.filter((item) => item.total !== 0).length;
     const hasTrendData = monthsWithValues > 0;
@@ -373,9 +376,9 @@ function DukampExpensesPage() {
     const currentTotal = currentValues.reduce((sum, item) => sum + item.amount, 0);
     const previousTotal = previousValues.reduce((sum, item) => sum + item.amount, 0);
     const change = previousAvailable && previousTotal !== 0 ? ((currentTotal - previousTotal) / Math.abs(previousTotal)) * 100 : null;
-    const average = monthsWithValues
-      ? monthlyTrend.reduce((sum, item) => sum + item.total, 0) / monthsWithValues
-      : 0;
+    const rawTrend = trendPeriods.map(key => scopeValues.filter(item => periodKey(item.year, item.month) === key).reduce((sum, item) => sum + item.amount, 0));
+    const rawCount = rawTrend.filter(total => total !== 0).length;
+    const average = rawCount ? rawTrend.reduce((sum, total) => sum + total, 0) / rawCount : 0;
 
     const groupCurrent = new Map<number, number>();
     const groupPrevious = new Map<number, number>();
@@ -648,8 +651,10 @@ function DukampExpensesPage() {
 
           </div>
 
+          {selectedCategory == null && selectedSubcategory == null && <DukampAnnualFinancialChart year={Number(computed.range?.to.slice(0, 4) || Math.floor(computed.activePeriod / 100))} />}
+
           <section className="mt-4 grid gap-4 2xl:grid-cols-[1.35fr_1fr]">
-            <Panel title="Evolução mensal" subtitle={analysis.mode === "month" ? "Histórico dos relatórios mensais" : `Evolução em ${computed.rangeLabel}`}>
+            <Panel title="Evolução mensal" subtitle={analysis.mode === "month" ? "Despesas filtradas dos relatórios mensais" : `Evolução em ${computed.rangeLabel}`}>
               <div className="h-[310px] w-full">
                 {computed.hasTrendData ? (
                   <ResponsiveContainer width="100%" height="100%">
@@ -717,34 +722,6 @@ function DukampExpensesPage() {
                   <EmptyChartState
                     title={`Sem lançamentos em ${computed.rangeLabel}`}
                     description={`Este filtro está zerado no período selecionado. A evolução mensal continua mostrando os meses em que houve valor.`}
-                  />
-                )}
-              </div>
-            </Panel>
-          </section>
-
-          <section className="mt-4">
-            <Panel
-              title={`Comparação com o ${computed.comparisonLabel}`}
-              subtitle={`${computed.previousLabel} × ${computed.rangeLabel} · maiores itens do período`}
-            >
-              <div className="h-[360px] w-full">
-                {computed.comparison.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={computed.comparison} margin={{ top: 10, right: 12, left: 8, bottom: 70 }}>
-                      <CartesianGrid stroke={GRID_COLOR} strokeDasharray="3 3" vertical={false} opacity={0.55} />
-                      <XAxis dataKey="name" angle={-35} textAnchor="end" interval={0} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                      <YAxis tickFormatter={(value) => compactMoney.format(Number(value))} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} width={72} />
-                      <Tooltip formatter={(value: any) => money.format(Number(value))} />
-                      <Legend />
-                      <Bar dataKey="anterior" name={computed.comparisonLabel} fill={PREVIOUS_COLOR} radius={[5, 5, 0, 0]} />
-                      <Bar dataKey="atual" name="Período atual" fill={CURRENT_COLOR} radius={[5, 5, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <EmptyChartState
-                    title="Sem valores para comparar"
-                    description={`Não há lançamentos em ${computed.previousLabel} nem em ${computed.rangeLabel} para este filtro.`}
                   />
                 )}
               </div>
