@@ -187,11 +187,10 @@ function AdminSellersPage() {
         <div>
           <h1 className="text-2xl font-bold">Equipe de Vendas</h1>
           <p className="text-sm text-muted-foreground">
-            Gerencie os cartões públicos e acompanhe o desempenho comercial por vendedor ou de toda a DuKamp.
+            Gerencie os cartões públicos e acompanhe o desempenho comercial por vendedor.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <SellerStatisticsDialog />
           <Dialog
             open={open}
             onOpenChange={(nextOpen) => {

@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
+import { PROTECTED_ADMIN_EMAIL } from "@/lib/constants";
 import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard, Package, Tag, FolderTree, Image as ImageIcon,
@@ -30,7 +31,7 @@ export const Route = createFileRoute("/admin")({
 });
 
 type NavLeaf = { to: string; label: string; icon: any; exact?: boolean; masterOnly?: boolean; search?: Record<string, string> };
-type NavGroup = { label: string; icon: any; basePath: string; children: NavLeaf[] };
+type NavGroup = { label: string; icon: any; basePath: string; children: NavLeaf[]; masterOnly?: boolean; dukampOnly?: boolean };
 type NavEntry = NavLeaf | NavGroup;
 
 const NAV: NavEntry[] = [
@@ -57,7 +58,13 @@ const NAV: NavEntry[] = [
     ],
   },
   { to: "/admin/erp", label: "ERP", icon: Database },
-  { to: "/admin/despesas-dukamp", label: "Despesas DuKamp", icon: WalletCards, masterOnly: true },
+  {
+    label: "Dukamp", icon: WalletCards, basePath: "/admin/dukamp", masterOnly: true, dukampOnly: true,
+    children: [
+      { to: "/admin/despesas-dukamp", label: "Despesas", icon: WalletCards },
+      { to: "/admin/dukamp/estatisticas", label: "Estatísticas", icon: BarChart3 },
+    ],
+  },
   { to: "/admin/equipe-vendas", label: "Equipe de Vendas", icon: UserSquare2 },
   { to: "/admin/banners", label: "Banners", icon: ImageIcon },
   { to: "/admin/anuncios", label: "Anúncios", icon: Megaphone },
@@ -96,15 +103,16 @@ async function countPendingRequests() {
   return (passwordRecoveries.count ?? 0) + (accountRequests.count ?? 0) + (saleRequests.count ?? 0);
 }
 
-function SidebarContent({ pathname, currentSearch, onNavigate, signOut, isMaster, pendingRequests }: {
+function SidebarContent({ pathname, currentSearch, onNavigate, signOut, isMaster, isDukampMaster, pendingRequests }: {
   pathname: string;
   currentSearch: Record<string, unknown>;
   onNavigate?: () => void;
   signOut: () => void;
   isMaster: boolean;
+  isDukampMaster: boolean;
   pendingRequests: number;
 }) {
-  const items = NAV.filter((n) => isGroup(n) || !n.masterOnly || isMaster);
+  const items = NAV.filter(n => (!n.masterOnly || isMaster) && (!isGroup(n) || !n.dukampOnly || isDukampMaster));
   return (
     <>
       <Link to="/admin" onClick={onNavigate} className="flex items-center gap-2 px-4 h-16 border-b">
@@ -243,7 +251,7 @@ function AdminLayout() {
   return (
     <div className="min-h-screen flex bg-muted/30">
       <aside className="hidden lg:flex w-60 bg-sidebar border-r flex-col shrink-0">
-        <SidebarContent pathname={pathname} currentSearch={currentSearch} signOut={signOut} isMaster={isMasterAdmin} pendingRequests={pendingRequestCount} />
+        <SidebarContent pathname={pathname} currentSearch={currentSearch} signOut={signOut} isMaster={isMasterAdmin} isDukampMaster={isMasterAdmin && user.email?.toLowerCase() === PROTECTED_ADMIN_EMAIL} pendingRequests={pendingRequestCount} />
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -260,7 +268,7 @@ function AdminLayout() {
                 currentSearch={currentSearch}
                 onNavigate={() => setMobileOpen(false)}
                 signOut={signOut}
-                isMaster={isMasterAdmin}
+                isMaster={isMasterAdmin} isDukampMaster={isMasterAdmin && user.email?.toLowerCase() === PROTECTED_ADMIN_EMAIL}
                 pendingRequests={pendingRequestCount}
               />
             </SheetContent>

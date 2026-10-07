@@ -61,6 +61,7 @@ import { Route as VendedorClientesRouteImport } from './routes/vendedor.clientes
 import { Route as VendedorMinhaContaRouteImport } from './routes/vendedor.minha-conta'
 import { Route as AdminContasIndexRouteImport } from './routes/admin.contas.index'
 import { Route as AdminContasIdRouteImport } from './routes/admin.contas.$id'
+import { Route as AdminDukampEstatisticasRouteImport } from './routes/admin.dukamp.estatisticas'
 import { Route as AdminVendasAtualizarValoresRouteImport } from './routes/admin.vendas.atualizar-valores'
 import { Route as AdminVendasClientesRouteImport } from './routes/admin.vendas.clientes'
 import { Route as AdminVendasHistoricoRouteImport } from './routes/admin.vendas.historico'
@@ -353,6 +354,11 @@ const AdminContasIdRoute = AdminContasIdRouteImport.update({
   path: '/contas/$id',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminDukampEstatisticasRoute = AdminDukampEstatisticasRouteImport.update({
+  id: '/dukamp/estatisticas',
+  path: '/dukamp/estatisticas',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminVendasAtualizarValoresRoute =
   AdminVendasAtualizarValoresRouteImport.update({
     id: '/vendas/atualizar-valores',
@@ -559,6 +565,7 @@ export interface FileRoutesByFullPath {
   '/produtos/': typeof ProdutosIndexRoute
   '/vendedor/': typeof VendedorIndexRoute
   '/admin/contas/$id': typeof AdminContasIdRoute
+  '/admin/dukamp/estatisticas': typeof AdminDukampEstatisticasRoute
   '/admin/vendas/atualizar-valores': typeof AdminVendasAtualizarValoresRoute
   '/admin/vendas/clientes': typeof AdminVendasClientesRoute
   '/admin/vendas/historico': typeof AdminVendasHistoricoRoute
@@ -638,6 +645,7 @@ export interface FileRoutesByTo {
   '/produtos': typeof ProdutosIndexRoute
   '/vendedor': typeof VendedorIndexRoute
   '/admin/contas/$id': typeof AdminContasIdRoute
+  '/admin/dukamp/estatisticas': typeof AdminDukampEstatisticasRoute
   '/admin/vendas/atualizar-valores': typeof AdminVendasAtualizarValoresRoute
   '/admin/vendas/clientes': typeof AdminVendasClientesRoute
   '/admin/vendas/historico': typeof AdminVendasHistoricoRoute
@@ -722,6 +730,7 @@ export interface FileRoutesById {
   '/produtos/': typeof ProdutosIndexRoute
   '/vendedor/': typeof VendedorIndexRoute
   '/admin/contas/$id': typeof AdminContasIdRoute
+  '/admin/dukamp/estatisticas': typeof AdminDukampEstatisticasRoute
   '/admin/vendas/atualizar-valores': typeof AdminVendasAtualizarValoresRoute
   '/admin/vendas/clientes': typeof AdminVendasClientesRoute
   '/admin/vendas/historico': typeof AdminVendasHistoricoRoute
@@ -807,6 +816,7 @@ export interface FileRouteTypes {
     | '/produtos/'
     | '/vendedor/'
     | '/admin/contas/$id'
+    | '/admin/dukamp/estatisticas'
     | '/admin/vendas/atualizar-valores'
     | '/admin/vendas/clientes'
     | '/admin/vendas/historico'
@@ -886,6 +896,7 @@ export interface FileRouteTypes {
     | '/produtos'
     | '/vendedor'
     | '/admin/contas/$id'
+    | '/admin/dukamp/estatisticas'
     | '/admin/vendas/atualizar-valores'
     | '/admin/vendas/clientes'
     | '/admin/vendas/historico'
@@ -969,6 +980,7 @@ export interface FileRouteTypes {
     | '/produtos/'
     | '/vendedor/'
     | '/admin/contas/$id'
+    | '/admin/dukamp/estatisticas'
     | '/admin/vendas/atualizar-valores'
     | '/admin/vendas/clientes'
     | '/admin/vendas/historico'
@@ -1414,6 +1426,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminContasIdRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/dukamp/estatisticas': {
+      id: '/admin/dukamp/estatisticas'
+      path: '/dukamp/estatisticas'
+      fullPath: '/admin/dukamp/estatisticas'
+      preLoaderRoute: typeof AdminDukampEstatisticasRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/vendas/atualizar-valores': {
       id: '/admin/vendas/atualizar-valores'
       path: '/vendas/atualizar-valores'
@@ -1640,6 +1659,7 @@ interface AdminRouteChildren {
   AdminSolicitacoesRoute: typeof AdminSolicitacoesRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminContasIdRoute: typeof AdminContasIdRoute
+  AdminDukampEstatisticasRoute: typeof AdminDukampEstatisticasRoute
   AdminVendasAtualizarValoresRoute: typeof AdminVendasAtualizarValoresRoute
   AdminVendasClientesRoute: typeof AdminVendasClientesRoute
   AdminVendasHistoricoRoute: typeof AdminVendasHistoricoRoute
@@ -1668,6 +1688,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminSolicitacoesRoute: AdminSolicitacoesRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminContasIdRoute: AdminContasIdRoute,
+  AdminDukampEstatisticasRoute: AdminDukampEstatisticasRoute,
   AdminVendasAtualizarValoresRoute: AdminVendasAtualizarValoresRoute,
   AdminVendasClientesRoute: AdminVendasClientesRoute,
   AdminVendasHistoricoRoute: AdminVendasHistoricoRoute,

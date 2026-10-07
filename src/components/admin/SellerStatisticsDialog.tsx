@@ -299,10 +299,10 @@ function SectionTitle({
   );
 }
 
-export function SellerStatisticsDialog({ seller }: { seller?: Seller | null }) {
+export function SellerStatisticsDialog({ seller, embedded = false }: { seller?: Seller | null; embedded?: boolean }) {
   const { isMasterAdmin } = useAuth();
   const today = new Date().toISOString().slice(0, 10);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(embedded);
   const [mode, setMode] = useState<PeriodMode>("month");
   const [day, setDay] = useState(today);
   const [month, setMonth] = useState(today.slice(0, 7));
@@ -365,9 +365,14 @@ export function SellerStatisticsDialog({ seller }: { seller?: Seller | null }) {
   const currentYear = Number(period.to.slice(0, 4));
   const report = query.data?.marginReport;
 
+  const Container = embedded ? "div" : DialogContent;
+  const Header = embedded ? "div" : DialogHeader;
+  const Title = embedded ? "h1" : DialogTitle;
+  const Description = embedded ? "p" : DialogDescription;
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+      {!embedded && <DialogTrigger asChild>
         {isDukamp ? (
           <Button variant="outline">
             <BarChart3 className="mr-2 h-4 w-4" /> Estatísticas DuKamp
@@ -377,28 +382,28 @@ export function SellerStatisticsDialog({ seller }: { seller?: Seller | null }) {
             <BarChart3 className="mr-1.5 h-4 w-4" /> Estatísticas
           </Button>
         )}
-      </DialogTrigger>
+      </DialogTrigger>}
 
-      <DialogContent className="max-h-[94vh] w-[96vw] max-w-[1480px] overflow-y-auto border-border/60 bg-muted/20 p-0 shadow-2xl">
+      <Container className={embedded ? "w-full overflow-hidden rounded-2xl border border-border/60 bg-muted/20 shadow-sm" : "max-h-[94vh] w-[96vw] max-w-[1480px] overflow-y-auto border-border/60 bg-muted/20 p-0 shadow-2xl"}>
         <div className="sticky top-0 z-30 border-b border-border/60 bg-background/95 px-6 py-5 backdrop-blur supports-[backdrop-filter]:bg-background/90">
-          <DialogHeader className="pr-8">
+          <Header className="pr-8">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <DialogTitle className="text-xl font-bold tracking-tight sm:text-2xl">
+                <Title className="text-xl font-bold tracking-tight sm:text-2xl">
                   {isDukamp ? "Estatísticas DuKamp" : `Estatísticas • ${seller.name}`}
-                </DialogTitle>
-                <DialogDescription className="mt-1">
+                </Title>
+                <Description className="mt-1">
                   {isDukamp
                     ? "Visão consolidada da operação comercial, margem, carteira e atividades."
                     : `Desempenho completo do vendedor${seller.erp_seller_code ? ` • COD VEND ${seller.erp_seller_code}` : ""}.`}
-                </DialogDescription>
+                </Description>
               </div>
               <div className="hidden items-center gap-2 rounded-full border bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground md:flex">
                 <CalendarDays className="h-3.5 w-3.5 text-primary" />
                 {dateBR(period.from)} a {dateBR(period.to)}
               </div>
             </div>
-          </DialogHeader>
+          </Header>
         </div>
 
         <div className="space-y-5 px-5 pb-6 sm:px-6">
@@ -821,7 +826,7 @@ export function SellerStatisticsDialog({ seller }: { seller?: Seller | null }) {
             </Tabs>
           ) : null}
         </div>
-      </DialogContent>
+      </Container>
     </Dialog>
   );
 }
