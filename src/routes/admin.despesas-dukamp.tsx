@@ -183,8 +183,12 @@ function ExpensesSidebar({
   const normalizedQuery = query.trim().toLocaleLowerCase("pt-BR");
 
   const visibleCategories = useMemo(() => {
-    if (!normalizedQuery) return data.categories;
-    return data.categories.filter((category) => {
+    const hiddenCategories = new Set(["perdas", "despesaschacara", "prolaboresocios"]);
+    const categories = data.categories.filter(category => !hiddenCategories.has(
+      category.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z]/g, ""),
+    ));
+    if (!normalizedQuery) return categories;
+    return categories.filter((category) => {
       if (category.name.toLocaleLowerCase("pt-BR").includes(normalizedQuery)) return true;
       return data.subcategories.some(
         (subcategory) =>
