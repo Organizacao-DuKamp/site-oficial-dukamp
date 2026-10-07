@@ -4,6 +4,8 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
+  ReferenceLine,
   Legend,
   ResponsiveContainer,
   Tooltip,
@@ -112,24 +114,52 @@ export function DukampAnnualFinancialChart({ year }: { year: number }) {
               <XAxis dataKey="month" />
               <YAxis
                 width={75}
+                domain={[
+                  (minimum: number) => Math.min(0, minimum),
+                  (maximum: number) => Math.max(0, maximum),
+                ]}
                 tickFormatter={(v) => Number(v).toLocaleString("pt-BR", { notation: "compact" })}
               />
-              <Tooltip formatter={money} />
+              <ReferenceLine y={0} stroke="#64748B" />
+              <Tooltip
+                formatter={(value, name) => [
+                  <span
+                    style={{
+                      color:
+                        name === "Mês anterior"
+                          ? "#64748B"
+                          : Number(value) < 0
+                            ? "#DC2626"
+                            : "#159447",
+                    }}
+                  >
+                    {money(value)}
+                  </span>,
+                  name,
+                ]}
+              />
               <Legend />
-              <Bar dataKey="anterior" name="Mês anterior" fill="#94A3B8" radius={[5, 5, 0, 0]} />
               <Bar
                 dataKey="atual"
                 name={mode === "expenses" ? "Despesas do mês" : "Lucro líquido do mês"}
                 fill="#159447"
                 radius={[5, 5, 0, 0]}
-              />
+              >
+                {rows.map((row) => (
+                  <Cell
+                    key={row.month}
+                    fill={row.atual !== null && row.atual < 0 ? "#DC2626" : "#159447"}
+                  />
+                ))}
+              </Bar>
+              <Bar dataKey="anterior" name="Mês anterior" fill="#94A3B8" radius={[5, 5, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         )}
       </div>
       <p className="mt-2 text-xs text-muted-foreground">
         Meses sem relatório ficam sem valor; lucro líquido exige margem bruta e despesas
-        disponíveis.
+        disponíveis. Valores negativos em vermelho; zero ou positivos em verde.
       </p>
     </section>
   );
