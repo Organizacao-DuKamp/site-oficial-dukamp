@@ -204,8 +204,8 @@ function ExpensesSidebar({
   }, [data.categories, data.subcategories, normalizedQuery]);
 
   return (
-    <div className="flex h-full flex-col bg-card">
-      <div className="border-b px-4 py-4">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-card">
+      <div className="shrink-0 border-b px-4 py-4">
         <Link
           to="/admin"
           onClick={onNavigate}
@@ -224,7 +224,7 @@ function ExpensesSidebar({
         </div>
       </div>
 
-      <div className="border-b p-3">
+      <div className="shrink-0 border-b p-3">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -236,7 +236,7 @@ function ExpensesSidebar({
         </div>
       </div>
 
-      <nav className="flex-1 overflow-y-auto p-2">
+      <nav aria-label="Categorias de despesas" className="min-h-0 flex-1 overflow-y-scroll overscroll-contain p-2 [scrollbar-gutter:stable]">
         {isMasterAdmin && user?.email?.toLowerCase() === PROTECTED_ADMIN_EMAIL && <Link to="/admin/dukamp/atualizar-valores" onClick={onNavigate} className="mb-1 flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-accent"><WalletCards className="h-4 w-4" />Atualizar valores</Link>}
         <button
           onClick={() => {
@@ -265,7 +265,10 @@ function ExpensesSidebar({
           return (
             <details key={category.code} open={isActive || Boolean(normalizedQuery)} className="group mb-1">
               <summary
-                onClick={() => onSelectCategory(category.code)}
+                onClick={(event) => {
+                  event.preventDefault();
+                  onSelectCategory(category.code);
+                }}
                 className={`flex cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
                   isActive && selectedSubcategory == null ? "bg-accent font-semibold" : "hover:bg-accent/70"
                 }`}
@@ -314,7 +317,7 @@ function ExpensesSidebar({
         })}
       </nav>
 
-      <div className="border-t px-4 py-3 text-[10px] text-muted-foreground">
+      <div className="shrink-0 border-t px-4 py-3 text-[10px] text-muted-foreground">
         Base privada · DESPESAS DUKAMP - 2026.xlsx
       </div>
     </div>
@@ -542,18 +545,18 @@ function DukampExpensesPage() {
     computed.selectedSubcategoryName ?? computed.selectedCategoryName ?? "o filtro selecionado";
 
   return (
-    <div className="flex min-h-screen bg-muted/30">
-      <aside className="hidden w-72 shrink-0 border-r lg:block">{sidebar}</aside>
+    <div className="flex h-dvh overflow-hidden bg-muted/30">
+      <aside className="hidden h-full min-h-0 w-72 shrink-0 overflow-hidden border-r lg:block">{sidebar}</aside>
 
-      <div className="min-w-0 flex-1">
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-background/95 px-3 backdrop-blur lg:hidden">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <header className="z-30 flex h-14 shrink-0 items-center gap-3 border-b bg-background/95 px-3 backdrop-blur lg:hidden">
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" aria-label="Abrir categorias">
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[88vw] max-w-80 p-0">
+            <SheetContent side="left" className="h-dvh overflow-hidden w-[88vw] max-w-80 p-0">
               {sidebar}
             </SheetContent>
           </Sheet>
@@ -561,7 +564,7 @@ function DukampExpensesPage() {
           <span className="font-semibold">Despesas DuKamp</span>
         </header>
 
-        <main className="mx-auto w-full min-w-0 max-w-[1600px] overflow-x-clip p-4 sm:p-6 lg:p-8">
+        <main className="mx-auto min-h-0 w-full min-w-0 max-w-[1600px] flex-1 overflow-y-auto overflow-x-hidden overscroll-contain p-4 sm:p-6 lg:p-8">
           {selectedSubcategory === BANK_RECORDS_CODE ? <BankRecordsPanel /> : <>
           <div className="mb-6 flex flex-col justify-between gap-4 xl:flex-row xl:items-end">
             <div>
