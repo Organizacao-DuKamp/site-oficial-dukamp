@@ -15,11 +15,13 @@ import {
 import { Eye, Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUpload, ImageListUpload, MediaListUpload } from "./ImageUpload";
+import { ProductOptionsEditor } from "./ProductOptionsEditor";
+import { productOptionsSchema } from "@/lib/product-options";
 
 export type FieldDef = {
   name: string;
   label: string;
-  type?: "text" | "textarea" | "number" | "date" | "boolean" | "select" | "image" | "imageList" | "mediaList";
+  type?: "text" | "textarea" | "number" | "date" | "boolean" | "select" | "image" | "imageList" | "mediaList" | "productOptions";
   options?: { value: string; label: string }[];
   required?: boolean;
   defaultValue?: any;
@@ -104,6 +106,7 @@ export function ResourceCrud({ title, table, readTable, columns, fields, orderBy
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin", table] });
+      if (table === "products") void qc.invalidateQueries();
       setOpen(false);
       setEditing(null);
       toast.success("Salvo!");
@@ -260,10 +263,11 @@ export function ResourceCrud({ title, table, readTable, columns, fields, orderBy
 function ResourceForm({ fields, initial, onSubmit, submitting }: {
   fields: FieldDef[]; initial: any; onSubmit: (v: any) => void; submitting: boolean;
 }) {
+  const [uploadingOptions, setUploadingOptions] = useState(false);
   const [values, setValues] = useState<any>(() => {
     const v: any = {};
     fields.forEach((f) => {
-      if (f.type === "imageList" || f.type === "mediaList") {
+      if (f.type === "imageList" || f.type === "mediaList" || f.type === "productOptions") {
         v[f.name] = Array.isArray(initial?.[f.name]) ? initial[f.name] : (f.defaultValue ?? []);
       } else {
         v[f.name] = initial?.[f.name] ?? f.defaultValue ?? (f.type === "boolean" ? false : "");
@@ -278,8 +282,15 @@ function ResourceForm({ fields, initial, onSubmit, submitting }: {
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (uploadingOptions || submitting) return;
     const out: any = {};
+    for (const field of fields.filter(field => field.type === "productOptions")) {
+      const result = productOptionsSchema.safeParse(values[field.name] ?? []);
+      if (!result.success) { toast.error(result.error.issues[0].message); return; }
+      out[field.name] = result.data;
+    }
     fields.forEach((f) => {
+      if (f.type === "productOptions") return;
       let v = values[f.name];
       if (f.type === "number") v = v === "" || v == null ? null : Number(v);
       if (f.type === "imageList" || f.type === "mediaList") { out[f.name] = Array.isArray(v) ? v : []; return; }
@@ -294,9 +305,11 @@ function ResourceForm({ fields, initial, onSubmit, submitting }: {
     <form onSubmit={submit} className="space-y-3">
       <div className="grid sm:grid-cols-2 gap-3">
         {fields.filter((f) => !f.showIf || f.showIf(values)).map((f) => (
-          <div key={f.name} className={f.type === "textarea" || f.type === "image" || f.type === "imageList" || f.type === "mediaList" ? "sm:col-span-2" : ""}>
+          <div key={f.name} className={f.type === "textarea" || f.type === "image" || f.type === "imageList" || f.type === "mediaList" || f.type === "productOptions" ? "sm:col-span-2" : ""}>
             <Label>{f.label}</Label>
-            {f.type === "textarea" ? (
+            {f.type === "productOptions" ? (
+              <ProductOptionsEditor value={values[f.name] ?? []} onChange={value => handleChange(f.name, value)} onUploadingChange={setUploadingOptions} />
+            ) : f.type === "textarea" ? (
               <Textarea value={values[f.name] ?? ""} onChange={(e) => handleChange(f.name, e.target.value)} rows={4} />
             ) : f.type === "boolean" ? (
               <div className="h-9 flex items-center"><Switch checked={!!values[f.name]} onCheckedChange={(v) => handleChange(f.name, v)} /></div>
@@ -328,7 +341,7 @@ function ResourceForm({ fields, initial, onSubmit, submitting }: {
         ))}
       </div>
       <DialogFooter>
-        <Button type="submit" disabled={submitting}>{submitting ? "Salvando..." : "Salvar"}</Button>
+        <Button type="submit" disabled={submitting || uploadingOptions}>{uploadingOptions ? "Enviando foto..." : submitting ? "Salvando..." : "Salvar"}</Button>
       </DialogFooter>
     </form>
   );

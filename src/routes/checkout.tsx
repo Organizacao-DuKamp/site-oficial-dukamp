@@ -1,3 +1,4 @@
+import { cartItemKey, choicesForSelections, selectionSummary } from "@/lib/product-options";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { lookupCepWithFallback, type CepLookupResult } from "@/lib/cep";
 import { checkoutPrefill } from "@/lib/customer-profile";
@@ -418,6 +419,8 @@ function CheckoutPage() {
   function validateDelivery(): string | null {
     if (authLoading || profileLoading || !sellerReady) return "Aguarde o carregamento dos dados da sua conta.";
     if (sellerChoice === undefined) return "Selecione o vendedor que ajudou você ou escolha Nenhum vendedor.";
+    const optionError = items.find(item => item.optionError);
+    if (optionError) return `Escolha novamente as opções de ${optionError.name} na página do produto.`;
     if (!pricingReady) return "Aguarde a atualização dos preços ou recarregue a página.";
     const labels: Record<keyof Form, string> = {
       customer_name: "Nome completo",
@@ -447,7 +450,7 @@ function CheckoutPage() {
       data: {
         ...form,
         seller_id: sellerChoice ?? null,
-        items: items.map((i) => ({ product_id: i.id, quantity: i.quantity, unit_price: i.price })),
+        items: items.map((i) => ({ product_id: i.id, quantity: i.quantity, unit_price: i.price, selected_options: choicesForSelections(i.selectedOptions) })),
         shipping_cost: frete?.valor ?? 0,
         shipping_service: frete?.servico ?? "A combinar",
         shipping_deadline_days: frete?.prazoDias ?? 0,
@@ -699,7 +702,7 @@ function CheckoutPage() {
             <Section number={1} icon={<ClipboardList className="h-4 w-4" />} title="Seu pedido">
               <div className="space-y-3">
                 {items.map((i) => (
-                  <div key={i.id} className="flex items-center gap-3 sm:gap-4 py-2 border-b last:border-b-0">
+                  <div key={cartItemKey(i)} className="flex items-center gap-3 sm:gap-4 py-2 border-b last:border-b-0">
                     <div className="h-16 w-16 shrink-0 overflow-hidden rounded-md border bg-white grid place-items-center">
                       {i.image ? (
                         <img src={i.image} alt={i.name} className="h-full w-full object-contain p-1" />
@@ -709,6 +712,8 @@ function CheckoutPage() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <h3 className="text-sm sm:text-base font-medium line-clamp-2">{i.name}</h3>
+                      {selectionSummary(i.selectedOptions) && <p className="text-xs text-muted-foreground">{selectionSummary(i.selectedOptions)}</p>}
+                      {i.optionError && <p role="alert" className="text-xs text-destructive">{i.optionError} Volte ao carrinho para escolher as opções.</p>}
                       <p className="text-xs sm:text-sm text-muted-foreground">
                         {i.quantity} × {formatBRL(i.price)}
                       </p>

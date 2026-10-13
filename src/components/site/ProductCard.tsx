@@ -7,6 +7,7 @@ import { useAuth, priceForAccount, pixPriceForAccount, regularPriceForAccount, i
 import { optimizedImage } from "@/lib/image-url";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { toast } from "sonner";
+import { readProductOptions } from "@/lib/product-options";
 
 export type ProductLite = {
   catalogs?: { name?: string | null; slug?: string | null } | null;
@@ -31,6 +32,7 @@ export type ProductLite = {
   brand: string | null;
   stock: number;
   installments?: number | null;
+  options?: unknown;
 };
 
 
@@ -138,11 +140,15 @@ export function ProductCard({ p, eager = false }: { p: ProductLite; eager?: bool
             disabled={p.stock <= 0}
             onClick={(e) => {
               stopNav(e);
+              if (readProductOptions(p.options).length) {
+                void navigate({ to: "/produtos/$slug", params: { slug: p.slug } });
+                return;
+              }
               add({ id: p.id, name: p.name, price: displayPrice, image });
               toast.success("Adicionado ao carrinho");
             }}
           >
-            <ShoppingCart className="h-4 w-4 mr-1.5" /> {p.stock > 0 ? "Comprar" : "Indisponível"}
+            <ShoppingCart className="h-4 w-4 mr-1.5" /> {p.stock > 0 ? readProductOptions(p.options).length ? "Escolher opções" : "Comprar" : "Indisponível"}
           </Button>
           <button
             type="button"

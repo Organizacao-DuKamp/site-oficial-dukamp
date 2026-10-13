@@ -448,6 +448,7 @@ export type Database = {
       }
       order_items: {
         Row: {
+          selected_options: Json
           altura: number | null
           comprimento: number | null
           created_at: string
@@ -463,6 +464,7 @@ export type Database = {
           unit_price: number
         }
         Insert: {
+          selected_options?: Json
           altura?: number | null
           comprimento?: number | null
           created_at?: string
@@ -478,6 +480,7 @@ export type Database = {
           unit_price: number
         }
         Update: {
+          selected_options?: Json
           altura?: number | null
           comprimento?: number | null
           created_at?: string
@@ -712,6 +715,7 @@ export type Database = {
       }
       products: {
         Row: {
+          options: Json
           active: boolean
           altura: number | null
           brand: string | null
@@ -748,6 +752,7 @@ export type Database = {
           weight: number
         }
         Insert: {
+          options?: Json
           active?: boolean
           altura?: number | null
           brand?: string | null
@@ -784,6 +789,7 @@ export type Database = {
           weight?: number
         }
         Update: {
+          options?: Json
           active?: boolean
           altura?: number | null
           brand?: string | null

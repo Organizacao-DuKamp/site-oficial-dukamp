@@ -1,7 +1,7 @@
 import { productSeo, seoHead } from "@/lib/seo";
 import { createFileRoute, notFound, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,8 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { RichContent } from "@/components/site/RichContent";
 import { OptimizedImage } from "@/components/ui/optimized-image";
+import { ProductOptionSelector } from "@/components/site/ProductOptionSelector";
+import { readProductOptions, resolveOptionSelections } from "@/lib/product-options";
 
 function ZoomBox({ children }: { children: React.ReactNode }) {
   const [origin, setOrigin] = useState("50% 50%");
@@ -75,6 +77,9 @@ function Page() {
   const { accountType } = useAuth();
   const [activeImg, setActiveImg] = useState(0);
   const [qty, setQtyState] = useState(1);
+  const [selected, setSelected] = useState<Record<string, string>>({});
+  const [optionPreview, setOptionPreview] = useState<string | null>(null);
+  useEffect(() => { setSelected({}); setOptionPreview(null); setActiveImg(0); setQtyState(1); }, [slug]);
   const { data: p, isLoading, isFetched } = useQuery({
     initialData: initialProduct,
     queryKey: ["product", slug],
@@ -96,7 +101,10 @@ function Page() {
     );
   }
   if (!p) return <SiteLayout><p>Produto não encontrado.</p></SiteLayout>;
-  const images: string[] = (p.images && p.images.length > 0) ? p.images : ["/placeholder.svg"];
+  const baseImages: string[] = (p.images && p.images.length > 0) ? p.images : ["/placeholder.svg"];
+  const images = optionPreview ? [optionPreview, ...baseImages.filter(image => image !== optionPreview)] : baseImages;
+  const options = readProductOptions(p.options);
+  const optionsReady = options.every(option => option.values.some(value => value.id === selected[option.id]));
   const displayPrice = priceForAccount(p as any, accountType);
   const displayPix = pixPriceForAccount(p as any, accountType);
   const installments = Math.max(1, Number(p.installments ?? 1));
@@ -112,7 +120,7 @@ function Page() {
       <div className="grid md:grid-cols-2 gap-8">
         <div className="space-y-3">
           {images.length > 1 ? (
-            <Carousel opts={{ loop: true, startIndex: activeImg }} className="w-full">
+            <Carousel key={optionPreview ?? p.id} opts={{ loop: true, startIndex: activeImg }} className="w-full">
               <CarouselContent>
                 {images.map((src, i) => (
                   <CarouselItem key={i}>
@@ -192,6 +200,12 @@ function Page() {
             {displayPix != null && <div className="text-sm text-primary mt-1">ou {formatBRL(displayPix)} no PIX</div>}
             {installments > 1 && <div className="text-sm text-muted-foreground">em até {installments}x sem juros</div>}
           </div>
+          <ProductOptionSelector options={options} selected={selected} onSelect={(optionId, valueId) => {
+            setSelected(previous => ({ ...previous, [optionId]: valueId }));
+            const value = options.find(option => option.id === optionId)?.values.find(value => value.id === valueId);
+            setOptionPreview(value?.image || null);
+            setActiveImg(0);
+          }} />
           <div className="mt-6 flex flex-col sm:flex-row sm:items-center gap-3">
             <div className="inline-flex items-center border rounded-md h-10">
               <button
@@ -231,15 +245,17 @@ function Page() {
             </div>
             <Button
               className="flex-1 sm:flex-none"
-              disabled={p.stock <= 0}
+              disabled={p.stock <= 0 || !optionsReady}
               onClick={() => {
-                add({ id: p.id, name: p.name, price: displayPrice, image: images[0] }, qty);
+                const selectedOptions = resolveOptionSelections(p.options, options.map(option => ({ option_id: option.id, value_id: selected[option.id] })));
+                add({ id: p.id, slug: p.slug, name: p.name, price: displayPrice, image: images[0], selectedOptions }, qty);
                 toast.success(`${qty} ${qty === 1 ? "item adicionado" : "itens adicionados"} ao carrinho`);
               }}
             >
               <ShoppingCart className="h-4 w-4 mr-2" /> {p.stock > 0 ? "Adicionar ao carrinho" : "Indisponível"}
             </Button>
           </div>
+          {!optionsReady && <p className="mt-2 text-sm text-muted-foreground">Escolha uma alternativa de cada opção para adicionar ao carrinho.</p>}
           <div className="mt-6 text-sm text-muted-foreground">
             <div>Estoque: {p.stock}</div>
             {p.weight != null && <div>Peso: {p.weight} kg</div>}

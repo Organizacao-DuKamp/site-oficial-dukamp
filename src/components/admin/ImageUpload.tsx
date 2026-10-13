@@ -33,31 +33,40 @@ export function ImageUpload({
   value,
   onChange,
   folder,
+  pasteEnabled = true,
+  onBusyChange,
 }: {
   value: string;
   onChange: (v: string) => void;
   folder?: string;
+  pasteEnabled?: boolean;
+  onBusyChange?: (busy: boolean) => void;
 }) {
   const ref = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const callbacks = useRef({ onChange, onBusyChange });
+  callbacks.current = { onChange, onBusyChange };
 
   async function handle(files: FileList | File[] | null) {
     if (!files || (files as any).length === 0) return;
     const first = (files as any)[0] as File;
     if (!first) return;
     setBusy(true);
+    callbacks.current.onBusyChange?.(true);
     try {
       const url = await uploadOne(first, folder);
-      onChange(url);
+      callbacks.current.onChange(url);
     } catch (e: any) {
       toast.error(e.message ?? "Erro ao enviar imagem");
     } finally {
       setBusy(false);
+      callbacks.current.onBusyChange?.(false);
       if (ref.current) ref.current.value = "";
     }
   }
 
   useEffect(() => {
+    if (!pasteEnabled) return;
     function onPaste(e: ClipboardEvent) {
       const items = e.clipboardData?.items;
       if (!items) return;
@@ -74,7 +83,7 @@ export function ImageUpload({
     }
     window.addEventListener("paste", onPaste);
     return () => window.removeEventListener("paste", onPaste);
-  }, []);
+  }, [pasteEnabled]);
 
   return (
     <div className="space-y-2">

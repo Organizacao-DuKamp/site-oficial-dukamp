@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { selectionSummary } from "@/lib/product-options";
 
 export const Route = createFileRoute("/admin/vendas/pedidos")({
   validateSearch: (search: Record<string, unknown>): { orderId?: string } => ({ orderId: typeof search.orderId === "string" && /^[0-9a-f-]{36}$/i.test(search.orderId) ? search.orderId : undefined }),
@@ -57,6 +58,13 @@ function Pedidos() {
         {!isPickup(o) && <p><strong>Endereço:</strong> {[o.rua, o.numero, o.complemento, o.bairro, o.cidade, o.estado, o.cep].filter(Boolean).join(", ")}</p>}
         {o.referencia_entrega && <p><strong>Referência para entrega:</strong> {o.referencia_entrega}</p>}
         {o.pessoa_autorizada && <p><strong>Pessoa autorizada a receber:</strong> {o.pessoa_autorizada}</p>}
+      </div>
+      <div className="space-y-2 rounded-lg border p-3">
+        <h3 className="text-sm font-semibold">Produtos do pedido</h3>
+        {(o.order_items ?? []).map((item: any) => <div key={item.id} className="flex items-start justify-between gap-3 text-sm">
+          <div><p>{item.quantity}× {item.name}</p>{selectionSummary(item.selected_options) && <p className="text-xs text-muted-foreground">{selectionSummary(item.selected_options)}</p>}</div>
+          <span className="shrink-0 font-medium">{formatBRL(Number(item.subtotal))}</span>
+        </div>)}
       </div>
       <OrderFulfillment order={o} />
       <div className="flex flex-wrap gap-3">

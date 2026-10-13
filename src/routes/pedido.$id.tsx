@@ -1,3 +1,4 @@
+import { selectionSummary } from "@/lib/product-options";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { useServerFn } from "@tanstack/react-start";
@@ -170,7 +171,7 @@ function OrderPage() {
           <div className="divide-y text-sm">
             {items.map((i, idx) => (
               <div key={idx} className="py-2 flex justify-between">
-                <span>{i.quantity}× {i.name}</span>
+                <div><span>{i.quantity}× {i.name}</span>{selectionSummary(i.selected_options) && <p className="text-xs text-muted-foreground">{selectionSummary(i.selected_options)}</p>}</div>
                 <span>{formatBRL(Number(i.subtotal))}</span>
               </div>
             ))}

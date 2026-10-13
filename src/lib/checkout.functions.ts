@@ -3,6 +3,7 @@ import { z } from "zod";
 import { normalizeTaxCode, roundMoney } from "@/lib/tax";
 import { PICKUP_SERVICE, checkoutFieldValid } from "@/lib/order-fulfillment";
 import { priceForAccount } from "@/lib/pricing";
+import { optionChoicesSchema, productQuantities, resolveOptionSelections } from "@/lib/product-options";
 
 const CEP_ORIGEM = (process.env.CORREIOS_CEP_ORIGEM || "15150104").replace(/\D/g, "");
 
@@ -399,7 +400,7 @@ export const calculateShipping = createServerFn({ method: "POST" })
     if (cepDest.length !== 8) throw new Error("CEP de destino inválido");
 
     const supa = await getServerSupabase("public");
-    const ids = data.items.map((item) => item.product_id);
+    const ids = [...new Set(data.items.map((item) => item.product_id))];
     const { data: prods, error } = await supa
       .from("products")
       .select("id,name,peso,altura,largura,comprimento")
@@ -519,6 +520,7 @@ const orderSchema = z.object({
         product_id: z.string().uuid(),
         quantity: z.number().int().positive(),
         unit_price: z.number().positive(),
+        selected_options: optionChoicesSchema,
       }),
     )
     .min(1),
@@ -568,11 +570,11 @@ export const createPixOrder = createServerFn({ method: "POST" })
     const seller = await resolveOrderSeller(supa, authenticatedUser, data.seller_id);
     const shippingCost = data.fulfillment_method === "pickup" ? 0 : data.shipping_cost;
     const shippingService = data.fulfillment_method === "pickup" ? PICKUP_SERVICE : data.shipping_service;
-    const ids = data.items.map((item) => item.product_id);
+    const ids = [...new Set(data.items.map((item) => item.product_id))];
     const { data: prods, error: productError } = await supa
       .from("products")
       .select(
-        "id,name,code,price,consumer_price,producer_price,on_sale,sale_consumer_price,sale_producer_price,peso,altura,largura,comprimento,stock,active,tax_code,catalogs(name,slug)",
+        "id,name,code,options,price,consumer_price,producer_price,on_sale,sale_consumer_price,sale_producer_price,peso,altura,largura,comprimento,stock,active,tax_code,catalogs(name,slug)",
       )
       .in("id", ids);
     if (productError) throw new Error(productError.message);
@@ -593,10 +595,12 @@ export const createPixOrder = createServerFn({ method: "POST" })
     let subtotal = 0;
     let taxAmount = 0;
 
+    const quantities = productQuantities(data.items);
     const orderItems = data.items.map((item) => {
       const product = prods.find((p: any) => p.id === item.product_id) as any;
       if (!product.active) throw new Error(`Produto indisponível: ${product.name}`);
-      if ((product.stock ?? 0) < item.quantity) throw new Error(`Estoque insuficiente: ${product.name}`);
+      if ((product.stock ?? 0) < (quantities.get(item.product_id) ?? 0)) throw new Error(`Estoque insuficiente: ${product.name}`);
+      const selectedOptions = resolveOptionSelections(product.options, item.selected_options);
 
       const unit = priceForAccount(product, accountType);
       if (!Number.isFinite(unit) || unit <= 0) throw new Error(`Preço indisponível: ${product.name}`);
@@ -610,6 +614,7 @@ export const createPixOrder = createServerFn({ method: "POST" })
       return {
         product_id: product.id,
         product_code: product.code,
+        selected_options: selectedOptions,
         name: product.name,
         unit_price: unit,
         base_unit_price: unit,
@@ -1000,7 +1005,7 @@ export const getOrderPublic = createServerFn({ method: "GET" })
     }
     const { data: items } = await supa
       .from("order_items")
-      .select("name,quantity,unit_price,subtotal,tax_code,icms_rate,tax_amount")
+      .select("name,quantity,unit_price,subtotal,tax_code,icms_rate,tax_amount,selected_options")
       .eq("order_id", data.id);
     return { order, items: items || [] };
   });

@@ -1,3 +1,4 @@
+import { cartItemKey, selectionSummary } from "@/lib/product-options";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -157,7 +158,7 @@ function CarrinhoPage() {
     const linhas = items
       .map(
         (item) =>
-          `• ${item.name} — ${item.quantity}× ${formatBRL(item.price)} = ${formatBRL(item.price * item.quantity)}`,
+          `• ${item.name}${selectionSummary(item.selectedOptions) ? " (" + selectionSummary(item.selectedOptions) + ")" : ""} — ${item.quantity}× ${formatBRL(item.price)} = ${formatBRL(item.price * item.quantity)}`,
       )
       .join("\n");
     const extras = frete && taxAmount != null
@@ -215,7 +216,7 @@ function CarrinhoPage() {
           {items.map((item) => {
             const subtotal = item.price * item.quantity;
             return (
-              <div key={item.id} className="flex gap-4 p-3 border rounded-lg bg-card">
+              <div key={cartItemKey(item)} className="flex gap-4 p-3 border rounded-lg bg-card">
                 <div className="h-24 w-24 sm:h-28 sm:w-28 rounded bg-muted shrink-0 overflow-hidden">
                   {item.image && (
                     <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
@@ -225,7 +226,7 @@ function CarrinhoPage() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="font-medium line-clamp-2 text-sm sm:text-base">{item.name}</div>
                     <button
-                      onClick={() => remove(item.id)}
+                      onClick={() => remove(cartItemKey(item))}
                       className="text-muted-foreground hover:text-destructive p-1"
                       aria-label="Remover"
                       title="Remover"
@@ -233,6 +234,8 @@ function CarrinhoPage() {
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
+                  {selectionSummary(item.selectedOptions) && <p className="mt-1 text-xs text-muted-foreground">{selectionSummary(item.selectedOptions)}</p>}
+                  {item.optionError && <div role="alert" className="mt-2 text-sm text-destructive">{item.optionError} {item.slug && <Link className="font-medium underline" to="/produtos/$slug" params={{ slug: item.slug }}>Escolher opções</Link>}<p className="text-xs">Remova este item e adicione-o novamente após escolher as opções.</p></div>}
                   <div className="text-xs text-muted-foreground mt-1">Unidade: {formatBRL(item.price)}</div>
 
                   <div className="mt-auto flex items-end justify-between gap-2 pt-3">
@@ -241,7 +244,7 @@ function CarrinhoPage() {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8"
-                        onClick={() => setQty(item.id, item.quantity - 1)}
+                        onClick={() => setQty(cartItemKey(item), item.quantity - 1)}
                         disabled={item.quantity <= 1}
                         aria-label="Diminuir"
                       >
@@ -253,15 +256,15 @@ function CarrinhoPage() {
                         onChange={(e) => {
                           const raw = e.target.value.replace(/\D/g, "");
                           if (raw === "") {
-                            setQty(item.id, 1);
+                            setQty(cartItemKey(item), 1);
                             return;
                           }
                           const n = parseInt(raw, 10);
-                          if (Number.isFinite(n) && n > 0) setQty(item.id, n);
+                          if (Number.isFinite(n) && n > 0) setQty(cartItemKey(item), n);
                         }}
                         onBlur={(e) => {
                           const n = parseInt(e.target.value.replace(/\D/g, ""), 10);
-                          setQty(item.id, Number.isFinite(n) && n > 0 ? n : 1);
+                          setQty(cartItemKey(item), Number.isFinite(n) && n > 0 ? n : 1);
                         }}
                         className="h-8 w-14 text-center border-0 focus-visible:ring-0 px-0"
                         inputMode="numeric"
@@ -270,7 +273,7 @@ function CarrinhoPage() {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8"
-                        onClick={() => setQty(item.id, item.quantity + 1)}
+                        onClick={() => setQty(cartItemKey(item), item.quantity + 1)}
                         aria-label="Aumentar"
                       >
                         <Plus className="h-3.5 w-3.5" />

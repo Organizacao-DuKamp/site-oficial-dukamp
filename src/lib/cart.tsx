@@ -3,6 +3,7 @@ import { useAuth } from "@/lib/auth";
 import { priceForAccount } from "@/lib/pricing";
 import { supabase } from "@/integrations/supabase/client";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { cartItemKey, choicesForSelections, resolveOptionSelections, type SelectedOption } from "@/lib/product-options";
 
 export type CartItem = {
   id: string;
@@ -10,6 +11,9 @@ export type CartItem = {
   price: number;
   image?: string;
   quantity: number;
+  selectedOptions?: SelectedOption[];
+  slug?: string;
+  optionError?: string;
 };
 
 type CartCtx = {
@@ -40,7 +44,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     staleTime: 0,
     queryFn: async () => {
       const { data, error } = await supabase.from("products")
-        .select("id,price,consumer_price,producer_price,on_sale,sale_producer_price,catalogs(name,slug)")
+        .select("id,slug,options,images,price,consumer_price,producer_price,on_sale,sale_producer_price,catalogs(name,slug)")
         .in("id", ids);
       if (error) throw error;
       if (data.length !== ids.length) throw new Error("Produto do carrinho não encontrado.");
@@ -51,7 +55,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
     (ids.length === 0 || Boolean(products.data && !products.isError));
   const items = storedItems.map(item => {
     const product = products.data?.find(product => product.id === item.id);
-    return product ? { ...item, price: priceForAccount(product, accountType) } : item;
+    if (!product) return item;
+    const current = { ...item, slug: product.slug, price: priceForAccount(product, accountType) };
+    try {
+      const selectedOptions = resolveOptionSelections(product.options, choicesForSelections(item.selectedOptions));
+      return { ...current, selectedOptions, image: selectedOptions.find(option => option.image)?.image || product.images?.[0] || item.image, optionError: undefined };
+    } catch {
+      return { ...current, optionError: "As opções deste produto precisam ser escolhidas novamente." };
+    }
   });
 
   useEffect(() => {
@@ -71,8 +82,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const add: CartCtx["add"] = (item, qty = 1) => {
     setItems((prev) => {
-      const found = prev.find((i) => i.id === item.id);
-      if (found) return prev.map((i) => (i.id === item.id ? { ...i, quantity: i.quantity + qty } : i));
+      const key = cartItemKey(item);
+      const found = prev.find((i) => cartItemKey(i) === key);
+      if (found) return prev.map((i) => (cartItemKey(i) === key ? { ...item, quantity: i.quantity + qty } : i));
       return [...prev, { ...item, quantity: qty }];
     });
   };
@@ -84,9 +96,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }));
     setItems(normalized);
   };
-  const remove = (id: string) => setItems((p) => p.filter((i) => i.id !== id));
+  const remove = (id: string) => setItems((p) => p.filter((i) => cartItemKey(i) !== id));
   const setQty = (id: string, qty: number) =>
-    setItems((p) => p.map((i) => (i.id === id ? { ...i, quantity: Math.max(1, qty) } : i)));
+    setItems((p) => p.map((i) => (cartItemKey(i) === id ? { ...i, quantity: Math.max(1, qty) } : i)));
   const clear = () => setItems([]);
 
   const count = items.reduce((s, i) => s + i.quantity, 0);

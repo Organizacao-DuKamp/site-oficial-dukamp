@@ -87,7 +87,7 @@ export const adminListOrders = createServerFn({ method: "GET" })
     let q = (supabase as any)
       .from("orders")
       .select(
-        "*",
+        "*,order_items(id,name,quantity,unit_price,subtotal,selected_options)",
       )
       .order("created_at", { ascending: false })
       .limit(500);

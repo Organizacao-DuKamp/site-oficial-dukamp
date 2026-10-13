@@ -13,12 +13,14 @@ const requestUrl = moduleUrl('export const getRequest = () => globalThis.__fulfi
 const auditUrl = moduleUrl('export function createAuditedAdminClient(actor) { globalThis.__fulfillmentActor=actor; return globalThis.__fulfillmentDb; }');
 const notifyUrl = moduleUrl('export function paymentNotificationUrl() { return "https://fixture.invalid/webhook"; }');
 const sellerUrl = moduleUrl(source('src/lib/order-seller.server.ts'));
+const optionsUrl = moduleUrl(source('src/lib/product-options.ts').replace('\"zod\"',JSON.stringify(import.meta.resolve('zod'))));
 const checkout = source('src/lib/checkout.functions.ts');
 const checkoutSource = `
 const z = globalThis.__fulfillmentZ;
 import { PICKUP_SERVICE, checkoutFieldValid } from ${JSON.stringify(fulfillmentUrl)};
 import { normalizeTaxCode, roundMoney } from ${JSON.stringify(taxUrl)};
 import { priceForAccount } from ${JSON.stringify(pricingUrl)};
+import { optionChoicesSchema, productQuantities, resolveOptionSelections } from ${JSON.stringify(optionsUrl)};
 const onlyDigits = s => (s || '').replace(/\\D/g,'');
 const getServerSupabase = async () => globalThis.__fulfillmentDb;
 const createServerFn = () => { let validate; return { inputValidator(fn) { validate=fn; return this; }, handler(fn) { return async data => fn({data:validate(data)}); } }; };
@@ -30,7 +32,7 @@ const fixture = {
  cep:'',rua:'',numero:'',bairro:'',cidade:'',estado:'',items:[{product_id:'00000000-0000-4000-8000-000000000001',quantity:2,unit_price:1}],
  seller_id:null,shipping_cost:999,shipping_service:'forged shipping',shipping_deadline_days:30,fulfillment_method:'pickup',payment_method:'card',card_installments:1,
 };
-function setupDb(validToken=true) {
+function setupDb(validToken=true, options=[]) {
  globalThis.__fulfillmentRequest = new Request('https://fixture.invalid/checkout',{headers:{authorization:'Bearer fixture-token'}});
  const writes=[];
  globalThis.__fulfillmentDb = {
@@ -42,7 +44,7 @@ function setupDb(validToken=true) {
     maybeSingle:async()=>({data:{account_type:'cliente'}}),
     insert(value) { insert=value; writes.push({table,value}); return chain; },
     single:async()=>({data:{...insert,id:'00000000-0000-4000-8000-000000000002',order_number:'TEST'}}),
-    then(resolve,reject) { return Promise.resolve({data:table==='products' ? [{id:fixture.items[0].product_id,name:'Test Product',code:'TEST',consumer_price:10,price:10,stock:10,active:true,tax_code:'040'}] : null}).then(resolve,reject); },
+    then(resolve,reject) { return Promise.resolve({data:table==='products' ? [{id:fixture.items[0].product_id,name:'Test Product',code:'TEST',options,consumer_price:10,price:10,stock:10,active:true,tax_code:'040'}] : null}).then(resolve,reject); },
    }; return chain;
   },
  };
@@ -119,4 +121,29 @@ test('admin access records the verified actor and deduplicates by session',async
  assert.equal(response.status,200); assert.equal(records[0].row.actor_id,'verified-admin');
  assert.equal(records[0].row.actor_ip,'127.0.0.1');assert.equal(records[0].row.session_id,sessionId);
  assert.deepEqual(records[0].options,{onConflict:'session_id',ignoreDuplicates:true});
+});
+
+const colorOptions = [{ id: '11111111-1111-4111-8111-111111111111', name: 'Cor do produto', values: [
+ { id:'22222222-2222-4222-8222-222222222222', label:'Preta', image:'https://fixture.invalid/preta.webp' },
+ { id:'33333333-3333-4333-8333-333333333333', label:'Branca' },
+] }];
+const optionItem = (index, quantity) => ({...fixture.items[0],quantity,selected_options:[{option_id:colorOptions[0].id,value_id:colorOptions[0].values[index].id}]});
+test('checkout preserves distinct alternatives of the same product in order items', async()=>{
+ const writes=setupDb(true,colorOptions); process.env.MERCADO_PAGO_ACCESS_TOKEN='fixture-only';
+ await createPixOrder({...fixture,items:[optionItem(0,2),optionItem(1,3)]});
+ const lines=writes.find(write=>write.table==='order_items').value;
+ assert.equal(lines.length,2); assert.equal(lines[0].selected_options[0].label,'Preta'); assert.equal(lines[1].selected_options[0].label,'Branca');
+ assert.equal(lines[0].selected_options[0].image,'https://fixture.invalid/preta.webp');
+ assert.equal(writes.find(write=>write.table==='orders').value.subtotal,50);
+});
+test('invalid or missing alternatives are rejected before creating any order', async()=>{
+ const writes=setupDb(true,colorOptions);
+ await assert.rejects(createPixOrder(fixture),/Escolha uma alternativa/);
+ await assert.rejects(createPixOrder({...fixture,items:[{...optionItem(0,1),selected_options:[{option_id:colorOptions[0].id,value_id:'99999999-9999-4999-8999-999999999999'}]}]}),/alternativa válida/);
+ assert.equal(writes.length,0);
+});
+test('checkout checks shared product stock across different alternatives', async()=>{
+ const writes=setupDb(true,colorOptions);
+ await assert.rejects(createPixOrder({...fixture,items:[optionItem(0,6),optionItem(1,5)]}),/Estoque insuficiente/);
+ assert.equal(writes.length,0);
 });
