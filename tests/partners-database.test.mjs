@@ -26,7 +26,7 @@ test('real PostgreSQL: partner migration, tenant RLS, atomic checkout, payment r
    amount numeric,payment_total numeric,cost_amount numeric,weight_kg numeric,paid_at timestamptz,active boolean DEFAULT true,erp_stock_synced_at timestamptz,updated_at timestamptz DEFAULT now());`);
   const consumer=source('supabase/migrations/20261002170958_consumer_address_paid_sales.sql');
   await db.exec(consumer.slice(consumer.indexOf('CREATE FUNCTION dukamp_private.record_paid_web_order()'),consumer.indexOf('-- Preserve imported ERP amounts.')));
-  await db.exec(source('supabase/migrations/20261019194500_dukamp_partners.sql'));
+  await db.exec(source('supabase/migrations/20261019200751_dukamp_partners.sql'));
   await db.exec(source('tests/partners.sql'));
   for(const table of ['dukamp_partners','dukamp_partner_quotes','orders','order_items','web_order_sales','customers']){
    assert.equal((await db.query(`SELECT count(*)::int AS n FROM public.${table}`)).rows[0].n,0,`Fixture leaked into ${table}`);

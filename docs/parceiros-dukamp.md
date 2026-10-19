@@ -31,9 +31,9 @@ As ações validam o usuário autenticado e o cadastro ativo no banco. Somente a
 
 ## Migração e publicação
 
-A migração é `supabase/migrations/20261019194500_dukamp_partners.sql`. Ela cria os cadastros/cotações/configurações, acrescenta colunas aos pedidos, cria a visão de resultados, função transacional, políticas e bucket de logos. Deve ser aplicada **antes** de publicar as rotas novas. A migração foi testada em PostgreSQL isolado; a tentativa de aplicação em produção foi bloqueada pela revisão automática e nenhum schema de produção foi alterado.
+A migração é `supabase/migrations/20261019200751_dukamp_partners.sql`. Ela cria os cadastros/cotações/configurações, acrescenta colunas aos pedidos, cria a visão de resultados, função transacional, políticas e bucket de logos. Deve ser aplicada **antes** de publicar as rotas novas. A migração foi testada em PostgreSQL isolado e aplicada no projeto de produção em 19/10/2026 após autorização explícita do responsável. O nome do arquivo acompanha a versão registrada no histórico do Supabase para evitar aplicação duplicada.
 
-O projeto indicado por `supabase/config.toml` e `vite.config.ts` é `pioyrbcdprnplhcoyzam`. O servidor usa as variáveis já utilizadas no site: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `MERCADO_PAGO_ACCESS_TOKEN`, `MERCADO_PAGO_PUBLIC_KEY` e `PUBLIC_APP_URL` (HTTPS), além das configurações de frete existentes. A chave de serviço continua restrita ao servidor. A aplicação no projeto Supabase depende de autorização explícita após a revisão das alterações.
+O projeto indicado por `supabase/config.toml` e `vite.config.ts` é `pioyrbcdprnplhcoyzam`. O servidor usa as variáveis já utilizadas no site: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `MERCADO_PAGO_ACCESS_TOKEN`, `MERCADO_PAGO_PUBLIC_KEY` e `PUBLIC_APP_URL` (HTTPS), além das configurações de frete existentes. A chave de serviço continua restrita ao servidor. A autorização para a aplicação e publicação foi concedida em 19/10/2026.
 
 Após aplicar a migração e publicar o código, criar uma loja pelo administrador, testar seu login e realizar uma compra controlada com as credenciais de teste do Mercado Pago antes de disponibilizar o acesso às lojas. O roteiro inclui conferir o valor líquido, o webhook, o pedido administrativo, a entrega e o cancelamento/reembolso.
 
