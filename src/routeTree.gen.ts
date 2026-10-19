@@ -20,6 +20,8 @@ import { Route as CotacoesRouteImport } from './routes/cotacoes'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as MinhaContaRouteImport } from './routes/minha-conta'
 import { Route as MinhasComprasRouteImport } from './routes/minhas-compras'
+import { Route as ParceiroRouteImport } from './routes/parceiro'
+import { Route as ParceiroLoginRouteImport } from './routes/parceiro-login'
 import { Route as ProdutosRouteImport } from './routes/produtos'
 import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
 import { Route as SobreRouteImport } from './routes/sobre'
@@ -41,6 +43,7 @@ import { Route as AdminErpRouteImport } from './routes/admin.erp'
 import { Route as AdminEstoqueRouteImport } from './routes/admin.estoque'
 import { Route as AdminFooterRouteImport } from './routes/admin.footer'
 import { Route as AdminNavbarRouteImport } from './routes/admin.navbar'
+import { Route as AdminParceirosRouteImport } from './routes/admin.parceiros'
 import { Route as AdminProdutosRouteImport } from './routes/admin.produtos'
 import { Route as AdminSolicitacoesRouteImport } from './routes/admin.solicitacoes'
 import { Route as CatalogosIndexRouteImport } from './routes/catalogos.index'
@@ -51,6 +54,10 @@ import { Route as InstitucionalNossaHistoriaRouteImport } from './routes/institu
 import { Route as InstitucionalNossosProdutosRouteImport } from './routes/institucional.nossos-produtos'
 import { Route as OrcamentoIdRouteImport } from './routes/orcamento.$id'
 import { Route as PaginasSlugRouteImport } from './routes/paginas.$slug'
+import { Route as ParceiroIndexRouteImport } from './routes/parceiro.index'
+import { Route as ParceiroProdutosRouteImport } from './routes/parceiro.produtos'
+import { Route as ParceiroRegistrarRouteImport } from './routes/parceiro.registrar'
+import { Route as ParceiroSimularRouteImport } from './routes/parceiro.simular'
 import { Route as PedidoIdRouteImport } from './routes/pedido.$id'
 import { Route as ProdutosIndexRouteImport } from './routes/produtos.index'
 import { Route as ProdutosSlugRouteImport } from './routes/produtos.$slug'
@@ -63,6 +70,10 @@ import { Route as AdminContasIndexRouteImport } from './routes/admin.contas.inde
 import { Route as AdminContasIdRouteImport } from './routes/admin.contas.$id'
 import { Route as AdminDukampAtualizarValoresRouteImport } from './routes/admin.dukamp.atualizar-valores'
 import { Route as AdminDukampEstatisticasRouteImport } from './routes/admin.dukamp.estatisticas'
+import { Route as AdminParceirosIndexRouteImport } from './routes/admin.parceiros.index'
+import { Route as AdminParceirosLojasRouteImport } from './routes/admin.parceiros.lojas'
+import { Route as AdminParceirosMinhaAreaRouteImport } from './routes/admin.parceiros.minha-area'
+import { Route as AdminParceirosVendasRouteImport } from './routes/admin.parceiros.vendas'
 import { Route as AdminVendasAtualizarValoresRouteImport } from './routes/admin.vendas.atualizar-valores'
 import { Route as AdminVendasClientesRouteImport } from './routes/admin.vendas.clientes'
 import { Route as AdminVendasHistoricoRouteImport } from './routes/admin.vendas.historico'
@@ -90,6 +101,8 @@ import { Route as ApiSellerAreaAzulRouteImport } from './routes/api/seller/area-
 import { Route as ApiSellerChatRouteImport } from './routes/api/seller/chat'
 import { Route as ApiSellerClientsRouteImport } from './routes/api/seller/clients'
 import { Route as ApiSellerQuotesRouteImport } from './routes/api/seller/quotes'
+import { Route as ParceiroVendasIndexRouteImport } from './routes/parceiro.vendas.index'
+import { Route as ParceiroVendasIdRouteImport } from './routes/parceiro.vendas.$id'
 import { Route as VendedorOrcamentosIndexRouteImport } from './routes/vendedor.orcamentos.index'
 import { Route as VendedorOrcamentosQuoteIdRouteImport } from './routes/vendedor.orcamentos.$quoteId'
 import { Route as VendedorOrcamentosNovoRouteImport } from './routes/vendedor.orcamentos.novo'
@@ -147,6 +160,16 @@ const MinhaContaRoute = MinhaContaRouteImport.update({
 const MinhasComprasRoute = MinhasComprasRouteImport.update({
   id: '/minhas-compras',
   path: '/minhas-compras',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParceiroRoute = ParceiroRouteImport.update({
+  id: '/parceiro',
+  path: '/parceiro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParceiroLoginRoute = ParceiroLoginRouteImport.update({
+  id: '/parceiro-login',
+  path: '/parceiro-login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProdutosRoute = ProdutosRouteImport.update({
@@ -254,6 +277,11 @@ const AdminNavbarRoute = AdminNavbarRouteImport.update({
   path: '/navbar',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminParceirosRoute = AdminParceirosRouteImport.update({
+  id: '/parceiros',
+  path: '/parceiros',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminProdutosRoute = AdminProdutosRouteImport.update({
   id: '/produtos',
   path: '/produtos',
@@ -305,6 +333,26 @@ const PaginasSlugRoute = PaginasSlugRouteImport.update({
   id: '/paginas/$slug',
   path: '/paginas/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ParceiroIndexRoute = ParceiroIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ParceiroRoute,
+} as any)
+const ParceiroProdutosRoute = ParceiroProdutosRouteImport.update({
+  id: '/produtos',
+  path: '/produtos',
+  getParentRoute: () => ParceiroRoute,
+} as any)
+const ParceiroRegistrarRoute = ParceiroRegistrarRouteImport.update({
+  id: '/registrar',
+  path: '/registrar',
+  getParentRoute: () => ParceiroRoute,
+} as any)
+const ParceiroSimularRoute = ParceiroSimularRouteImport.update({
+  id: '/simular',
+  path: '/simular',
+  getParentRoute: () => ParceiroRoute,
 } as any)
 const PedidoIdRoute = PedidoIdRouteImport.update({
   id: '/pedido/$id',
@@ -366,6 +414,26 @@ const AdminDukampEstatisticasRoute = AdminDukampEstatisticasRouteImport.update({
   id: '/dukamp/estatisticas',
   path: '/dukamp/estatisticas',
   getParentRoute: () => AdminRoute,
+} as any)
+const AdminParceirosIndexRoute = AdminParceirosIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminParceirosRoute,
+} as any)
+const AdminParceirosLojasRoute = AdminParceirosLojasRouteImport.update({
+  id: '/lojas',
+  path: '/lojas',
+  getParentRoute: () => AdminParceirosRoute,
+} as any)
+const AdminParceirosMinhaAreaRoute = AdminParceirosMinhaAreaRouteImport.update({
+  id: '/minha-area',
+  path: '/minha-area',
+  getParentRoute: () => AdminParceirosRoute,
+} as any)
+const AdminParceirosVendasRoute = AdminParceirosVendasRouteImport.update({
+  id: '/vendas',
+  path: '/vendas',
+  getParentRoute: () => AdminParceirosRoute,
 } as any)
 const AdminVendasAtualizarValoresRoute =
   AdminVendasAtualizarValoresRouteImport.update({
@@ -510,6 +578,16 @@ const ApiSellerQuotesRoute = ApiSellerQuotesRouteImport.update({
   path: '/api/seller/quotes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ParceiroVendasIndexRoute = ParceiroVendasIndexRouteImport.update({
+  id: '/vendas/',
+  path: '/vendas/',
+  getParentRoute: () => ParceiroRoute,
+} as any)
+const ParceiroVendasIdRoute = ParceiroVendasIdRouteImport.update({
+  id: '/vendas/$id',
+  path: '/vendas/$id',
+  getParentRoute: () => ParceiroRoute,
+} as any)
 const VendedorOrcamentosIndexRoute = VendedorOrcamentosIndexRouteImport.update({
   id: '/orcamentos/',
   path: '/orcamentos/',
@@ -539,6 +617,8 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/minha-conta': typeof MinhaContaRoute
   '/minhas-compras': typeof MinhasComprasRoute
+  '/parceiro': typeof ParceiroRouteWithChildren
+  '/parceiro-login': typeof ParceiroLoginRoute
   '/produtos': typeof ProdutosRouteWithChildren
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/sobre': typeof SobreRoute
@@ -559,6 +639,7 @@ export interface FileRoutesByFullPath {
   '/admin/estoque': typeof AdminEstoqueRoute
   '/admin/footer': typeof AdminFooterRoute
   '/admin/navbar': typeof AdminNavbarRoute
+  '/admin/parceiros': typeof AdminParceirosRouteWithChildren
   '/admin/produtos': typeof AdminProdutosRoute
   '/admin/solicitacoes': typeof AdminSolicitacoesRoute
   '/catalogos/$slug': typeof CatalogosSlugRoute
@@ -567,6 +648,9 @@ export interface FileRoutesByFullPath {
   '/institucional/nossos-produtos': typeof InstitucionalNossosProdutosRoute
   '/orcamento/$id': typeof OrcamentoIdRoute
   '/paginas/$slug': typeof PaginasSlugRoute
+  '/parceiro/produtos': typeof ParceiroProdutosRoute
+  '/parceiro/registrar': typeof ParceiroRegistrarRoute
+  '/parceiro/simular': typeof ParceiroSimularRoute
   '/pedido/$id': typeof PedidoIdRoute
   '/produtos/$slug': typeof ProdutosSlugRoute
   '/vendedor/area-azul': typeof VendedorAreaAzulRoute
@@ -576,11 +660,15 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/catalogos/': typeof CatalogosIndexRoute
   '/equipe-de-vendas/': typeof EquipeDeVendasIndexRoute
+  '/parceiro/': typeof ParceiroIndexRoute
   '/produtos/': typeof ProdutosIndexRoute
   '/vendedor/': typeof VendedorIndexRoute
   '/admin/contas/$id': typeof AdminContasIdRoute
   '/admin/dukamp/atualizar-valores': typeof AdminDukampAtualizarValoresRoute
   '/admin/dukamp/estatisticas': typeof AdminDukampEstatisticasRoute
+  '/admin/parceiros/lojas': typeof AdminParceirosLojasRoute
+  '/admin/parceiros/minha-area': typeof AdminParceirosMinhaAreaRoute
+  '/admin/parceiros/vendas': typeof AdminParceirosVendasRoute
   '/admin/vendas/atualizar-valores': typeof AdminVendasAtualizarValoresRoute
   '/admin/vendas/clientes': typeof AdminVendasClientesRoute
   '/admin/vendas/historico': typeof AdminVendasHistoricoRoute
@@ -608,9 +696,12 @@ export interface FileRoutesByFullPath {
   '/api/seller/chat': typeof ApiSellerChatRoute
   '/api/seller/clients': typeof ApiSellerClientsRoute
   '/api/seller/quotes': typeof ApiSellerQuotesRoute
+  '/parceiro/vendas/$id': typeof ParceiroVendasIdRoute
   '/vendedor/orcamentos/$quoteId': typeof VendedorOrcamentosQuoteIdRoute
   '/vendedor/orcamentos/novo': typeof VendedorOrcamentosNovoRoute
   '/admin/contas/': typeof AdminContasIndexRoute
+  '/admin/parceiros/': typeof AdminParceirosIndexRoute
+  '/parceiro/vendas/': typeof ParceiroVendasIndexRoute
   '/vendedor/orcamentos/': typeof VendedorOrcamentosIndexRoute
 }
 export interface FileRoutesByTo {
@@ -623,6 +714,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/minha-conta': typeof MinhaContaRoute
   '/minhas-compras': typeof MinhasComprasRoute
+  '/parceiro-login': typeof ParceiroLoginRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/sobre': typeof SobreRoute
   '/unidades': typeof UnidadesRoute
@@ -649,6 +741,9 @@ export interface FileRoutesByTo {
   '/institucional/nossos-produtos': typeof InstitucionalNossosProdutosRoute
   '/orcamento/$id': typeof OrcamentoIdRoute
   '/paginas/$slug': typeof PaginasSlugRoute
+  '/parceiro/produtos': typeof ParceiroProdutosRoute
+  '/parceiro/registrar': typeof ParceiroRegistrarRoute
+  '/parceiro/simular': typeof ParceiroSimularRoute
   '/pedido/$id': typeof PedidoIdRoute
   '/produtos/$slug': typeof ProdutosSlugRoute
   '/vendedor/area-azul': typeof VendedorAreaAzulRoute
@@ -658,11 +753,15 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/catalogos': typeof CatalogosIndexRoute
   '/equipe-de-vendas': typeof EquipeDeVendasIndexRoute
+  '/parceiro': typeof ParceiroIndexRoute
   '/produtos': typeof ProdutosIndexRoute
   '/vendedor': typeof VendedorIndexRoute
   '/admin/contas/$id': typeof AdminContasIdRoute
   '/admin/dukamp/atualizar-valores': typeof AdminDukampAtualizarValoresRoute
   '/admin/dukamp/estatisticas': typeof AdminDukampEstatisticasRoute
+  '/admin/parceiros/lojas': typeof AdminParceirosLojasRoute
+  '/admin/parceiros/minha-area': typeof AdminParceirosMinhaAreaRoute
+  '/admin/parceiros/vendas': typeof AdminParceirosVendasRoute
   '/admin/vendas/atualizar-valores': typeof AdminVendasAtualizarValoresRoute
   '/admin/vendas/clientes': typeof AdminVendasClientesRoute
   '/admin/vendas/historico': typeof AdminVendasHistoricoRoute
@@ -690,9 +789,12 @@ export interface FileRoutesByTo {
   '/api/seller/chat': typeof ApiSellerChatRoute
   '/api/seller/clients': typeof ApiSellerClientsRoute
   '/api/seller/quotes': typeof ApiSellerQuotesRoute
+  '/parceiro/vendas/$id': typeof ParceiroVendasIdRoute
   '/vendedor/orcamentos/$quoteId': typeof VendedorOrcamentosQuoteIdRoute
   '/vendedor/orcamentos/novo': typeof VendedorOrcamentosNovoRoute
   '/admin/contas': typeof AdminContasIndexRoute
+  '/admin/parceiros': typeof AdminParceirosIndexRoute
+  '/parceiro/vendas': typeof ParceiroVendasIndexRoute
   '/vendedor/orcamentos': typeof VendedorOrcamentosIndexRoute
 }
 export interface FileRoutesById {
@@ -708,6 +810,8 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/minha-conta': typeof MinhaContaRoute
   '/minhas-compras': typeof MinhasComprasRoute
+  '/parceiro': typeof ParceiroRouteWithChildren
+  '/parceiro-login': typeof ParceiroLoginRoute
   '/produtos': typeof ProdutosRouteWithChildren
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/sobre': typeof SobreRoute
@@ -728,6 +832,7 @@ export interface FileRoutesById {
   '/admin/estoque': typeof AdminEstoqueRoute
   '/admin/footer': typeof AdminFooterRoute
   '/admin/navbar': typeof AdminNavbarRoute
+  '/admin/parceiros': typeof AdminParceirosRouteWithChildren
   '/admin/produtos': typeof AdminProdutosRoute
   '/admin/solicitacoes': typeof AdminSolicitacoesRoute
   '/catalogos/$slug': typeof CatalogosSlugRoute
@@ -736,6 +841,9 @@ export interface FileRoutesById {
   '/institucional/nossos-produtos': typeof InstitucionalNossosProdutosRoute
   '/orcamento/$id': typeof OrcamentoIdRoute
   '/paginas/$slug': typeof PaginasSlugRoute
+  '/parceiro/produtos': typeof ParceiroProdutosRoute
+  '/parceiro/registrar': typeof ParceiroRegistrarRoute
+  '/parceiro/simular': typeof ParceiroSimularRoute
   '/pedido/$id': typeof PedidoIdRoute
   '/produtos/$slug': typeof ProdutosSlugRoute
   '/vendedor/area-azul': typeof VendedorAreaAzulRoute
@@ -745,11 +853,15 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/catalogos/': typeof CatalogosIndexRoute
   '/equipe-de-vendas/': typeof EquipeDeVendasIndexRoute
+  '/parceiro/': typeof ParceiroIndexRoute
   '/produtos/': typeof ProdutosIndexRoute
   '/vendedor/': typeof VendedorIndexRoute
   '/admin/contas/$id': typeof AdminContasIdRoute
   '/admin/dukamp/atualizar-valores': typeof AdminDukampAtualizarValoresRoute
   '/admin/dukamp/estatisticas': typeof AdminDukampEstatisticasRoute
+  '/admin/parceiros/lojas': typeof AdminParceirosLojasRoute
+  '/admin/parceiros/minha-area': typeof AdminParceirosMinhaAreaRoute
+  '/admin/parceiros/vendas': typeof AdminParceirosVendasRoute
   '/admin/vendas/atualizar-valores': typeof AdminVendasAtualizarValoresRoute
   '/admin/vendas/clientes': typeof AdminVendasClientesRoute
   '/admin/vendas/historico': typeof AdminVendasHistoricoRoute
@@ -777,9 +889,12 @@ export interface FileRoutesById {
   '/api/seller/chat': typeof ApiSellerChatRoute
   '/api/seller/clients': typeof ApiSellerClientsRoute
   '/api/seller/quotes': typeof ApiSellerQuotesRoute
+  '/parceiro/vendas/$id': typeof ParceiroVendasIdRoute
   '/vendedor/orcamentos/$quoteId': typeof VendedorOrcamentosQuoteIdRoute
   '/vendedor/orcamentos/novo': typeof VendedorOrcamentosNovoRoute
   '/admin/contas/': typeof AdminContasIndexRoute
+  '/admin/parceiros/': typeof AdminParceirosIndexRoute
+  '/parceiro/vendas/': typeof ParceiroVendasIndexRoute
   '/vendedor/orcamentos/': typeof VendedorOrcamentosIndexRoute
 }
 export interface FileRouteTypes {
@@ -796,6 +911,8 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/minha-conta'
     | '/minhas-compras'
+    | '/parceiro'
+    | '/parceiro-login'
     | '/produtos'
     | '/recuperar-senha'
     | '/sobre'
@@ -816,6 +933,7 @@ export interface FileRouteTypes {
     | '/admin/estoque'
     | '/admin/footer'
     | '/admin/navbar'
+    | '/admin/parceiros'
     | '/admin/produtos'
     | '/admin/solicitacoes'
     | '/catalogos/$slug'
@@ -824,6 +942,9 @@ export interface FileRouteTypes {
     | '/institucional/nossos-produtos'
     | '/orcamento/$id'
     | '/paginas/$slug'
+    | '/parceiro/produtos'
+    | '/parceiro/registrar'
+    | '/parceiro/simular'
     | '/pedido/$id'
     | '/produtos/$slug'
     | '/vendedor/area-azul'
@@ -833,11 +954,15 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/catalogos/'
     | '/equipe-de-vendas/'
+    | '/parceiro/'
     | '/produtos/'
     | '/vendedor/'
     | '/admin/contas/$id'
     | '/admin/dukamp/atualizar-valores'
     | '/admin/dukamp/estatisticas'
+    | '/admin/parceiros/lojas'
+    | '/admin/parceiros/minha-area'
+    | '/admin/parceiros/vendas'
     | '/admin/vendas/atualizar-valores'
     | '/admin/vendas/clientes'
     | '/admin/vendas/historico'
@@ -865,9 +990,12 @@ export interface FileRouteTypes {
     | '/api/seller/chat'
     | '/api/seller/clients'
     | '/api/seller/quotes'
+    | '/parceiro/vendas/$id'
     | '/vendedor/orcamentos/$quoteId'
     | '/vendedor/orcamentos/novo'
     | '/admin/contas/'
+    | '/admin/parceiros/'
+    | '/parceiro/vendas/'
     | '/vendedor/orcamentos/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -880,6 +1008,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/minha-conta'
     | '/minhas-compras'
+    | '/parceiro-login'
     | '/recuperar-senha'
     | '/sobre'
     | '/unidades'
@@ -906,6 +1035,9 @@ export interface FileRouteTypes {
     | '/institucional/nossos-produtos'
     | '/orcamento/$id'
     | '/paginas/$slug'
+    | '/parceiro/produtos'
+    | '/parceiro/registrar'
+    | '/parceiro/simular'
     | '/pedido/$id'
     | '/produtos/$slug'
     | '/vendedor/area-azul'
@@ -915,11 +1047,15 @@ export interface FileRouteTypes {
     | '/admin'
     | '/catalogos'
     | '/equipe-de-vendas'
+    | '/parceiro'
     | '/produtos'
     | '/vendedor'
     | '/admin/contas/$id'
     | '/admin/dukamp/atualizar-valores'
     | '/admin/dukamp/estatisticas'
+    | '/admin/parceiros/lojas'
+    | '/admin/parceiros/minha-area'
+    | '/admin/parceiros/vendas'
     | '/admin/vendas/atualizar-valores'
     | '/admin/vendas/clientes'
     | '/admin/vendas/historico'
@@ -947,9 +1083,12 @@ export interface FileRouteTypes {
     | '/api/seller/chat'
     | '/api/seller/clients'
     | '/api/seller/quotes'
+    | '/parceiro/vendas/$id'
     | '/vendedor/orcamentos/$quoteId'
     | '/vendedor/orcamentos/novo'
     | '/admin/contas'
+    | '/admin/parceiros'
+    | '/parceiro/vendas'
     | '/vendedor/orcamentos'
   id:
     | '__root__'
@@ -964,6 +1103,8 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/minha-conta'
     | '/minhas-compras'
+    | '/parceiro'
+    | '/parceiro-login'
     | '/produtos'
     | '/recuperar-senha'
     | '/sobre'
@@ -984,6 +1125,7 @@ export interface FileRouteTypes {
     | '/admin/estoque'
     | '/admin/footer'
     | '/admin/navbar'
+    | '/admin/parceiros'
     | '/admin/produtos'
     | '/admin/solicitacoes'
     | '/catalogos/$slug'
@@ -992,6 +1134,9 @@ export interface FileRouteTypes {
     | '/institucional/nossos-produtos'
     | '/orcamento/$id'
     | '/paginas/$slug'
+    | '/parceiro/produtos'
+    | '/parceiro/registrar'
+    | '/parceiro/simular'
     | '/pedido/$id'
     | '/produtos/$slug'
     | '/vendedor/area-azul'
@@ -1001,11 +1146,15 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/catalogos/'
     | '/equipe-de-vendas/'
+    | '/parceiro/'
     | '/produtos/'
     | '/vendedor/'
     | '/admin/contas/$id'
     | '/admin/dukamp/atualizar-valores'
     | '/admin/dukamp/estatisticas'
+    | '/admin/parceiros/lojas'
+    | '/admin/parceiros/minha-area'
+    | '/admin/parceiros/vendas'
     | '/admin/vendas/atualizar-valores'
     | '/admin/vendas/clientes'
     | '/admin/vendas/historico'
@@ -1033,9 +1182,12 @@ export interface FileRouteTypes {
     | '/api/seller/chat'
     | '/api/seller/clients'
     | '/api/seller/quotes'
+    | '/parceiro/vendas/$id'
     | '/vendedor/orcamentos/$quoteId'
     | '/vendedor/orcamentos/novo'
     | '/admin/contas/'
+    | '/admin/parceiros/'
+    | '/parceiro/vendas/'
     | '/vendedor/orcamentos/'
   fileRoutesById: FileRoutesById
 }
@@ -1051,6 +1203,8 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   MinhaContaRoute: typeof MinhaContaRoute
   MinhasComprasRoute: typeof MinhasComprasRoute
+  ParceiroRoute: typeof ParceiroRouteWithChildren
+  ParceiroLoginRoute: typeof ParceiroLoginRoute
   ProdutosRoute: typeof ProdutosRouteWithChildren
   RecuperarSenhaRoute: typeof RecuperarSenhaRoute
   SobreRoute: typeof SobreRoute
@@ -1164,6 +1318,20 @@ declare module '@tanstack/react-router' {
       path: '/minhas-compras'
       fullPath: '/minhas-compras'
       preLoaderRoute: typeof MinhasComprasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parceiro': {
+      id: '/parceiro'
+      path: '/parceiro'
+      fullPath: '/parceiro'
+      preLoaderRoute: typeof ParceiroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parceiro-login': {
+      id: '/parceiro-login'
+      path: '/parceiro-login'
+      fullPath: '/parceiro-login'
+      preLoaderRoute: typeof ParceiroLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/produtos': {
@@ -1313,6 +1481,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminNavbarRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/parceiros': {
+      id: '/admin/parceiros'
+      path: '/parceiros'
+      fullPath: '/admin/parceiros'
+      preLoaderRoute: typeof AdminParceirosRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/produtos': {
       id: '/admin/produtos'
       path: '/produtos'
@@ -1382,6 +1557,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/paginas/$slug'
       preLoaderRoute: typeof PaginasSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/parceiro/': {
+      id: '/parceiro/'
+      path: '/'
+      fullPath: '/parceiro/'
+      preLoaderRoute: typeof ParceiroIndexRouteImport
+      parentRoute: typeof ParceiroRoute
+    }
+    '/parceiro/produtos': {
+      id: '/parceiro/produtos'
+      path: '/produtos'
+      fullPath: '/parceiro/produtos'
+      preLoaderRoute: typeof ParceiroProdutosRouteImport
+      parentRoute: typeof ParceiroRoute
+    }
+    '/parceiro/registrar': {
+      id: '/parceiro/registrar'
+      path: '/registrar'
+      fullPath: '/parceiro/registrar'
+      preLoaderRoute: typeof ParceiroRegistrarRouteImport
+      parentRoute: typeof ParceiroRoute
+    }
+    '/parceiro/simular': {
+      id: '/parceiro/simular'
+      path: '/simular'
+      fullPath: '/parceiro/simular'
+      preLoaderRoute: typeof ParceiroSimularRouteImport
+      parentRoute: typeof ParceiroRoute
     }
     '/pedido/$id': {
       id: '/pedido/$id'
@@ -1466,6 +1669,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/dukamp/estatisticas'
       preLoaderRoute: typeof AdminDukampEstatisticasRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/admin/parceiros/': {
+      id: '/admin/parceiros/'
+      path: '/'
+      fullPath: '/admin/parceiros/'
+      preLoaderRoute: typeof AdminParceirosIndexRouteImport
+      parentRoute: typeof AdminParceirosRoute
+    }
+    '/admin/parceiros/lojas': {
+      id: '/admin/parceiros/lojas'
+      path: '/lojas'
+      fullPath: '/admin/parceiros/lojas'
+      preLoaderRoute: typeof AdminParceirosLojasRouteImport
+      parentRoute: typeof AdminParceirosRoute
+    }
+    '/admin/parceiros/minha-area': {
+      id: '/admin/parceiros/minha-area'
+      path: '/minha-area'
+      fullPath: '/admin/parceiros/minha-area'
+      preLoaderRoute: typeof AdminParceirosMinhaAreaRouteImport
+      parentRoute: typeof AdminParceirosRoute
+    }
+    '/admin/parceiros/vendas': {
+      id: '/admin/parceiros/vendas'
+      path: '/vendas'
+      fullPath: '/admin/parceiros/vendas'
+      preLoaderRoute: typeof AdminParceirosVendasRouteImport
+      parentRoute: typeof AdminParceirosRoute
     }
     '/admin/vendas/atualizar-valores': {
       id: '/admin/vendas/atualizar-valores'
@@ -1656,6 +1887,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSellerQuotesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/parceiro/vendas/': {
+      id: '/parceiro/vendas/'
+      path: '/vendas'
+      fullPath: '/parceiro/vendas/'
+      preLoaderRoute: typeof ParceiroVendasIndexRouteImport
+      parentRoute: typeof ParceiroRoute
+    }
+    '/parceiro/vendas/$id': {
+      id: '/parceiro/vendas/$id'
+      path: '/vendas/$id'
+      fullPath: '/parceiro/vendas/$id'
+      preLoaderRoute: typeof ParceiroVendasIdRouteImport
+      parentRoute: typeof ParceiroRoute
+    }
     '/vendedor/orcamentos/': {
       id: '/vendedor/orcamentos/'
       path: '/orcamentos'
@@ -1680,6 +1925,24 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminParceirosRouteChildren {
+  AdminParceirosLojasRoute: typeof AdminParceirosLojasRoute
+  AdminParceirosMinhaAreaRoute: typeof AdminParceirosMinhaAreaRoute
+  AdminParceirosVendasRoute: typeof AdminParceirosVendasRoute
+  AdminParceirosIndexRoute: typeof AdminParceirosIndexRoute
+}
+
+const AdminParceirosRouteChildren: AdminParceirosRouteChildren = {
+  AdminParceirosLojasRoute: AdminParceirosLojasRoute,
+  AdminParceirosMinhaAreaRoute: AdminParceirosMinhaAreaRoute,
+  AdminParceirosVendasRoute: AdminParceirosVendasRoute,
+  AdminParceirosIndexRoute: AdminParceirosIndexRoute,
+}
+
+const AdminParceirosRouteWithChildren = AdminParceirosRoute._addFileChildren(
+  AdminParceirosRouteChildren,
+)
+
 interface AdminRouteChildren {
   AdminAnunciosRoute: typeof AdminAnunciosRoute
   AdminAtendimentosRoute: typeof AdminAtendimentosRoute
@@ -1696,6 +1959,7 @@ interface AdminRouteChildren {
   AdminEstoqueRoute: typeof AdminEstoqueRoute
   AdminFooterRoute: typeof AdminFooterRoute
   AdminNavbarRoute: typeof AdminNavbarRoute
+  AdminParceirosRoute: typeof AdminParceirosRouteWithChildren
   AdminProdutosRoute: typeof AdminProdutosRoute
   AdminSolicitacoesRoute: typeof AdminSolicitacoesRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -1726,6 +1990,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminEstoqueRoute: AdminEstoqueRoute,
   AdminFooterRoute: AdminFooterRoute,
   AdminNavbarRoute: AdminNavbarRoute,
+  AdminParceirosRoute: AdminParceirosRouteWithChildren,
   AdminProdutosRoute: AdminProdutosRoute,
   AdminSolicitacoesRoute: AdminSolicitacoesRoute,
   AdminIndexRoute: AdminIndexRoute,
@@ -1754,6 +2019,28 @@ const CatalogosRouteChildren: CatalogosRouteChildren = {
 
 const CatalogosRouteWithChildren = CatalogosRoute._addFileChildren(
   CatalogosRouteChildren,
+)
+
+interface ParceiroRouteChildren {
+  ParceiroProdutosRoute: typeof ParceiroProdutosRoute
+  ParceiroRegistrarRoute: typeof ParceiroRegistrarRoute
+  ParceiroSimularRoute: typeof ParceiroSimularRoute
+  ParceiroIndexRoute: typeof ParceiroIndexRoute
+  ParceiroVendasIdRoute: typeof ParceiroVendasIdRoute
+  ParceiroVendasIndexRoute: typeof ParceiroVendasIndexRoute
+}
+
+const ParceiroRouteChildren: ParceiroRouteChildren = {
+  ParceiroProdutosRoute: ParceiroProdutosRoute,
+  ParceiroRegistrarRoute: ParceiroRegistrarRoute,
+  ParceiroSimularRoute: ParceiroSimularRoute,
+  ParceiroIndexRoute: ParceiroIndexRoute,
+  ParceiroVendasIdRoute: ParceiroVendasIdRoute,
+  ParceiroVendasIndexRoute: ParceiroVendasIndexRoute,
+}
+
+const ParceiroRouteWithChildren = ParceiroRoute._addFileChildren(
+  ParceiroRouteChildren,
 )
 
 interface ProdutosRouteChildren {
@@ -1808,6 +2095,8 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   MinhaContaRoute: MinhaContaRoute,
   MinhasComprasRoute: MinhasComprasRoute,
+  ParceiroRoute: ParceiroRouteWithChildren,
+  ParceiroLoginRoute: ParceiroLoginRoute,
   ProdutosRoute: ProdutosRouteWithChildren,
   RecuperarSenhaRoute: RecuperarSenhaRoute,
   SobreRoute: SobreRoute,
