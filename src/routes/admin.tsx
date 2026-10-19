@@ -66,6 +66,12 @@ const NAV: NavEntry[] = [
       { to: "/admin/dukamp/atualizar-valores", label: "Atualizar valores", icon: WalletCards },
     ],
   },
+  { label: "Parceiros Dukamp", icon: Users, basePath: "/admin/parceiros", children: [
+    { to: "/admin/parceiros", label: "Visão geral", icon: BarChart3, exact: true },
+    { to: "/admin/parceiros/lojas", label: "Gerenciar parceiros", icon: Users },
+    { to: "/admin/parceiros/vendas", label: "Gerenciar vendas", icon: ShoppingBag },
+    { to: "/admin/parceiros/minha-area", label: "Gerenciar minha área", icon: Settings },
+  ] },
   { to: "/admin/equipe-vendas", label: "Equipe de Vendas", icon: UserSquare2 },
   { to: "/admin/banners", label: "Banners", icon: ImageIcon },
   { to: "/admin/anuncios", label: "Anúncios", icon: Megaphone },
@@ -138,7 +144,7 @@ function SidebarContent({ pathname, currentSearch, onNavigate, signOut, isMaster
                 </summary>
                 <div className="mt-1 ml-3 pl-3 border-l space-y-1">
                   {n.children.map((c) => {
-                    const pathActive = pathname === c.to || pathname.startsWith(c.to + "/");
+                    const pathActive = pathname === c.to || (!c.exact && pathname.startsWith(c.to + "/"));
                     const isDukampTab = c.search?.aba === "dukamp";
                     const active = pathActive && (isDukampTab
                       ? currentSearch.aba === "dukamp"

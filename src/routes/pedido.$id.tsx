@@ -179,6 +179,8 @@ function OrderPage() {
           <div className="border-t mt-3 pt-3 space-y-1 text-sm">
             <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span>{formatBRL(Number(order.subtotal))}</span></div>
             <div className="flex justify-between text-muted-foreground"><span>Frete ({order.shipping_service})</span><span>{formatBRL(Number(order.shipping_cost))}</span></div>
+            {order.partner_id && <div className="flex justify-between text-muted-foreground"><span>Comissão retida pela loja parceira (10%)</span><span>− {formatBRL(Number(order.partner_commission_amount))}</span></div>}
+            {Number(order.payment_fee) > 0 && <div className="flex justify-between text-muted-foreground"><span>Taxa do cartão</span><span>{formatBRL(Number(order.payment_fee))}</span></div>}
             <div className="flex justify-between font-bold text-base"><span>Total</span><span>{formatBRL(Number(order.total))}</span></div>
           </div>
         </div>

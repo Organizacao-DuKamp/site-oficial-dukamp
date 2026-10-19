@@ -1,3 +1,4 @@
+import { partnerAmounts, partnerCustomerDetailsSchema } from "./partners";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { normalizeTaxCode, roundMoney } from "@/lib/tax";
@@ -498,6 +499,8 @@ export function computePaymentTotals(
 }
 
 const orderSchema = z.object({
+  partner_quote_id: z.string().uuid().optional(),
+  partner_customer_details: partnerCustomerDetailsSchema,
   customer_name: z.string().min(2).max(120),
   email: z.string().email(),
   phone: z.string().min(8).max(30),
@@ -566,8 +569,22 @@ export const createPixOrder = createServerFn({ method: "POST" })
 
     const { createAuditedAdminClient } = await import("@/lib/audit.server");
     supa = createAuditedAdminClient(authUserId, getRequest());
+    const partnerCheckout = data.partner_quote_id
+      ? await (await import("./partners.server")).authorizePartnerCheckout(supa, authUserId, data)
+      : null;
+    if (partnerCheckout) {
+      const previous = partnerCheckout.existingOrder;
+      if (previous && (previous.mp_payment_id || previous.payment_method === "card")) {
+        return { orderId: previous.id, orderNumber: previous.order_number, redirectUrl: null as string | null,
+          amount: Number(previous.total), merchandiseAmount: Number(previous.subtotal), taxAmount: Number(previous.tax_amount), shippingAmount: Number(previous.shipping_cost) };
+      }
+      data.shipping_cost = Number(partnerCheckout.quote.shipping_cost);
+      data.shipping_service = partnerCheckout.quote.payload.shipping.servico;
+      data.shipping_deadline_days = partnerCheckout.quote.payload.shipping.prazoDias;
+      data.seller_id = null;
+    }
     const { resolveOrderSeller } = await import("@/lib/order-seller.server");
-    const seller = await resolveOrderSeller(supa, authenticatedUser, data.seller_id);
+    const seller = partnerCheckout ? null : await resolveOrderSeller(supa, authenticatedUser, data.seller_id);
     const shippingCost = data.fulfillment_method === "pickup" ? 0 : data.shipping_cost;
     const shippingService = data.fulfillment_method === "pickup" ? PICKUP_SERVICE : data.shipping_service;
     const ids = [...new Set(data.items.map((item) => item.product_id))];
@@ -581,7 +598,7 @@ export const createPixOrder = createServerFn({ method: "POST" })
     if (!prods || prods.length !== ids.length) throw new Error("Produto inválido no carrinho");
 
     let accountType = "cliente";
-    if (authUserId) {
+    if (authUserId && !partnerCheckout) {
       const { data: profile, error: profileError } = await supa
         .from("profiles")
         .select("account_type")
@@ -630,7 +647,13 @@ export const createPixOrder = createServerFn({ method: "POST" })
       };
     });
 
-    const baseAmount = roundMoney(subtotal + taxAmount + shippingCost);
+    const commercialAmount = roundMoney(subtotal + taxAmount + shippingCost);
+    const partnerTotals = partnerCheckout ? partnerAmounts(subtotal + taxAmount, shippingCost) : null;
+    if (partnerTotals && (partnerTotals.gross !== Number(partnerCheckout!.quote.gross_total) ||
+      partnerTotals.commission !== Number(partnerCheckout!.quote.commission_amount))) {
+      throw new Error("Os preços foram atualizados. Simule a compra novamente.");
+    }
+    const baseAmount = partnerTotals?.net ?? commercialAmount;
     const paymentMethod = data.payment_method ?? "pix";
     const installments =
       paymentMethod === "card" ? ((data.card_installments ?? 1) as CardInstallments) : null;
@@ -640,10 +663,13 @@ export const createPixOrder = createServerFn({ method: "POST" })
     const cpf = onlyDigits(data.cpf_cnpj);
     const idType = cpf.length === 14 ? "CNPJ" : "CPF";
 
-    const { data: order, error: orderError } = await supa
-      .from("orders")
-      .insert({
-        user_id: authUserId,
+    const orderPayload = {
+        user_id: partnerCheckout ? null : authUserId,
+        ...(partnerCheckout && partnerTotals ? {
+          partner_id: partnerCheckout.partner.id, partner_quote_id: partnerCheckout.quote.id,
+          partner_name: partnerCheckout.partner.razao_social, partner_gross_total: partnerTotals.gross,
+          partner_commission_amount: partnerTotals.commission, partner_customer_details: data.partner_customer_details,
+        } : {}),
         seller_id: seller?.id ?? null,
         seller_name: seller?.name ?? null,
         seller_code: seller?.erp_seller_code?.trim() || null,
@@ -674,15 +700,22 @@ export const createPixOrder = createServerFn({ method: "POST" })
         payment_base_amount: baseAmount,
         payment_fee: totals.feeAmount,
         card_installments: totals.installments,
-      } as any)
-      .select("*")
-      .single();
-    if (orderError || !order) throw new Error(orderError?.message || "Falha ao criar pedido");
-
-    const { error: itemError } = await supa
-      .from("order_items")
-      .insert(orderItems.map((orderItem) => ({ ...orderItem, order_id: order.id })) as any);
-    if (itemError) throw new Error(itemError.message);
+      };
+    let order: { id: string; order_number: string; created_at?: string };
+    if (partnerCheckout) {
+      const result = await (supa as any).rpc("create_dukamp_partner_order", {
+        p_order: orderPayload, p_items: orderItems, p_checkout_hash: partnerCheckout.requestHash,
+      });
+      if (result.error || !result.data) throw new Error(result.error?.message || "Falha ao registrar a venda.");
+      order = result.data;
+    } else {
+      const result = await supa.from("orders").insert(orderPayload as any).select("*").single();
+      if (result.error || !result.data) throw new Error(result.error?.message || "Falha ao criar pedido");
+      order = result.data;
+      const { error: itemError } = await supa.from("order_items")
+        .insert(orderItems.map((orderItem) => ({ ...orderItem, order_id: order.id })) as any);
+      if (itemError) throw new Error(itemError.message);
+    }
 
     const mpToken = process.env.MERCADO_PAGO_ACCESS_TOKEN!;
     if (!mpToken) throw new Error("MERCADO_PAGO_ACCESS_TOKEN ausente");
@@ -706,7 +739,7 @@ export const createPixOrder = createServerFn({ method: "POST" })
     }
 
     if (paymentMethod === "boleto") {
-      const expires = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+      const expires = new Date((partnerCheckout && order.created_at ? Date.parse(order.created_at) : Date.now()) + 3 * 24 * 60 * 60 * 1000);
       const expiresIso = expires.toISOString().replace("Z", "-00:00");
       const zipCode = onlyDigits(data.cep);
       const streetNumber = onlyDigits(data.numero) || data.numero;
@@ -794,7 +827,7 @@ export const createPixOrder = createServerFn({ method: "POST" })
       };
     }
 
-    const expires = new Date(Date.now() + 30 * 60 * 1000);
+    const expires = new Date((partnerCheckout && order.created_at ? Date.parse(order.created_at) : Date.now()) + 30 * 60 * 1000);
     const expiresIso = expires.toISOString().replace("Z", "-00:00");
 
     const mpRes = await fetch("https://api.mercadopago.com/v1/payments", {
@@ -986,7 +1019,7 @@ export const getOrderPublic = createServerFn({ method: "GET" })
     const { data: order, error } = await (supa as any)
       .from("orders")
       .select(
-        "id,user_id,order_number,customer_name,email,total,subtotal,tax_amount,tax_destination_uf,shipping_cost,shipping_service,shipping_deadline_days,payment_method,payment_status,mp_qr_code,mp_qr_code_base64,mp_ticket_url,mp_expires_at,mp_payment_id,created_at,delivery_status,fulfillment_method,pickup_location,pickup_ready_at,pickup_deadline_at,refund_status,cancellation_reason,tracking_code,tracking_status,posted_at,label_created_at",
+        "id,user_id,order_number,customer_name,email,total,subtotal,tax_amount,tax_destination_uf,partner_id,partner_gross_total,partner_commission_amount,payment_fee,shipping_cost,shipping_service,shipping_deadline_days,payment_method,payment_status,mp_qr_code,mp_qr_code_base64,mp_ticket_url,mp_expires_at,mp_payment_id,created_at,delivery_status,fulfillment_method,pickup_location,pickup_ready_at,pickup_deadline_at,refund_status,cancellation_reason,tracking_code,tracking_status,posted_at,label_created_at",
       )
       .eq("id", data.id)
       .single();

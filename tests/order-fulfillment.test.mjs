@@ -14,9 +14,13 @@ const auditUrl = moduleUrl('export function createAuditedAdminClient(actor) { gl
 const notifyUrl = moduleUrl('export function paymentNotificationUrl() { return "https://fixture.invalid/webhook"; }');
 const sellerUrl = moduleUrl(source('src/lib/order-seller.server.ts'));
 const optionsUrl = moduleUrl(source('src/lib/product-options.ts').replace('\"zod\"',JSON.stringify(import.meta.resolve('zod'))));
+const partnersUrl = moduleUrl(source('src/lib/partners.ts').replace('"zod"',JSON.stringify(import.meta.resolve('zod'))));
+const partnerCheckoutUrl = moduleUrl('export const authorizePartnerCheckout=(...args)=>globalThis.__partnerCheckout(...args);');
+const providerUrl = moduleUrl('export const applyProviderPayment=async()=>null;');
 const checkout = source('src/lib/checkout.functions.ts');
 const checkoutSource = `
 const z = globalThis.__fulfillmentZ;
+import { partnerAmounts, partnerCustomerDetailsSchema } from ${JSON.stringify(partnersUrl)};
 import { PICKUP_SERVICE, checkoutFieldValid } from ${JSON.stringify(fulfillmentUrl)};
 import { normalizeTaxCode, roundMoney } from ${JSON.stringify(taxUrl)};
 import { priceForAccount } from ${JSON.stringify(pricingUrl)};
@@ -26,7 +30,7 @@ const getServerSupabase = async () => globalThis.__fulfillmentDb;
 const createServerFn = () => { let validate; return { inputValidator(fn) { validate=fn; return this; }, handler(fn) { return async data => fn({data:validate(data)}); } }; };
 `+checkout.slice(checkout.indexOf('export const CARD_FEE_TABLE'),checkout.indexOf('export const getMpPublicKey'));
 globalThis.__fulfillmentZ = z;
-const { createPixOrder } = await import(moduleUrl(checkoutSource.replaceAll('@/lib/order-seller.server',sellerUrl).replaceAll('@/lib/audit.server',auditUrl).replaceAll('@tanstack/react-start/server',requestUrl).replaceAll('@/lib/mercadopago-notifications.server',notifyUrl)));
+const { createPixOrder } = await import(moduleUrl(checkoutSource.replaceAll('./partners.server',partnerCheckoutUrl).replaceAll('@/lib/mercadopago-payment.server',providerUrl).replaceAll('@/lib/order-seller.server',sellerUrl).replaceAll('@/lib/audit.server',auditUrl).replaceAll('@tanstack/react-start/server',requestUrl).replaceAll('@/lib/mercadopago-notifications.server',notifyUrl)));
 const fixture = {
  customer_name:'Test Customer',email:'fixture@example.invalid',phone:'17999999999',cpf_cnpj:'12345678901',
  cep:'',rua:'',numero:'',bairro:'',cidade:'',estado:'',items:[{product_id:'00000000-0000-4000-8000-000000000001',quantity:2,unit_price:1}],
@@ -43,6 +47,7 @@ function setupDb(validToken=true, options=[]) {
     select:()=>chain,in:()=>chain,eq:()=>chain,
     maybeSingle:async()=>({data:{account_type:'cliente'}}),
     insert(value) { insert=value; writes.push({table,value}); return chain; },
+    update(value) { writes.push({table,value,update:true}); return chain; },
     single:async()=>({data:{...insert,id:'00000000-0000-4000-8000-000000000002',order_number:'TEST'}}),
     then(resolve,reject) { return Promise.resolve({data:table==='products' ? [{id:fixture.items[0].product_id,name:'Test Product',code:'TEST',options,consumer_price:10,price:10,stock:10,active:true,tax_code:'040'}] : null}).then(resolve,reject); },
    }; return chain;
@@ -146,4 +151,28 @@ test('checkout checks shared product stock across different alternatives', async
  const writes=setupDb(true,colorOptions);
  await assert.rejects(createPixOrder({...fixture,items:[optionItem(0,6),optionItem(1,5)]}),/Estoque insuficiente/);
  assert.equal(writes.length,0);
+});
+
+
+test('partner checkout derives the discounted Dukamp charge from the stored quote, ignoring browser freight and price',async()=>{
+ const writes=setupDb();const db=globalThis.__fulfillmentDb;
+ globalThis.__partnerCheckout=async(_db,user,data)=>{
+  assert.equal(user,'verified-user');assert.equal(data.partner_quote_id,'00000000-0000-4000-8000-000000000003');
+  return {partner:{id:'partner-a',razao_social:'Fixture Partner'},quote:{id:data.partner_quote_id,gross_total:70,commission_amount:7,shipping_cost:50,payload:{shipping:{servico:'PAC',prazoDias:5}}},requestHash:'fixture-hash',existingOrder:null};
+ };
+ db.rpc=async(name,args)=>{assert.equal(name,'create_dukamp_partner_order');writes.push({table:'partner-order',value:args.p_order,items:args.p_items});return {data:{...args.p_order,id:'00000000-0000-4000-8000-000000000002',order_number:'TEST-PARTNER'}}};
+ const originalFetch=globalThis.fetch;let payment;
+ globalThis.fetch=async(url,init)=>{assert.equal(url,'https://api.mercadopago.com/v1/payments');payment=JSON.parse(init.body);return Response.json({id:123,status:'pending',external_reference:payment.external_reference,currency_id:'BRL',transaction_amount:payment.transaction_amount,date_last_updated:new Date().toISOString(),point_of_interaction:{transaction_data:{qr_code:'fixture-pix'}}});};
+ try{
+  const result=await createPixOrder({...fixture,cep:'15150104',rua:'Rua teste',numero:'1',bairro:'Centro',cidade:'Monte Aprazível',estado:'SP',fulfillment_method:'delivery',payment_method:'pix',partner_quote_id:'00000000-0000-4000-8000-000000000003'});
+  const order=writes.find(w=>w.table==='partner-order');
+  assert.equal(order.value.user_id,null);assert.equal(order.value.subtotal,20);assert.equal(order.value.shipping_cost,50);assert.equal(order.value.shipping_service,'PAC');
+  assert.equal(order.value.partner_gross_total,70);assert.equal(order.value.partner_commission_amount,7);assert.equal(order.value.total,63);assert.equal(order.value.payment_base_amount,63);
+  assert.equal(payment.transaction_amount,63);assert.equal(result.amount,63);assert.equal(order.items[0].unit_price,10);
+ }finally{globalThis.fetch=originalFetch}
+});
+test('repeating a completed partner checkout returns the existing charge without creating another payment',async()=>{
+ const writes=setupDb();globalThis.__partnerCheckout=async()=>({quote:{},partner:{},existingOrder:{id:'existing-order',order_number:'EXISTING',mp_payment_id:'123',total:63,subtotal:20,tax_amount:0,shipping_cost:50}});
+ const result=await createPixOrder({...fixture,partner_quote_id:'00000000-0000-4000-8000-000000000003'});
+ assert.equal(result.orderId,'existing-order');assert.equal(writes.length,0);
 });

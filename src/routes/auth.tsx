@@ -128,6 +128,7 @@ function LoginForm({ onLogin }: { onLogin: (e: string, p: string) => Promise<{ e
       <Button type="submit" className="w-full" disabled={loading}>
         {loading ? "Entrando..." : "Entrar"}
       </Button>
+      <a href="/parceiro-login" className="block pt-2 text-center text-sm font-medium text-primary underline underline-offset-4">Sou parceiro Dukamp</a>
     </form>
   );
 }
