@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { createPartnerDatabase } from './fixtures/partner-database.mjs';
 const source=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
-const migrationPath='supabase/changes/partner_sale_requests.sql';
+const migrationPath='supabase/migrations/20261020175414_partner_sale_requests.sql';
 const a='00000000-0000-4000-8000-000000000001',b='00000000-0000-4000-8000-000000000002',admin='00000000-0000-4000-8000-000000000003',
  store='10000000-0000-4000-8000-000000000001',product='20000000-0000-4000-8000-000000000001',other='20000000-0000-4000-8000-000000000002';
 test('approval ledger: tenant access, unpaid submission, idempotency, admin-only commission and atomic stock',async()=>{
