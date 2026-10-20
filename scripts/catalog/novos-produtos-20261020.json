@@ -1,0 +1,1617 @@
+{
+  "source_archive": "Novos Produtos Dukamp.zip",
+  "date": "2026-10-20",
+  "notes": [
+    "Cadastro por código/SKU; numerações mantêm preço e saldo independentes.",
+    "Preços e saldos usam os dados já armazenados na DuKamp; o ZIP não contém preços.",
+    "Amostra REFERENCIA-calca-jeans-azul não cadastrada como produto, nem atribuída a códigos sem correspondência.",
+    "Itens com pendências ficam inativos; estoque ausente permanece zero. Não se presume quantidade pela foto.",
+    "Os dados de estoque consultados foram importados em setembro de 2026; a importação não representa uma contagem física realizada hoje."
+  ],
+  "products": [
+    {
+      "code": "031232",
+      "name": "Bota preta de cano longo — Nº 36",
+      "slug": "bota-preta-de-cano-longo-no-36-031232",
+      "description": "<p>Par de botas pretas de cano longo com corpo moldado, abertura superior ampla e linhas de reforço visíveis.</p><p><strong>Numeração deste item: 36.</strong> Venda por par.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 72.59,
+      "producer_price": 72.59,
+      "consumer_price": 72.59,
+      "stock": 1,
+      "brand": null,
+      "active": true,
+      "featured": false,
+      "options": [
+        {
+          "id": "61a995de-c03e-5e80-a0b8-a600d05fdf19",
+          "name": "Numeração",
+          "values": [
+            {
+              "id": "c89f559b-538c-516e-bd9e-d763d8dfde41",
+              "label": "36"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/31232-bota-preta.webp",
+      "source_folder": "31232-bota-preta",
+      "pending": null,
+      "price_source": "dukamp_stock_items.sale_price",
+      "stock_source": "dukamp_stock_items.stock"
+    },
+    {
+      "code": "034843",
+      "name": "Corda multiuso Artplus colorida 6 mm x 30 m",
+      "slug": "corda-multiuso-artplus-colorida-6-mm-x-30-m-034843",
+      "description": "<p>Corda trançada de base escura com detalhes azuis, verdes e alaranjados, apresentada em meada.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 46.54,
+      "producer_price": 46.54,
+      "consumer_price": 46.54,
+      "stock": 7,
+      "brand": "Artplus",
+      "active": true,
+      "featured": false,
+      "options": [],
+      "image_path": "public/products/novos-20261020/34843-corda-colorida.webp",
+      "source_folder": "34843-corda-colorida",
+      "pending": null,
+      "price_source": "dukamp_stock_items.sale_price",
+      "stock_source": "dukamp_stock_items.stock"
+    },
+    {
+      "code": "034851",
+      "name": "Corda multiuso colorida 8 mm x 30 m",
+      "slug": "corda-multiuso-colorida-8-mm-x-30-m-034851",
+      "description": "<p>Corda trançada de base escura com detalhes coloridos, apresentada em meada. A etiqueta indica corda PET e 8 mm x 30 metros.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 47.81,
+      "producer_price": 47.81,
+      "consumer_price": 47.81,
+      "stock": 7,
+      "brand": null,
+      "active": true,
+      "featured": false,
+      "options": [],
+      "image_path": "public/products/novos-20261020/34851-corda-colorida-8mm-30m.webp",
+      "source_folder": "34851-corda-colorida-8mm-30m",
+      "pending": null,
+      "price_source": "dukamp_stock_items.sale_price",
+      "stock_source": "dukamp_stock_items.stock"
+    },
+    {
+      "code": "034860",
+      "name": "Corda multiuso em meada amarela",
+      "slug": "corda-multiuso-em-meada-amarela-034860",
+      "description": "<p>Corda trançada amarela, apresentada em meada para uso geral. Embalagem da linha Artplus.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 59.51,
+      "producer_price": 59.51,
+      "consumer_price": 59.51,
+      "stock": 7,
+      "brand": "Artplus",
+      "active": true,
+      "featured": false,
+      "options": [],
+      "image_path": "public/products/novos-20261020/34860-corda-amarela.webp",
+      "source_folder": "34860-corda-amarela",
+      "pending": null,
+      "price_source": "dukamp_stock_items.sale_price",
+      "stock_source": "dukamp_stock_items.stock"
+    },
+    {
+      "code": "035009",
+      "name": "Botina Primavera BOT.SEG.002 nobuck castor — Nº 37",
+      "slug": "botina-primavera-bot-seg-002-nobuck-castor-no-37-035009",
+      "description": "<p>Botina de cano curto na cor castor, com elásticos laterais pretos, costura aparente e solado preto. A embalagem identifica nobuck castor e solado PNE; traz indicação de couro.</p><p><strong>Numeração deste item: 37.</strong> Venda por par.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 79.76,
+      "producer_price": 79.76,
+      "consumer_price": 79.76,
+      "stock": 5,
+      "brand": "Primavera",
+      "active": true,
+      "featured": false,
+      "options": [
+        {
+          "id": "6c3cc493-723d-578d-8c7f-2a95e6f48a28",
+          "name": "Numeração",
+          "values": [
+            {
+              "id": "1f1e5ed9-cf5c-5b0f-a711-9b38ea065c04",
+              "label": "37"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/35009-35084-botina-primavera-castor.webp",
+      "source_folder": "35009-35084-botina-primavera-castor",
+      "pending": null,
+      "price_source": "dukamp_stock_items.sale_price",
+      "stock_source": "dukamp_stock_items.stock"
+    },
+    {
+      "code": "035017",
+      "name": "Botina Primavera BOT.SEG.002 nobuck castor — Nº 38",
+      "slug": "botina-primavera-bot-seg-002-nobuck-castor-no-38-035017",
+      "description": "<p>Botina de cano curto na cor castor, com elásticos laterais pretos, costura aparente e solado preto. A embalagem identifica nobuck castor e solado PNE; traz indicação de couro.</p><p><strong>Numeração deste item: 38.</strong> Venda por par.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 73.02,
+      "producer_price": 73.02,
+      "consumer_price": 73.02,
+      "stock": 3,
+      "brand": "Primavera",
+      "active": true,
+      "featured": false,
+      "options": [
+        {
+          "id": "0ecf2b58-2e8c-5279-b3e6-82e78253dc71",
+          "name": "Numeração",
+          "values": [
+            {
+              "id": "08c381e5-e5df-5d5e-a5e7-00f0d1026db5",
+              "label": "38"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/35009-35084-botina-primavera-castor.webp",
+      "source_folder": "35009-35084-botina-primavera-castor",
+      "pending": null,
+      "price_source": "dukamp_stock_items.sale_price",
+      "stock_source": "dukamp_stock_items.stock"
+    },
+    {
+      "code": "035076",
+      "name": "Botina Primavera BOT.SEG.002 nobuck castor — Nº 44",
+      "slug": "botina-primavera-bot-seg-002-nobuck-castor-no-44-035076",
+      "description": "<p>Botina de cano curto na cor castor, com elásticos laterais pretos, costura aparente e solado preto. A embalagem identifica nobuck castor e solado PNE; traz indicação de couro.</p><p><strong>Numeração deste item: 44.</strong> Venda por par.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 72.99,
+      "producer_price": 72.99,
+      "consumer_price": 72.99,
+      "stock": 3,
+      "brand": "Primavera",
+      "active": true,
+      "featured": false,
+      "options": [
+        {
+          "id": "736152ed-8ced-592f-896d-a5b7ec46c2da",
+          "name": "Numeração",
+          "values": [
+            {
+              "id": "7b4c7fb3-0fc5-531a-8162-623764b4e727",
+              "label": "44"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/35009-35084-botina-primavera-castor.webp",
+      "source_folder": "35009-35084-botina-primavera-castor",
+      "pending": null,
+      "price_source": "dukamp_stock_items.sale_price",
+      "stock_source": "dukamp_stock_items.stock"
+    },
+    {
+      "code": "035084",
+      "name": "Botina Primavera BOT.SEG.002 nobuck castor — Nº 45",
+      "slug": "botina-primavera-bot-seg-002-nobuck-castor-no-45-035084",
+      "description": "<p>Botina de cano curto na cor castor, com elásticos laterais pretos, costura aparente e solado preto. A embalagem identifica nobuck castor e solado PNE; traz indicação de couro.</p><p><strong>Numeração deste item: 45.</strong> Venda por par.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 72.92,
+      "producer_price": 72.92,
+      "consumer_price": 72.92,
+      "stock": 3,
+      "brand": "Primavera",
+      "active": true,
+      "featured": false,
+      "options": [
+        {
+          "id": "d6821cb2-67d4-5162-bd6f-5855b4c6408f",
+          "name": "Numeração",
+          "values": [
+            {
+              "id": "98df8cc2-98b2-5300-b47d-671c9814905c",
+              "label": "45"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/35009-35084-botina-primavera-castor.webp",
+      "source_folder": "35009-35084-botina-primavera-castor",
+      "pending": null,
+      "price_source": "dukamp_stock_items.sale_price",
+      "stock_source": "dukamp_stock_items.stock"
+    },
+    {
+      "code": "049611",
+      "name": "Bota Saygon 7042 café com zíper lateral — Nº 38",
+      "slug": "bota-saygon-7042-cafe-com-ziper-lateral-no-38-049611",
+      "description": "<p>Bota de cano curto em tom café, fechamento com cadarço e zíper lateral, ilhoses metálicos, gola acolchoada e solado preto de desenho robusto. Referência 7042, cor 342 café.</p><p><strong>Numeração deste item: 38.</strong> Venda por par.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 81.78,
+      "producer_price": 81.78,
+      "consumer_price": 81.78,
+      "stock": 1,
+      "brand": "Saygon",
+      "active": true,
+      "featured": false,
+      "options": [
+        {
+          "id": "c49c052e-01bf-5f29-824d-c92339de8464",
+          "name": "Numeração",
+          "values": [
+            {
+              "id": "88bebcb7-0ce4-5bc9-a13a-dc69d2ab8136",
+              "label": "38"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/49611-bota-saygon-cafe.webp",
+      "source_folder": "49611-bota-saygon-cafe",
+      "pending": null,
+      "price_source": "dukamp_stock_items.sale_price",
+      "stock_source": "dukamp_stock_items.stock"
+    },
+    {
+      "code": "UTG-20261020-10",
+      "name": "Óculos para solda com visor articulado",
+      "slug": "oculos-para-solda-com-visor-articulado-utg-20261020-10",
+      "description": "<p>Óculos de corpo preto com visor frontal articulado, apresentados em embalagem blister com cartão azul.</p><!-- PENDENCIA IMPORTACAO 2026-10-20: O código 049824 corresponde a CARREGADOR USB C/ TOMADA DUPLA PRETO no ERP e estoque. A embalagem original também indica USB; a descrição do ZIP informa óculos para solda. Confirmar o produto e substituir a descrição antes de publicar. -->",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 0.0,
+      "producer_price": 0.0,
+      "consumer_price": 0.0,
+      "stock": 0,
+      "brand": null,
+      "active": false,
+      "featured": false,
+      "options": [],
+      "image_path": "public/products/novos-20261020/49824-oculos-solda.webp",
+      "source_folder": "49824-oculos-solda",
+      "pending": "O código 049824 corresponde a CARREGADOR USB C/ TOMADA DUPLA PRETO no ERP e estoque. A embalagem original também indica USB; a descrição do ZIP informa óculos para solda. Confirmar o produto e substituir a descrição antes de publicar.",
+      "price_source": null,
+      "stock_source": null
+    },
+    {
+      "code": "051837",
+      "name": "Tênis slip-on Saygon 1800 preto/preto — Nº 43",
+      "slug": "tenis-slip-on-saygon-1800-preto-preto-no-43-051837",
+      "description": "<p>Tênis sem cadarço, com cabedal têxtil preto de trama aparente, gola canelada e puxador traseiro. Solado escuro. Cor 08 preto/preto.</p><p><strong>Numeração deste item: 43.</strong> Venda por par.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 72.18,
+      "producer_price": 72.18,
+      "consumer_price": 72.18,
+      "stock": 1,
+      "brand": "Saygon",
+      "active": true,
+      "featured": false,
+      "options": [
+        {
+          "id": "0f229df9-8380-5b0c-a0c7-a0ce4cb58b63",
+          "name": "Numeração",
+          "values": [
+            {
+              "id": "be3744fb-e188-5f77-9a99-80f61f4c5332",
+              "label": "43"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/51837-tenis-saygon-preto.webp",
+      "source_folder": "51837-tenis-saygon-preto",
+      "pending": null,
+      "price_source": "dukamp_stock_items.sale_price",
+      "stock_source": "dukamp_stock_items.stock"
+    },
+    {
+      "code": "051845",
+      "name": "Tênis slip-on Saygon 1800 preto/cinza — Nº 34",
+      "slug": "tenis-slip-on-saygon-1800-preto-cinza-no-34-051845",
+      "description": "<p>Tênis sem cadarço com cabedal têxtil de trama aparente, gola canelada, puxador traseiro e solado branco com detalhe preto na ponta. Cor identificada na caixa: preto/cinza, código de cor 256.</p><p><strong>Numeração deste item: 34.</strong> Venda por par.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 72.18,
+      "producer_price": 72.18,
+      "consumer_price": 72.18,
+      "stock": 3,
+      "brand": "Saygon",
+      "active": true,
+      "featured": false,
+      "options": [
+        {
+          "id": "799d16e3-ffbb-5432-ac56-ff946fe664d2",
+          "name": "Numeração",
+          "values": [
+            {
+              "id": "5108fb7a-150a-58bb-9d14-5633fbc42a72",
+              "label": "34"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/51845-tenis-saygon-preto-cinza.webp",
+      "source_folder": "51845-tenis-saygon-preto-cinza",
+      "pending": null,
+      "price_source": "dukamp_stock_items.sale_price",
+      "stock_source": "dukamp_stock_items.stock"
+    },
+    {
+      "code": "051918",
+      "name": "Tênis slip-on Saygon 1800 bordô — Nº 34",
+      "slug": "tenis-slip-on-saygon-1800-bordo-no-34-051918",
+      "description": "<p>Tênis de calce sem cadarço, cabedal têxtil bordô com diferentes tramas, gola canelada e puxador traseiro. Solado branco com detalhe preto na ponta. Cor 310 bordô.</p><p><strong>Numeração deste item: 34.</strong> Venda por par.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 72.18,
+      "producer_price": 72.18,
+      "consumer_price": 72.18,
+      "stock": 2,
+      "brand": "Saygon",
+      "active": true,
+      "featured": false,
+      "options": [
+        {
+          "id": "8ece04c4-56c8-5b2a-ac14-1c0196b79783",
+          "name": "Numeração",
+          "values": [
+            {
+              "id": "128004b7-c649-54f7-868e-757c4adc9947",
+              "label": "34"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/51918-51926-tenis-saygon-bordo.webp",
+      "source_folder": "51918-51926-tenis-saygon-bordo",
+      "pending": null,
+      "price_source": "dukamp_stock_items.sale_price",
+      "stock_source": "dukamp_stock_items.stock"
+    },
+    {
+      "code": "051926",
+      "name": "Tênis slip-on Saygon 1800 bordô — Nº 35",
+      "slug": "tenis-slip-on-saygon-1800-bordo-no-35-051926",
+      "description": "<p>Tênis de calce sem cadarço, cabedal têxtil bordô com diferentes tramas, gola canelada e puxador traseiro. Solado branco com detalhe preto na ponta. Cor 310 bordô.</p><p><strong>Numeração deste item: 35.</strong> Venda por par.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 72.18,
+      "producer_price": 72.18,
+      "consumer_price": 72.18,
+      "stock": 1,
+      "brand": "Saygon",
+      "active": true,
+      "featured": false,
+      "options": [
+        {
+          "id": "65275a39-7e8e-5d3c-b845-c6ea2bbb6705",
+          "name": "Numeração",
+          "values": [
+            {
+              "id": "2d804724-e29f-590e-a99f-34eb85b33777",
+              "label": "35"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/51918-51926-tenis-saygon-bordo.webp",
+      "source_folder": "51918-51926-tenis-saygon-bordo",
+      "pending": null,
+      "price_source": "dukamp_stock_items.sale_price",
+      "stock_source": "dukamp_stock_items.stock"
+    },
+    {
+      "code": "056308",
+      "name": "Bota branca de cano longo — Nº 39",
+      "slug": "bota-branca-de-cano-longo-no-39-056308",
+      "description": "<p>Par de botas brancas de cano longo, com corpo moldado, abertura superior ampla e linhas de reforço visíveis no cano e no pé.</p><p><strong>Numeração deste item: 39.</strong> Venda por par.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 64.35,
+      "producer_price": 64.35,
+      "consumer_price": 64.35,
+      "stock": 1,
+      "brand": null,
+      "active": true,
+      "featured": false,
+      "options": [
+        {
+          "id": "ad8f8840-a5a4-513e-98c0-c4d6900a5d9f",
+          "name": "Numeração",
+          "values": [
+            {
+              "id": "eea69f94-15d1-5679-a303-1855f4405b65",
+              "label": "39"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/56308-bota-branca.webp",
+      "source_folder": "56308-bota-branca",
+      "pending": null,
+      "price_source": "dukamp_stock_items.sale_price",
+      "stock_source": "dukamp_stock_items.stock"
+    },
+    {
+      "code": "058467",
+      "name": "Lanterna de cabeça Solver SLP-10 PRO LED COB 3 W",
+      "slug": "lanterna-de-cabeca-solver-slp-10-pro-led-cob-3-w-058467",
+      "description": "<p>Lanterna de cabeça com corpo preto e faixa, apresentada em blister. A embalagem identifica modelo SLP-10 PRO, LED COB, potência de 3 W e duas intensidades de iluminação.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 74.66,
+      "producer_price": 74.66,
+      "consumer_price": 74.66,
+      "stock": 4,
+      "brand": "Solver",
+      "active": true,
+      "featured": false,
+      "options": [],
+      "image_path": "public/products/novos-20261020/58467-lanterna-solver-slp10.webp",
+      "source_folder": "58467-lanterna-solver-slp10",
+      "pending": null,
+      "price_source": "dukamp_stock_items.sale_price",
+      "stock_source": "dukamp_stock_items.stock"
+    },
+    {
+      "code": "060240",
+      "name": "Chave grifo Thompson 8 polegadas",
+      "slug": "chave-grifo-thompson-8-polegadas-060240",
+      "description": "<p>Chave para tubos com mordentes dentados, ajuste por porca e cabo vermelho. Embalagem Thompson identifica 8 polegadas.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 27.73,
+      "producer_price": 27.73,
+      "consumer_price": 27.73,
+      "stock": 1,
+      "brand": "Thompson",
+      "active": true,
+      "featured": false,
+      "options": [],
+      "image_path": "public/products/novos-20261020/60240-chave-grifo-thompson-8.webp",
+      "source_folder": "60240-chave-grifo-thompson-8",
+      "pending": null,
+      "price_source": "dukamp_stock_items.sale_price",
+      "stock_source": "dukamp_stock_items.stock"
+    },
+    {
+      "code": "UTG-20261020-18",
+      "name": "Chave Phillips Foxlux",
+      "slug": "chave-phillips-foxlux-utg-20261020-18",
+      "description": "<p>Chave manual com ponta Phillips, haste metálica e cabo laranja translúcido. A embalagem ao fundo identifica a marca Foxlux.</p><!-- PENDENCIA IMPORTACAO 2026-10-20: Código 62709 não localizado no ERP/estoque; há mais de uma chave no gancho e a medida não está confirmada. Conferir código, medida, preço e saldo. -->",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 0.0,
+      "producer_price": 0.0,
+      "consumer_price": 0.0,
+      "stock": 0,
+      "brand": "Foxlux",
+      "active": false,
+      "featured": false,
+      "options": [],
+      "image_path": "public/products/novos-20261020/62709-chave-phillips-foxlux.webp",
+      "source_folder": "62709-chave-phillips-foxlux",
+      "pending": "Código 62709 não localizado no ERP/estoque; há mais de uma chave no gancho e a medida não está confirmada. Conferir código, medida, preço e saldo.",
+      "price_source": null,
+      "stock_source": null
+    },
+    {
+      "code": "062839",
+      "name": "Cama pet oval rosa com estampa de patinhas",
+      "slug": "cama-pet-oval-rosa-com-estampa-de-patinhas-062839",
+      "description": "<p>Cama oval com borda elevada rosa-clara e almofada central rosa estampada com patinhas azuis, amarelas, brancas e pretas.</p>",
+      "catalog_id": "bfe4d1d0-5f8f-469d-8277-35ccc40dee8b",
+      "category_id": "683bc2b2-7454-40eb-a1a0-ac42b2675aaa",
+      "price": 67.38,
+      "producer_price": 67.38,
+      "consumer_price": 67.38,
+      "stock": 3,
+      "brand": null,
+      "active": true,
+      "featured": false,
+      "options": [],
+      "image_path": "public/products/novos-20261020/62839-cama-pet-rosa.webp",
+      "source_folder": "62839-cama-pet-rosa",
+      "pending": null,
+      "price_source": "dukamp_stock_items.sale_price",
+      "stock_source": "dukamp_stock_items.stock"
+    },
+    {
+      "code": "063746",
+      "name": "Trena Rino Tools de caixa aberta 20 m",
+      "slug": "trena-rino-tools-de-caixa-aberta-20-m-063746",
+      "description": "<p>Trena de caixa aberta com fita de fibra de vidro. A embalagem identifica 20 metros, fita de 13 mm, leitura em metros e polegadas e recolhimento por manivela.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 24.79,
+      "producer_price": 24.79,
+      "consumer_price": 24.79,
+      "stock": 2,
+      "brand": "Rino Tools",
+      "active": true,
+      "featured": false,
+      "options": [],
+      "image_path": "public/products/novos-20261020/63746-trena-rino-20m.webp",
+      "source_folder": "63746-trena-rino-20m",
+      "pending": null,
+      "price_source": "dukamp_stock_items.sale_price",
+      "stock_source": "dukamp_stock_items.stock"
+    },
+    {
+      "code": "UTG-20261020-21",
+      "name": "Chave combinada Tramontina Master — 10 mm",
+      "slug": "chave-combinada-tramontina-master-10-mm-utg-20261020-21",
+      "description": "<p>Ferramenta manual metálica com uma extremidade de boca aberta e outra de anel. Linha Master, com medida gravada no corpo. Venda por unidade, conforme a medida escolhida.</p><p><strong>Medida deste item: 10 mm.</strong> Venda por unidade; não é um kit.</p><p>A imagem apresenta o modelo na medida 25 mm. Este anúncio corresponde à medida informada no título.</p><!-- PENDENCIA IMPORTACAO 2026-10-20: Código lido 33642 no ZIP corresponde a 9 mm no ERP. O ERP possui 033650 para 10 mm, mas a associação da peça precisa de conferência. -->",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 0.0,
+      "producer_price": 0.0,
+      "consumer_price": 0.0,
+      "stock": 0,
+      "brand": "Tramontina",
+      "active": false,
+      "featured": false,
+      "options": [
+        {
+          "id": "ee82f8ea-233e-5d30-b8e9-eda36a1a5002",
+          "name": "Medida",
+          "values": [
+            {
+              "id": "2637f2b2-6a89-5c8e-9ef4-fc68c02cf021",
+              "label": "10 mm"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/chaves-combinadas-tramontina-master.webp",
+      "source_folder": "CHAVES-COMBINADAS-tramontina-master",
+      "pending": "Código lido 33642 no ZIP corresponde a 9 mm no ERP. O ERP possui 033650 para 10 mm, mas a associação da peça precisa de conferência.",
+      "price_source": null,
+      "stock_source": null
+    },
+    {
+      "code": "UTG-20261020-22",
+      "name": "Chave combinada Tramontina Master — 12 mm",
+      "slug": "chave-combinada-tramontina-master-12-mm-utg-20261020-22",
+      "description": "<p>Ferramenta manual metálica com uma extremidade de boca aberta e outra de anel. Linha Master, com medida gravada no corpo. Venda por unidade, conforme a medida escolhida.</p><p><strong>Medida deste item: 12 mm.</strong> Venda por unidade; não é um kit.</p><p>A imagem apresenta o modelo na medida 25 mm. Este anúncio corresponde à medida informada no título.</p><!-- PENDENCIA IMPORTACAO 2026-10-20: Código da loja não visível; a referência 2045112 do material deve ser confrontada com o cadastro. Confirmar código, preço e saldo. -->",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 0.0,
+      "producer_price": 0.0,
+      "consumer_price": 0.0,
+      "stock": 0,
+      "brand": "Tramontina",
+      "active": false,
+      "featured": false,
+      "options": [
+        {
+          "id": "6199c21a-efec-53bc-909c-6280a8ac00ae",
+          "name": "Medida",
+          "values": [
+            {
+              "id": "16adbef6-34d6-5c29-9b2e-cdd25d3223ff",
+              "label": "12 mm"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/chaves-combinadas-tramontina-master.webp",
+      "source_folder": "CHAVES-COMBINADAS-tramontina-master",
+      "pending": "Código da loja não visível; a referência 2045112 do material deve ser confrontada com o cadastro. Confirmar código, preço e saldo.",
+      "price_source": null,
+      "stock_source": null
+    },
+    {
+      "code": "033707",
+      "name": "Chave combinada Tramontina Master — 15 mm",
+      "slug": "chave-combinada-tramontina-master-15-mm-033707",
+      "description": "<p>Ferramenta manual metálica com uma extremidade de boca aberta e outra de anel. Linha Master, com medida gravada no corpo. Venda por unidade, conforme a medida escolhida.</p><p><strong>Medida deste item: 15 mm.</strong> Venda por unidade; não é um kit.</p><p>A imagem apresenta o modelo na medida 25 mm. Este anúncio corresponde à medida informada no título.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 11.15,
+      "producer_price": 11.15,
+      "consumer_price": 11.15,
+      "stock": 0,
+      "brand": "Tramontina",
+      "active": true,
+      "featured": false,
+      "options": [
+        {
+          "id": "4c1c129b-4f51-54f9-8c5b-2716ef33e6a4",
+          "name": "Medida",
+          "values": [
+            {
+              "id": "020736a7-9e12-56f5-8907-d9e589b413c2",
+              "label": "15 mm"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/chaves-combinadas-tramontina-master.webp",
+      "source_folder": "CHAVES-COMBINADAS-tramontina-master",
+      "pending": null,
+      "price_source": "erp_products.pricing_data.faixas[prazo_dias=28].produtor.preco",
+      "stock_source": null
+    },
+    {
+      "code": "033715",
+      "name": "Chave combinada Tramontina Master — 16 mm",
+      "slug": "chave-combinada-tramontina-master-16-mm-033715",
+      "description": "<p>Ferramenta manual metálica com uma extremidade de boca aberta e outra de anel. Linha Master, com medida gravada no corpo. Venda por unidade, conforme a medida escolhida.</p><p><strong>Medida deste item: 16 mm.</strong> Venda por unidade; não é um kit.</p><p>A imagem apresenta o modelo na medida 25 mm. Este anúncio corresponde à medida informada no título.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 12.99,
+      "producer_price": 12.99,
+      "consumer_price": 12.99,
+      "stock": 0,
+      "brand": "Tramontina",
+      "active": true,
+      "featured": false,
+      "options": [
+        {
+          "id": "ed6b1f52-9482-5611-8c6e-b86ca7ab1908",
+          "name": "Medida",
+          "values": [
+            {
+              "id": "2221edaa-0ab9-505d-b7ac-a32796eda4ab",
+              "label": "16 mm"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/chaves-combinadas-tramontina-master.webp",
+      "source_folder": "CHAVES-COMBINADAS-tramontina-master",
+      "pending": null,
+      "price_source": "erp_products.pricing_data.faixas[prazo_dias=28].produtor.preco",
+      "stock_source": null
+    },
+    {
+      "code": "033731",
+      "name": "Chave combinada Tramontina Master — 18 mm",
+      "slug": "chave-combinada-tramontina-master-18-mm-033731",
+      "description": "<p>Ferramenta manual metálica com uma extremidade de boca aberta e outra de anel. Linha Master, com medida gravada no corpo. Venda por unidade, conforme a medida escolhida.</p><p><strong>Medida deste item: 18 mm.</strong> Venda por unidade; não é um kit.</p><p>A imagem apresenta o modelo na medida 25 mm. Este anúncio corresponde à medida informada no título.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 13.78,
+      "producer_price": 13.78,
+      "consumer_price": 13.78,
+      "stock": 0,
+      "brand": "Tramontina",
+      "active": true,
+      "featured": false,
+      "options": [
+        {
+          "id": "55fc5a8f-52fe-52d1-b430-cb4fc8022172",
+          "name": "Medida",
+          "values": [
+            {
+              "id": "01868d00-7555-5643-9fde-fb5e661365d1",
+              "label": "18 mm"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/chaves-combinadas-tramontina-master.webp",
+      "source_folder": "CHAVES-COMBINADAS-tramontina-master",
+      "pending": null,
+      "price_source": "erp_products.pricing_data.faixas[prazo_dias=28].produtor.preco",
+      "stock_source": null
+    },
+    {
+      "code": "UTG-20261020-26",
+      "name": "Chave combinada Tramontina Master — 19 mm",
+      "slug": "chave-combinada-tramontina-master-19-mm-utg-20261020-26",
+      "description": "<p>Ferramenta manual metálica com uma extremidade de boca aberta e outra de anel. Linha Master, com medida gravada no corpo. Venda por unidade, conforme a medida escolhida.</p><p><strong>Medida deste item: 19 mm.</strong> Venda por unidade; não é um kit.</p><p>A imagem apresenta o modelo na medida 25 mm. Este anúncio corresponde à medida informada no título.</p><!-- PENDENCIA IMPORTACAO 2026-10-20: Código lido 33750 não localizado. O ERP possui 033740 para 19 mm; confirmar a etiqueta antes de vincular. -->",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 0.0,
+      "producer_price": 0.0,
+      "consumer_price": 0.0,
+      "stock": 0,
+      "brand": "Tramontina",
+      "active": false,
+      "featured": false,
+      "options": [
+        {
+          "id": "6b4ab100-cfe1-5aa6-9f26-3d70095c1d3f",
+          "name": "Medida",
+          "values": [
+            {
+              "id": "89781741-529d-5da1-b6c8-785bd6d9c36c",
+              "label": "19 mm"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/chaves-combinadas-tramontina-master.webp",
+      "source_folder": "CHAVES-COMBINADAS-tramontina-master",
+      "pending": "Código lido 33750 não localizado. O ERP possui 033740 para 19 mm; confirmar a etiqueta antes de vincular.",
+      "price_source": null,
+      "stock_source": null
+    },
+    {
+      "code": "033758",
+      "name": "Chave combinada Tramontina Master — 20 mm",
+      "slug": "chave-combinada-tramontina-master-20-mm-033758",
+      "description": "<p>Ferramenta manual metálica com uma extremidade de boca aberta e outra de anel. Linha Master, com medida gravada no corpo. Venda por unidade, conforme a medida escolhida.</p><p><strong>Medida deste item: 20 mm.</strong> Venda por unidade; não é um kit.</p><p>A imagem apresenta o modelo na medida 25 mm. Este anúncio corresponde à medida informada no título.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 17.01,
+      "producer_price": 17.01,
+      "consumer_price": 17.01,
+      "stock": 0,
+      "brand": "Tramontina",
+      "active": true,
+      "featured": false,
+      "options": [
+        {
+          "id": "9eb876f8-d64c-5b9a-8779-ff557dca51b7",
+          "name": "Medida",
+          "values": [
+            {
+              "id": "70ad94d1-53d8-5284-be88-5a6f5f5c3de7",
+              "label": "20 mm"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/chaves-combinadas-tramontina-master.webp",
+      "source_folder": "CHAVES-COMBINADAS-tramontina-master",
+      "pending": null,
+      "price_source": "erp_products.pricing_data.faixas[prazo_dias=28].produtor.preco",
+      "stock_source": null
+    },
+    {
+      "code": "033766",
+      "name": "Chave combinada Tramontina Master — 21 mm",
+      "slug": "chave-combinada-tramontina-master-21-mm-033766",
+      "description": "<p>Ferramenta manual metálica com uma extremidade de boca aberta e outra de anel. Linha Master, com medida gravada no corpo. Venda por unidade, conforme a medida escolhida.</p><p><strong>Medida deste item: 21 mm.</strong> Venda por unidade; não é um kit.</p><p>A imagem apresenta o modelo na medida 25 mm. Este anúncio corresponde à medida informada no título.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 17.03,
+      "producer_price": 17.03,
+      "consumer_price": 17.03,
+      "stock": 3,
+      "brand": "Tramontina",
+      "active": true,
+      "featured": false,
+      "options": [
+        {
+          "id": "6630e6c3-a211-5fb8-8cf2-e2b849baa0b7",
+          "name": "Medida",
+          "values": [
+            {
+              "id": "3cbfd048-c3e6-5dd5-92e6-a42b07f33d2f",
+              "label": "21 mm"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/chaves-combinadas-tramontina-master.webp",
+      "source_folder": "CHAVES-COMBINADAS-tramontina-master",
+      "pending": null,
+      "price_source": "dukamp_stock_items.sale_price",
+      "stock_source": "dukamp_stock_items.stock"
+    },
+    {
+      "code": "034711",
+      "name": "Chave combinada Tramontina Master — 23 mm",
+      "slug": "chave-combinada-tramontina-master-23-mm-034711",
+      "description": "<p>Ferramenta manual metálica com uma extremidade de boca aberta e outra de anel. Linha Master, com medida gravada no corpo. Venda por unidade, conforme a medida escolhida.</p><p><strong>Medida deste item: 23 mm.</strong> Venda por unidade; não é um kit.</p><p>A imagem apresenta o modelo na medida 25 mm. Este anúncio corresponde à medida informada no título.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 21.88,
+      "producer_price": 21.88,
+      "consumer_price": 21.88,
+      "stock": 1,
+      "brand": "Tramontina",
+      "active": true,
+      "featured": false,
+      "options": [
+        {
+          "id": "48263971-7b7b-53c0-95c8-ebc80deb6647",
+          "name": "Medida",
+          "values": [
+            {
+              "id": "b39ade04-cf0f-5519-9501-183bc3c4646c",
+              "label": "23 mm"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/chaves-combinadas-tramontina-master.webp",
+      "source_folder": "CHAVES-COMBINADAS-tramontina-master",
+      "pending": null,
+      "price_source": "dukamp_stock_items.sale_price",
+      "stock_source": "dukamp_stock_items.stock"
+    },
+    {
+      "code": "033790",
+      "name": "Chave combinada Tramontina Master — 24 mm",
+      "slug": "chave-combinada-tramontina-master-24-mm-033790",
+      "description": "<p>Ferramenta manual metálica com uma extremidade de boca aberta e outra de anel. Linha Master, com medida gravada no corpo. Venda por unidade, conforme a medida escolhida.</p><p><strong>Medida deste item: 24 mm.</strong> Venda por unidade; não é um kit.</p><p>A imagem apresenta o modelo na medida 25 mm. Este anúncio corresponde à medida informada no título.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 25.28,
+      "producer_price": 25.28,
+      "consumer_price": 25.28,
+      "stock": 1,
+      "brand": "Tramontina",
+      "active": true,
+      "featured": false,
+      "options": [
+        {
+          "id": "34177d46-68ab-5fd2-a89e-1f11c8f7ddaf",
+          "name": "Medida",
+          "values": [
+            {
+              "id": "0f4ca482-b7a9-5bf3-b59e-4f0c2e521671",
+              "label": "24 mm"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/chaves-combinadas-tramontina-master.webp",
+      "source_folder": "CHAVES-COMBINADAS-tramontina-master",
+      "pending": null,
+      "price_source": "dukamp_stock_items.sale_price",
+      "stock_source": "dukamp_stock_items.stock"
+    },
+    {
+      "code": "033804",
+      "name": "Chave combinada Tramontina Master — 25 mm",
+      "slug": "chave-combinada-tramontina-master-25-mm-033804",
+      "description": "<p>Ferramenta manual metálica com uma extremidade de boca aberta e outra de anel. Linha Master, com medida gravada no corpo. Venda por unidade, conforme a medida escolhida.</p><p><strong>Medida deste item: 25 mm.</strong> Venda por unidade; não é um kit.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 28.78,
+      "producer_price": 28.78,
+      "consumer_price": 28.78,
+      "stock": 2,
+      "brand": "Tramontina",
+      "active": true,
+      "featured": false,
+      "options": [
+        {
+          "id": "0bc784a6-36ef-58ae-960a-cefb9ed3f923",
+          "name": "Medida",
+          "values": [
+            {
+              "id": "3d6c72e0-1c4c-5b7b-b491-c01f2d57ba9d",
+              "label": "25 mm"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/chaves-combinadas-tramontina-master.webp",
+      "source_folder": "CHAVES-COMBINADAS-tramontina-master",
+      "pending": null,
+      "price_source": "dukamp_stock_items.sale_price",
+      "stock_source": "dukamp_stock_items.stock"
+    },
+    {
+      "code": "033812",
+      "name": "Chave combinada Tramontina Master — 26 mm",
+      "slug": "chave-combinada-tramontina-master-26-mm-033812",
+      "description": "<p>Ferramenta manual metálica com uma extremidade de boca aberta e outra de anel. Linha Master, com medida gravada no corpo. Venda por unidade, conforme a medida escolhida.</p><p><strong>Medida deste item: 26 mm.</strong> Venda por unidade; não é um kit.</p><p>A imagem apresenta o modelo na medida 25 mm. Este anúncio corresponde à medida informada no título.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 32.04,
+      "producer_price": 32.04,
+      "consumer_price": 32.04,
+      "stock": 3,
+      "brand": "Tramontina",
+      "active": true,
+      "featured": false,
+      "options": [
+        {
+          "id": "1fdd54f8-b0bd-5dde-b6c2-c4d7d3f7546f",
+          "name": "Medida",
+          "values": [
+            {
+              "id": "eec0a48f-de81-5a43-a719-738eb0c3f436",
+              "label": "26 mm"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/chaves-combinadas-tramontina-master.webp",
+      "source_folder": "CHAVES-COMBINADAS-tramontina-master",
+      "pending": null,
+      "price_source": "dukamp_stock_items.sale_price",
+      "stock_source": "dukamp_stock_items.stock"
+    },
+    {
+      "code": "033820",
+      "name": "Chave combinada Tramontina Master — 27 mm",
+      "slug": "chave-combinada-tramontina-master-27-mm-033820",
+      "description": "<p>Ferramenta manual metálica com uma extremidade de boca aberta e outra de anel. Linha Master, com medida gravada no corpo. Venda por unidade, conforme a medida escolhida.</p><p><strong>Medida deste item: 27 mm.</strong> Venda por unidade; não é um kit.</p><p>A imagem apresenta o modelo na medida 25 mm. Este anúncio corresponde à medida informada no título.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 46.55,
+      "producer_price": 46.55,
+      "consumer_price": 46.55,
+      "stock": 1,
+      "brand": "Tramontina",
+      "active": true,
+      "featured": false,
+      "options": [
+        {
+          "id": "2bcc2f84-85fe-556d-8203-190b82ba5459",
+          "name": "Medida",
+          "values": [
+            {
+              "id": "3236d320-df9e-572f-a319-b831ad94ab13",
+              "label": "27 mm"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/chaves-combinadas-tramontina-master.webp",
+      "source_folder": "CHAVES-COMBINADAS-tramontina-master",
+      "pending": null,
+      "price_source": "dukamp_stock_items.sale_price",
+      "stock_source": "dukamp_stock_items.stock"
+    },
+    {
+      "code": "033855",
+      "name": "Chave combinada Tramontina Master — 32 mm",
+      "slug": "chave-combinada-tramontina-master-32-mm-033855",
+      "description": "<p>Ferramenta manual metálica com uma extremidade de boca aberta e outra de anel. Linha Master, com medida gravada no corpo. Venda por unidade, conforme a medida escolhida.</p><p><strong>Medida deste item: 32 mm.</strong> Venda por unidade; não é um kit.</p><p>A imagem apresenta o modelo na medida 25 mm. Este anúncio corresponde à medida informada no título.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 53.86,
+      "producer_price": 53.86,
+      "consumer_price": 53.86,
+      "stock": 0,
+      "brand": "Tramontina",
+      "active": true,
+      "featured": false,
+      "options": [
+        {
+          "id": "75b258bc-e672-5767-8e8e-e306272154a2",
+          "name": "Medida",
+          "values": [
+            {
+              "id": "e39136e7-edb2-5510-9faa-f97019958d71",
+              "label": "32 mm"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/chaves-combinadas-tramontina-master.webp",
+      "source_folder": "CHAVES-COMBINADAS-tramontina-master",
+      "pending": null,
+      "price_source": "erp_products.pricing_data.faixas[prazo_dias=28].produtor.preco",
+      "stock_source": null
+    },
+    {
+      "code": "UTG-20261020-35",
+      "name": "Chave de fenda Foxlux PRO 1/4 x 6 polegadas",
+      "slug": "chave-de-fenda-foxlux-pro-1-4-x-6-polegadas-utg-20261020-35",
+      "description": "<p>Chave de fenda com cabo laranja translúcido e haste metálica. A embalagem indica 1/4 x 6 polegadas / 150 mm.</p><!-- PENDENCIA IMPORTACAO 2026-10-20: Código não confirmado; conferir código, preço e saldo. -->",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 0.0,
+      "producer_price": 0.0,
+      "consumer_price": 0.0,
+      "stock": 0,
+      "brand": "Foxlux",
+      "active": false,
+      "featured": false,
+      "options": [],
+      "image_path": "public/products/novos-20261020/codigo-pendente-chave-fenda-foxlux-150mm.webp",
+      "source_folder": "CODIGO-PENDENTE-chave-fenda-foxlux-150mm",
+      "pending": "Código não confirmado; conferir código, preço e saldo.",
+      "price_source": null,
+      "stock_source": null
+    },
+    {
+      "code": "UTG-20261020-36",
+      "name": "Corda multiuso colorida 6 mm x 20 m",
+      "slug": "corda-multiuso-colorida-6-mm-x-20-m-utg-20261020-36",
+      "description": "<p>Corda trançada de base escura com pontos coloridos, apresentada em meada Artplus. A etiqueta indica 6 mm e 20 metros.</p><!-- PENDENCIA IMPORTACAO 2026-10-20: Código lido 34330 não localizado; foto tem leitura duvidosa. Conferir inclusive diâmetro e código antes de vincular preço/saldo. -->",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 0.0,
+      "producer_price": 0.0,
+      "consumer_price": 0.0,
+      "stock": 0,
+      "brand": "Artplus",
+      "active": false,
+      "featured": false,
+      "options": [],
+      "image_path": "public/products/novos-20261020/codigo-pendente-corda-colorida-6mm-20m.webp",
+      "source_folder": "CODIGO-PENDENTE-corda-colorida-6mm-20m",
+      "pending": "Código lido 34330 não localizado; foto tem leitura duvidosa. Conferir inclusive diâmetro e código antes de vincular preço/saldo.",
+      "price_source": null,
+      "stock_source": null
+    },
+    {
+      "code": "UTG-20261020-37",
+      "name": "Porta-ferramenta preto com costura aparente",
+      "slug": "porta-ferramenta-preto-com-costura-aparente-utg-20261020-37",
+      "description": "<p>Suporte curto preto com abertura superior e costura clara ao redor da borda, mostrado pendurado no expositor.</p><!-- PENDENCIA IMPORTACAO 2026-10-20: Confirmar código, finalidade, material, preço e saldo. -->",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 0.0,
+      "producer_price": 0.0,
+      "consumer_price": 0.0,
+      "stock": 0,
+      "brand": null,
+      "active": false,
+      "featured": false,
+      "options": [],
+      "image_path": "public/products/novos-20261020/codigo-pendente-porta-ferramenta.webp",
+      "source_folder": "CODIGO-PENDENTE-porta-ferramenta",
+      "pending": "Confirmar código, finalidade, material, preço e saldo.",
+      "price_source": null,
+      "stock_source": null
+    },
+    {
+      "code": "057860",
+      "name": "Formão chanfrado Thompson com cabo de madeira — 1/2 polegada",
+      "slug": "formao-chanfrado-thompson-com-cabo-de-madeira-1-2-polegada-057860",
+      "description": "<p>Ferramenta manual com lâmina metálica chanfrada, cabo de madeira em tom claro e anéis metálicos. Venda por unidade e medida.</p><p><strong>Medida deste item: 1/2 polegada.</strong> Venda por unidade; não é um kit.</p><p>A imagem apresenta o modelo na medida 3/8 de polegada. Este anúncio corresponde à medida informada no título.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 16.05,
+      "producer_price": 16.05,
+      "consumer_price": 16.05,
+      "stock": 1,
+      "brand": "Thompson",
+      "active": true,
+      "featured": false,
+      "options": [
+        {
+          "id": "ae86e066-c10a-5a8b-96a5-1ae160c1cbb2",
+          "name": "Medida",
+          "values": [
+            {
+              "id": "616e8132-899a-5901-9983-b1bfbb5051d8",
+              "label": "1/2 polegada"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/formoes-thompson.webp",
+      "source_folder": "FORMOES-thompson",
+      "pending": null,
+      "price_source": "dukamp_stock_items.sale_price",
+      "stock_source": "dukamp_stock_items.stock"
+    },
+    {
+      "code": "057851",
+      "name": "Formão chanfrado Thompson com cabo de madeira — 3/8 polegada",
+      "slug": "formao-chanfrado-thompson-com-cabo-de-madeira-3-8-polegada-057851",
+      "description": "<p>Ferramenta manual com lâmina metálica chanfrada, cabo de madeira em tom claro e anéis metálicos. Venda por unidade e medida.</p><p><strong>Medida deste item: 3/8 polegada.</strong> Venda por unidade; não é um kit.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 16.05,
+      "producer_price": 16.05,
+      "consumer_price": 16.05,
+      "stock": 1,
+      "brand": "Thompson",
+      "active": true,
+      "featured": false,
+      "options": [
+        {
+          "id": "52e6c943-7f2a-5795-9ef7-f8e3998dd9f7",
+          "name": "Medida",
+          "values": [
+            {
+              "id": "df2c4dd1-dc41-5bb5-b5fa-21b960f1cd83",
+              "label": "3/8 polegada"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/formoes-thompson.webp",
+      "source_folder": "FORMOES-thompson",
+      "pending": null,
+      "price_source": "dukamp_stock_items.sale_price",
+      "stock_source": "dukamp_stock_items.stock"
+    },
+    {
+      "code": "UTG-20261020-40",
+      "name": "Formão chanfrado Thompson com cabo de madeira — 5/8 polegada",
+      "slug": "formao-chanfrado-thompson-com-cabo-de-madeira-5-8-polegada-utg-20261020-40",
+      "description": "<p>Ferramenta manual com lâmina metálica chanfrada, cabo de madeira em tom claro e anéis metálicos. Venda por unidade e medida.</p><p><strong>Medida deste item: 5/8 polegada.</strong> Venda por unidade; não é um kit.</p><p>A imagem apresenta o modelo na medida 3/8 de polegada. Este anúncio corresponde à medida informada no título.</p><!-- PENDENCIA IMPORTACAO 2026-10-20: Código da loja encoberto; confirmar associação com o ERP, preço e saldo. -->",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 0.0,
+      "producer_price": 0.0,
+      "consumer_price": 0.0,
+      "stock": 0,
+      "brand": "Thompson",
+      "active": false,
+      "featured": false,
+      "options": [
+        {
+          "id": "f00b2a15-c407-51f6-b8d0-a199bb462fd8",
+          "name": "Medida",
+          "values": [
+            {
+              "id": "9e3d9097-2783-51da-a2b4-af174ee1bfd1",
+              "label": "5/8 polegada"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/formoes-thompson.webp",
+      "source_folder": "FORMOES-thompson",
+      "pending": "Código da loja encoberto; confirmar associação com o ERP, preço e saldo.",
+      "price_source": null,
+      "stock_source": null
+    },
+    {
+      "code": "071412",
+      "name": "Calça jeans Wrangler com elastano — Nº 36",
+      "slug": "calca-jeans-wrangler-com-elastano-no-36-071412",
+      "description": "<p>Calças jeans em embalagem Wrangler, identificadas pelas etiquetas da loja como elastano. Peças mantidas embaladas no vídeo; lavagem, corte e percentual de composição de cada código não foram confirmados.</p><p><strong>Numeração deste item: 36.</strong> Venda por unidade.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 186.4,
+      "producer_price": 186.4,
+      "consumer_price": 186.4,
+      "stock": 7,
+      "brand": "Wrangler",
+      "active": true,
+      "featured": false,
+      "options": [
+        {
+          "id": "6d95adf9-c49a-5c9b-b9af-16bb5904e35c",
+          "name": "Numeração",
+          "values": [
+            {
+              "id": "165b19f8-7fe1-5fbc-96d7-36d8563943fb",
+              "label": "36"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/jeans-elastano-wrangler.webp",
+      "source_folder": "JEANS-ELASTANO-wrangler",
+      "pending": null,
+      "price_source": "dukamp_stock_items.sale_price",
+      "stock_source": "dukamp_stock_items.stock"
+    },
+    {
+      "code": "068713",
+      "name": "Calça jeans Wrangler com elastano — Nº 38",
+      "slug": "calca-jeans-wrangler-com-elastano-no-38-068713",
+      "description": "<p>Calças jeans em embalagem Wrangler, identificadas pelas etiquetas da loja como elastano. Peças mantidas embaladas no vídeo; lavagem, corte e percentual de composição de cada código não foram confirmados.</p><p><strong>Numeração deste item: 38.</strong> Venda por unidade.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 186.4,
+      "producer_price": 186.4,
+      "consumer_price": 186.4,
+      "stock": 3,
+      "brand": "Wrangler",
+      "active": true,
+      "featured": false,
+      "options": [
+        {
+          "id": "f7c5b6f7-eed7-5da1-a101-706ce4278bc9",
+          "name": "Numeração",
+          "values": [
+            {
+              "id": "06aeb1f4-659f-5e70-9272-fcb2da20b259",
+              "label": "38"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/jeans-elastano-wrangler.webp",
+      "source_folder": "JEANS-ELASTANO-wrangler",
+      "pending": null,
+      "price_source": "dukamp_stock_items.sale_price",
+      "stock_source": "dukamp_stock_items.stock"
+    },
+    {
+      "code": "068705",
+      "name": "Calça jeans Wrangler com elastano — Nº 38",
+      "slug": "calca-jeans-wrangler-com-elastano-no-38-068705",
+      "description": "<p>Calças jeans em embalagem Wrangler, identificadas pelas etiquetas da loja como elastano. Peças mantidas embaladas no vídeo; lavagem, corte e percentual de composição de cada código não foram confirmados.</p><p><strong>Numeração deste item: 38.</strong> Venda por unidade.</p><!-- PENDENCIA IMPORTACAO 2026-10-20: Etiqueta informa 38, anotação externa 37 BR e ERP NUM.28 (38). Confirmar numeração real antes de liberar a venda. -->",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 186.4,
+      "producer_price": 186.4,
+      "consumer_price": 186.4,
+      "stock": 1,
+      "brand": "Wrangler",
+      "active": false,
+      "featured": false,
+      "options": [
+        {
+          "id": "3cd08f3e-adf9-5f0a-830e-950d27616b30",
+          "name": "Numeração",
+          "values": [
+            {
+              "id": "2c3d05f6-b1fd-53b1-a698-58755ea767f1",
+              "label": "38"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/jeans-elastano-wrangler.webp",
+      "source_folder": "JEANS-ELASTANO-wrangler",
+      "pending": "Etiqueta informa 38, anotação externa 37 BR e ERP NUM.28 (38). Confirmar numeração real antes de liberar a venda.",
+      "price_source": "dukamp_stock_items.sale_price",
+      "stock_source": "dukamp_stock_items.stock"
+    },
+    {
+      "code": "068721",
+      "name": "Calça jeans Wrangler com elastano — Nº 40",
+      "slug": "calca-jeans-wrangler-com-elastano-no-40-068721",
+      "description": "<p>Calças jeans em embalagem Wrangler, identificadas pelas etiquetas da loja como elastano. Peças mantidas embaladas no vídeo; lavagem, corte e percentual de composição de cada código não foram confirmados.</p><p><strong>Numeração deste item: 40.</strong> Venda por unidade.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 186.4,
+      "producer_price": 186.4,
+      "consumer_price": 186.4,
+      "stock": 5,
+      "brand": "Wrangler",
+      "active": true,
+      "featured": false,
+      "options": [
+        {
+          "id": "d2c4eeac-172a-583a-a646-370a2c2dc0e3",
+          "name": "Numeração",
+          "values": [
+            {
+              "id": "5b734f78-af97-5ac6-ab00-5465c7dc8830",
+              "label": "40"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/jeans-elastano-wrangler.webp",
+      "source_folder": "JEANS-ELASTANO-wrangler",
+      "pending": null,
+      "price_source": "dukamp_stock_items.sale_price",
+      "stock_source": "dukamp_stock_items.stock"
+    },
+    {
+      "code": "068837",
+      "name": "Calça jeans Wrangler tradicional — Nº 36",
+      "slug": "calca-jeans-wrangler-tradicional-no-36-068837",
+      "description": "<p>Calças jeans em embalagem Wrangler, identificadas nas etiquetas da loja como tradicional. Lavagem, corte e composição não ficam visíveis nas peças embaladas.</p><p><strong>Numeração deste item: 36.</strong> Venda por unidade.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 170.24,
+      "producer_price": 170.24,
+      "consumer_price": 170.24,
+      "stock": 3,
+      "brand": "Wrangler",
+      "active": true,
+      "featured": false,
+      "options": [
+        {
+          "id": "266a0f91-61f7-580c-b567-5a862b67ef7b",
+          "name": "Numeração",
+          "values": [
+            {
+              "id": "40f857f3-818c-5ef5-9b93-0a20ec5599ec",
+              "label": "36"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/jeans-tradicional-wrangler.webp",
+      "source_folder": "JEANS-TRADICIONAL-wrangler",
+      "pending": null,
+      "price_source": "dukamp_stock_items.sale_price",
+      "stock_source": "dukamp_stock_items.stock"
+    },
+    {
+      "code": "071404",
+      "name": "Calça jeans Wrangler tradicional — Nº 38",
+      "slug": "calca-jeans-wrangler-tradicional-no-38-071404",
+      "description": "<p>Calças jeans em embalagem Wrangler, identificadas nas etiquetas da loja como tradicional. Lavagem, corte e composição não ficam visíveis nas peças embaladas.</p><p><strong>Numeração deste item: 38.</strong> Venda por unidade.</p><!-- PENDENCIA IMPORTACAO 2026-10-20: Etiqueta informa 38 e anotação externa 37 BR. Confirmar numeração real antes de liberar a venda. -->",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 170.24,
+      "producer_price": 170.24,
+      "consumer_price": 170.24,
+      "stock": 1,
+      "brand": "Wrangler",
+      "active": false,
+      "featured": false,
+      "options": [
+        {
+          "id": "9d4c5582-4b73-5644-86a2-37d1d2a63977",
+          "name": "Numeração",
+          "values": [
+            {
+              "id": "bfb32c9e-db39-5146-b5c1-6fdb1e522c34",
+              "label": "38"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/jeans-tradicional-wrangler.webp",
+      "source_folder": "JEANS-TRADICIONAL-wrangler",
+      "pending": "Etiqueta informa 38 e anotação externa 37 BR. Confirmar numeração real antes de liberar a venda.",
+      "price_source": "dukamp_stock_items.sale_price",
+      "stock_source": "dukamp_stock_items.stock"
+    },
+    {
+      "code": "068926",
+      "name": "Calça jeans Wrangler tradicional — Nº 52",
+      "slug": "calca-jeans-wrangler-tradicional-no-52-068926",
+      "description": "<p>Calças jeans em embalagem Wrangler, identificadas nas etiquetas da loja como tradicional. Lavagem, corte e composição não ficam visíveis nas peças embaladas.</p><p><strong>Numeração deste item: 52.</strong> Venda por unidade.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 170.24,
+      "producer_price": 170.24,
+      "consumer_price": 170.24,
+      "stock": 1,
+      "brand": "Wrangler",
+      "active": true,
+      "featured": false,
+      "options": [
+        {
+          "id": "e2c34ecd-121e-558c-bf13-a4ae9918f4bd",
+          "name": "Numeração",
+          "values": [
+            {
+              "id": "de8e4060-5ea0-5d37-829c-4ada0607d045",
+              "label": "52"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/jeans-tradicional-wrangler.webp",
+      "source_folder": "JEANS-TRADICIONAL-wrangler",
+      "pending": null,
+      "price_source": "dukamp_stock_items.sale_price",
+      "stock_source": "dukamp_stock_items.stock"
+    },
+    {
+      "code": "068942",
+      "name": "Calça jeans Wrangler tradicional — Nº 56",
+      "slug": "calca-jeans-wrangler-tradicional-no-56-068942",
+      "description": "<p>Calças jeans em embalagem Wrangler, identificadas nas etiquetas da loja como tradicional. Lavagem, corte e composição não ficam visíveis nas peças embaladas.</p><p><strong>Numeração deste item: 56.</strong> Venda por unidade.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 170.24,
+      "producer_price": 170.24,
+      "consumer_price": 170.24,
+      "stock": 7,
+      "brand": "Wrangler",
+      "active": true,
+      "featured": false,
+      "options": [
+        {
+          "id": "ec741345-44a5-50ba-9ccd-19254dc80b70",
+          "name": "Numeração",
+          "values": [
+            {
+              "id": "fc800dc1-cc41-5efd-8a3e-445ff4f0c109",
+              "label": "56"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/jeans-tradicional-wrangler.webp",
+      "source_folder": "JEANS-TRADICIONAL-wrangler",
+      "pending": null,
+      "price_source": "dukamp_stock_items.sale_price",
+      "stock_source": "dukamp_stock_items.stock"
+    },
+    {
+      "code": "068950",
+      "name": "Calça jeans Wrangler tradicional — Nº 58",
+      "slug": "calca-jeans-wrangler-tradicional-no-58-068950",
+      "description": "<p>Calças jeans em embalagem Wrangler, identificadas nas etiquetas da loja como tradicional. Lavagem, corte e composição não ficam visíveis nas peças embaladas.</p><p><strong>Numeração deste item: 58.</strong> Venda por unidade.</p>",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 170.24,
+      "producer_price": 170.24,
+      "consumer_price": 170.24,
+      "stock": 28,
+      "brand": "Wrangler",
+      "active": true,
+      "featured": false,
+      "options": [
+        {
+          "id": "a502f28a-50a6-5231-9116-b33183043280",
+          "name": "Numeração",
+          "values": [
+            {
+              "id": "4cd633d8-1fe7-59a6-9c9a-1dcff71bc49b",
+              "label": "58"
+            }
+          ]
+        }
+      ],
+      "image_path": "public/products/novos-20261020/jeans-tradicional-wrangler.webp",
+      "source_folder": "JEANS-TRADICIONAL-wrangler",
+      "pending": null,
+      "price_source": "dukamp_stock_items.sale_price",
+      "stock_source": "dukamp_stock_items.stock"
+    },
+    {
+      "code": "UTG-20261020-50",
+      "name": "Aquecedor de água Cotherm 127 V 1000 W",
+      "slug": "aquecedor-de-agua-cotherm-127-v-1000-w-utg-20261020-50",
+      "description": "<p>Aquecedor de água embalado, com elemento metálico, cabo elétrico preto e plugue de três pinos. A embalagem identifica Cotherm, 127 V e 1000 W.</p><!-- PENDENCIA IMPORTACAO 2026-10-20: Confirmar código da unidade 127 V / 1000 W, preço e saldo. -->",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 0.0,
+      "producer_price": 0.0,
+      "consumer_price": 0.0,
+      "stock": 0,
+      "brand": "Cotherm",
+      "active": false,
+      "featured": false,
+      "options": [],
+      "image_path": "public/products/novos-20261020/sem-codigo-aquecedor-cotherm-127v-1000w.webp",
+      "source_folder": "SEM-CODIGO-aquecedor-cotherm-127v-1000w",
+      "pending": "Confirmar código da unidade 127 V / 1000 W, preço e saldo.",
+      "price_source": null,
+      "stock_source": null
+    },
+    {
+      "code": "UTG-20261020-51",
+      "name": "Chave de fenda Foxlux PRO 3/16 x 5 polegadas",
+      "slug": "chave-de-fenda-foxlux-pro-3-16-x-5-polegadas-utg-20261020-51",
+      "description": "<p>Chave de fenda com cabo laranja translúcido e haste metálica. A embalagem identifica linha PRO e medida 3/16 x 5 polegadas, equivalente a 125 mm de haste.</p><!-- PENDENCIA IMPORTACAO 2026-10-20: Código da unidade não legível; há mais de um cadastro Foxlux 3/16 x 5 no ERP. Confirmar código, preço e saldo. -->",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 0.0,
+      "producer_price": 0.0,
+      "consumer_price": 0.0,
+      "stock": 0,
+      "brand": "Foxlux",
+      "active": false,
+      "featured": false,
+      "options": [],
+      "image_path": "public/products/novos-20261020/sem-codigo-chave-fenda-foxlux-125mm.webp",
+      "source_folder": "SEM-CODIGO-chave-fenda-foxlux-125mm",
+      "pending": "Código da unidade não legível; há mais de um cadastro Foxlux 3/16 x 5 no ERP. Confirmar código, preço e saldo.",
+      "price_source": null,
+      "stock_source": null
+    },
+    {
+      "code": "UTG-20261020-52",
+      "name": "Chave grifo Foxlux 10 polegadas",
+      "slug": "chave-grifo-foxlux-10-polegadas-utg-20261020-52",
+      "description": "<p>Chave para tubos com mordentes dentados, ajuste por porca e cabo vermelho. A embalagem Foxlux identifica 10 polegadas.</p><!-- PENDENCIA IMPORTACAO 2026-10-20: Código encoberto; confirmar modelo e associação com o cadastro antes de obter preço e saldo. -->",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 0.0,
+      "producer_price": 0.0,
+      "consumer_price": 0.0,
+      "stock": 0,
+      "brand": "Foxlux",
+      "active": false,
+      "featured": false,
+      "options": [],
+      "image_path": "public/products/novos-20261020/sem-codigo-chave-grifo-foxlux-10.webp",
+      "source_folder": "SEM-CODIGO-chave-grifo-foxlux-10",
+      "pending": "Código encoberto; confirmar modelo e associação com o cadastro antes de obter preço e saldo.",
+      "price_source": null,
+      "stock_source": null
+    },
+    {
+      "code": "UTG-20261020-53",
+      "name": "Chave teste Foxlux 150 mm",
+      "slug": "chave-teste-foxlux-150-mm-utg-20261020-53",
+      "description": "<p>Chave teste com cabo transparente, tampa vermelha e presilha metálica. A embalagem identifica 150 mm e uma unidade.</p><!-- PENDENCIA IMPORTACAO 2026-10-20: Código não visível; confirmar código, faixa de tensão, preço e saldo. -->",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 0.0,
+      "producer_price": 0.0,
+      "consumer_price": 0.0,
+      "stock": 0,
+      "brand": "Foxlux",
+      "active": false,
+      "featured": false,
+      "options": [],
+      "image_path": "public/products/novos-20261020/sem-codigo-chave-teste-foxlux-150mm.webp",
+      "source_folder": "SEM-CODIGO-chave-teste-foxlux-150mm",
+      "pending": "Código não visível; confirmar código, faixa de tensão, preço e saldo.",
+      "price_source": null,
+      "stock_source": null
+    },
+    {
+      "code": "UTG-20261020-54",
+      "name": "Chave manual com cabo verde",
+      "slug": "chave-manual-com-cabo-verde-utg-20261020-54",
+      "description": "<p>Chave manual com cabo verde translúcido e haste metálica reta.</p><!-- PENDENCIA IMPORTACAO 2026-10-20: Código, marca, medida, tipo de ponta, preço e saldo não confirmados. -->",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 0.0,
+      "producer_price": 0.0,
+      "consumer_price": 0.0,
+      "stock": 0,
+      "brand": null,
+      "active": false,
+      "featured": false,
+      "options": [],
+      "image_path": "public/products/novos-20261020/sem-codigo-chave-verde.webp",
+      "source_folder": "SEM-CODIGO-chave-verde",
+      "pending": "Código, marca, medida, tipo de ponta, preço e saldo não confirmados.",
+      "price_source": null,
+      "stock_source": null
+    },
+    {
+      "code": "UTG-20261020-55",
+      "name": "Correia marrom",
+      "slug": "correia-marrom-utg-20261020-55",
+      "description": "<p>Correia longa marrom mostrada pendurada no expositor.</p><!-- PENDENCIA IMPORTACAO 2026-10-20: Confirmar código, aplicação, material, dimensões, preço e saldo. -->",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 0.0,
+      "producer_price": 0.0,
+      "consumer_price": 0.0,
+      "stock": 0,
+      "brand": null,
+      "active": false,
+      "featured": false,
+      "options": [],
+      "image_path": "public/products/novos-20261020/sem-codigo-correia-marrom.webp",
+      "source_folder": "SEM-CODIGO-correia-marrom",
+      "pending": "Confirmar código, aplicação, material, dimensões, preço e saldo.",
+      "price_source": null,
+      "stock_source": null
+    },
+    {
+      "code": "UTG-20261020-56",
+      "name": "Lâmina agrícola metálica com furo quadrado",
+      "slug": "lamina-agricola-metalica-com-furo-quadrado-utg-20261020-56",
+      "description": "<p>Peça metálica de perfil largo, com duas abas laterais, ponta frontal e furo quadrado central para fixação. Acabamento escuro com marcas e oxidação superficial visíveis no original.</p><!-- PENDENCIA IMPORTACAO 2026-10-20: Confirmar código, aplicação, compatibilidade, marca, dimensões, preço e saldo. -->",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 0.0,
+      "producer_price": 0.0,
+      "consumer_price": 0.0,
+      "stock": 0,
+      "brand": null,
+      "active": false,
+      "featured": false,
+      "options": [],
+      "image_path": "public/products/novos-20261020/sem-codigo-lamina-agricola.webp",
+      "source_folder": "SEM-CODIGO-lamina-agricola",
+      "pending": "Confirmar código, aplicação, compatibilidade, marca, dimensões, preço e saldo.",
+      "price_source": null,
+      "stock_source": null
+    },
+    {
+      "code": "UTG-20261020-57",
+      "name": "Trena Sparta 3 m x 16 mm",
+      "slug": "trena-sparta-3-m-x-16-mm-utg-20261020-57",
+      "description": "<p>Trena retrátil com caixa preta emborrachada, detalhes laranja e alça. A etiqueta do produto indica 3 m x 16 mm.</p><!-- PENDENCIA IMPORTACAO 2026-10-20: Código não visível; confirmar código, preço e saldo. -->",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "price": 0.0,
+      "producer_price": 0.0,
+      "consumer_price": 0.0,
+      "stock": 0,
+      "brand": "Sparta",
+      "active": false,
+      "featured": false,
+      "options": [],
+      "image_path": "public/products/novos-20261020/sem-codigo-trena-sparta-3m.webp",
+      "source_folder": "SEM-CODIGO-trena-sparta-3m",
+      "pending": "Código não visível; confirmar código, preço e saldo.",
+      "price_source": null,
+      "stock_source": null
+    }
+  ]
+}
