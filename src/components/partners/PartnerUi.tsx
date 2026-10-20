@@ -75,13 +75,13 @@ export function SummaryCards({
     summaries.reduce((n, s) => n + Number(s[field] || 0), 0);
   const cards = [
     {
-      label: partners == null ? "Pedidos pagos" : "Parceiros ativos",
+      label: partners == null ? "Vendas confirmadas" : "Parceiros ativos",
       value: partners == null ? sum("paid_orders") : partners,
       icon: partners == null ? Package : Store,
     },
     { label: "Faturamento comercial", value: formatBRL(sum("gross_total")), icon: TrendingUp },
     { label: "Comissões reconhecidas", value: formatBRL(sum("commission_total")), icon: Wallet },
-    { label: "Pagamentos à Dukamp", value: formatBRL(sum("dukamp_total")), icon: Package },
+    { label: "Valor líquido das vendas", value: formatBRL(sum("dukamp_total")), icon: Package },
   ];
   return (
     <>
@@ -97,8 +97,7 @@ export function SummaryCards({
         ))}
       </div>
       <p className="mb-6 text-xs text-muted-foreground">
-        Totais de vendas com pagamento aprovado. Cancelamentos e solicitações de reembolso não geram
-        comissão. Taxas de cartão entram no pagamento à Dukamp e não na comissão.
+        Vendas aceitas pela Dukamp e histórico de pedidos pagos. Novas comissões são definidas pelo administrador ao aceitar a venda. As aprovadas no mês são pagas até o 10º dia útil do mês seguinte. Pedidos aguardando análise ou recusados não geram comissão.
       </p>
     </>
   );

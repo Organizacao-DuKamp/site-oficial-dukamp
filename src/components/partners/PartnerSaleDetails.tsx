@@ -1,3 +1,4 @@
+import { PartnerRequestDetails } from "./PartnerRequestDetails";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -49,6 +50,7 @@ export function PartnerSaleDetails({
   if (query.isPending) return <p>Carregando pedido...</p>;
   if (query.error) return <ErrorNotice error={query.error} retry={() => query.refetch()} />;
   const o = query.data;
+  if (o.request_kind === "approval") return <PartnerRequestDetails key={o.id} order={o} admin={admin} refresh={() => query.refetch()} />;
   const paid = o.payment_status === "approved";
   const stopped =
     ["rejected", "cancelled", "refunded"].includes(o.payment_status) ||

@@ -1,4 +1,5 @@
 import test from "node:test";
+import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { stripTypeScriptTypes } from "node:module";
@@ -64,7 +65,7 @@ test('only approved, uncancelled and unrefunded sales count toward commission',(
 });
 test('authorization rejects other tenants, expired/modified quotes and deactivated partners',async()=>{
  const db=fakeDb({dukamp_partners:[partner],dukamp_partner_quotes:[quote],products:[ownProduct]});
- assert.equal((await server.authorizePartnerCheckout(db,'user-a',checkout)).partner.id,'partner-a');
+ await assert.rejects(server.authorizePartnerCheckout(db,'user-a',checkout),/sem pagamento/);
  await assert.rejects(server.authorizePartnerCheckout(db,null,checkout),/Entre no painel/);
  await assert.rejects(server.authorizePartnerCheckout(db,'user-b',checkout),/não autorizado/);
  await assert.rejects(server.authorizePartnerCheckout(db,'user-a',{...checkout,numero:'99'}),/mudaram/);
@@ -73,8 +74,11 @@ test('authorization rejects other tenants, expired/modified quotes and deactivat
  await assert.rejects(server.requirePartnerAdmin(db,'user-a'),/administradores/);
 });
 test('consumed quotes allow only the exact same checkout request',async()=>{
- const authorized=await server.authorizePartnerCheckout(fakeDb({dukamp_partners:[partner],dukamp_partner_quotes:[quote],products:[ownProduct]}),'user-a',checkout);
- const consumed={...quote,order_id:'order-a',checkout_hash:authorized.requestHash,expires_at:'2020-01-01'};
+ const requestHash=createHash('sha256').update(JSON.stringify({
+  fingerprint: quote.payload.fingerprint, customer: [checkout.customer_name,checkout.email,checkout.phone,checkout.cpf_cnpj,"",""],
+  profile: {}, method: "pix", installments: null
+ })).digest('hex');
+ const consumed={...quote,order_id:'order-a',checkout_hash:requestHash,expires_at:'2020-01-01'};
  const db=fakeDb({dukamp_partners:[partner],dukamp_partner_quotes:[consumed],orders:[{id:'order-a',partner_id:'partner-a',payment_status:'pending'}]});
  assert.equal((await server.authorizePartnerCheckout(db,'user-a',checkout)).existingOrder.id,'order-a');
  for(const change of [{customer_name:'Another customer'},{payment_method:'boleto'},{partner_customer_details:{observacoes:'changed'}}])await assert.rejects(server.authorizePartnerCheckout(db,'user-a',{...checkout,...change}),/já possui/);
@@ -108,4 +112,11 @@ test('third-party products fail simulation and an old quote cannot authorize a n
  await assert.rejects(server.quotePurchase('user-a',input),/somente produtos fabricados/);
  await assert.rejects(server.authorizePartnerCheckout(fakeDb(tables),'user-a',checkout),/somente produtos fabricados/);
  assert.equal(tables.dukamp_partner_quotes.length,1);
+});
+
+test('commercial approval recognizes a manually assigned commission without a payment', () => {
+ const order={request_kind:'approval',approval_status:'approved',payment_status:'not_required',delivery_status:'preparando',refund_status:'none'};
+ assert.equal(recognizedPartnerSale(order),true);
+ for(const approval_status of ['pending','rejected']) assert.equal(recognizedPartnerSale({...order,approval_status}),false);
+ assert.equal(recognizedPartnerSale({...order,delivery_status:'cancelada'}),false);
 });

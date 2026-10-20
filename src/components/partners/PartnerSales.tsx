@@ -62,8 +62,8 @@ export function PartnerSales({ admin = false }: { admin?: boolean }) {
         title="Gerenciar vendas"
         description={
           admin
-            ? "Acompanhe os pedidos das lojas parceiras e atualize a preparação e entrega."
-            : "Consulte suas vendas, os pagamentos e o andamento de cada pedido."
+            ? "Confira o cliente, os produtos, os valores e o frete. Após confirmar a compra, aceite a venda e defina a comissão nos detalhes."
+            : "Acompanhe a confirmação das vendas, as comissões e as entregas."
         }
         action={
           <Button variant="outline" disabled={query.isFetching} onClick={() => query.refetch()}>
@@ -118,8 +118,8 @@ export function PartnerSales({ admin = false }: { admin?: boolean }) {
                         ...(admin ? ["Parceiro"] : []),
                         "Faturamento",
                         "Comissão",
-                        "À Dukamp",
-                        "Pagamento",
+                        "Total do pedido",
+                        "Confirmação",
                         "Processo",
                         "Ações",
                       ].map((t) => (
@@ -152,16 +152,16 @@ export function PartnerSales({ admin = false }: { admin?: boolean }) {
                                 : "text-muted-foreground"
                             }
                           >
-                            {formatBRL(Number(o.partner_commission_amount))}
+                            {o.request_kind === "approval" && o.approval_status === "pending" ? "A definir" : formatBRL(Number(o.partner_commission_amount))}
                           </span>
                           <p className="mt-1 text-[11px] text-muted-foreground">
                             {recognizedPartnerSale(o)
-                              ? "Reconhecida"
+                              ? "Confirmada"
                               : o.payment_status === "refunded" ||
                                   o.delivery_status === "cancelada" ||
                                   o.refund_status !== "none"
                                 ? "Não devida"
-                                : "Prevista"}
+                                : o.request_kind === "approval" ? (o.approval_status === "rejected" ? "Não devida" : "Aguardando aceite") : "Prevista"}
                           </p>
                         </td>
                         <td className="whitespace-nowrap p-4 tabular-nums">
@@ -171,11 +171,11 @@ export function PartnerSales({ admin = false }: { admin?: boolean }) {
                           <span
                             className={`inline-block whitespace-nowrap rounded-full px-2 py-1 text-xs ${o.payment_status === "approved" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}
                           >
-                            {partnerPaymentLabels[o.payment_status] || o.payment_status}
+                            {o.request_kind === "approval" ? ({ pending: "Aguardando confirmação", approved: "Venda aceita", rejected: "Recusada" }[o.approval_status || "pending"]) : partnerPaymentLabels[o.payment_status] || o.payment_status}
                           </span>
                         </td>
                         <td className="min-w-44 p-4">
-                          {admin &&
+                          {o.request_kind === "approval" ? <span>{o.approval_status === "approved" ? partnerDeliveryLabels[o.delivery_status] : "Aguardando análise"}</span> : admin &&
                           o.fulfillment_method !== "pickup" &&
                           o.delivery_status !== "cancelada" ? (
                             <select
@@ -214,7 +214,7 @@ export function PartnerSales({ admin = false }: { admin?: boolean }) {
                           ) : (
                             <Button asChild size="sm" variant="outline">
                               <Link to="/parceiro/vendas/$id" params={{ id: o.id }}>
-                                {o.payment_status === "pending"
+                                {o.request_kind !== "approval" && o.payment_status === "pending"
                                   ? "Pagamento / detalhes"
                                   : "Ver venda"}
                               </Link>

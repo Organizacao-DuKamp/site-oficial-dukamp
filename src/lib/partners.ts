@@ -84,10 +84,11 @@ export const defaultPartnerSettings = {
   support_phone: "",
   support_email: "",
   partnership_terms:
-    "Comissão de 10% sobre produtos + frete, sem incluir taxas de cartão. A loja retém a comissão e paga o saldo à Dukamp. A comissão só é reconhecida após aprovação do pagamento e é desconsiderada em vendas canceladas ou reembolsadas. Preços, estoque, frete e prazos são confirmados na simulação. A Dukamp cuida da produção e logística; a loja cuida da prospecção e do atendimento ao cliente.",
+    "O parceiro registra o pedido sem pagamento. A Dukamp entra em contato com o cliente e confirma a compra. Após a confirmação, o administrador aceita a venda e informa a comissão em reais, que fica disponível no painel do parceiro. As comissões aprovadas no mês são pagas pela chave Pix cadastrada até o 10º dia útil do mês seguinte. Preços, estoque, frete e prazos são conferidos na simulação; o estoque é baixado ao aceitar a venda.",
 };
 export type Partner = z.infer<typeof partnerSchema> & {
   id: string;
+  pix_key: string;
   user_id: string;
   created_at: string;
   deleted_at: string | null;
@@ -150,9 +151,11 @@ export function recognizedPartnerSale(order: {
   payment_status: string;
   delivery_status: string;
   refund_status?: string | null;
+  request_kind?: string;
+  approval_status?: string;
 }) {
   return (
-    order.payment_status === "approved" &&
+    (order.request_kind === "approval" ? order.approval_status === "approved" : order.payment_status === "approved") &&
     order.delivery_status !== "cancelada" &&
     !["requested", "refunded"].includes(order.refund_status ?? "")
   );
@@ -230,6 +233,13 @@ export type PartnerOrder = Omit<
   import("@/integrations/supabase/types").Database["public"]["Tables"]["orders"]["Row"],
   "delivery_status"
 > & {
+  request_kind?: "approval";
+  approval_status?: "pending" | "approved" | "rejected";
+  commission_payout_month?: string | null;
+  approved_at?: string | null;
+  rejection_reason?: string | null;
+  source_store_id?: string | null;
+  partner_pix_key?: string;
   partner_id: string;
   partner_quote_id: string;
   origin_store_id?: string | null;

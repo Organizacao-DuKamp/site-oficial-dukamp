@@ -4,13 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Calculator, Plus, Trash2, Truck, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { quotePartnerPurchase, partnerQuoteSchema } from "@/lib/partners.functions";
-import {
-  createPixOrder,
-  computePaymentTotals,
-  CARD_FEE_TABLE,
-  type CardInstallments,
-} from "@/lib/checkout.functions";
+import { quotePartnerPurchase, partnerQuoteSchema, submitPartnerSale } from "@/lib/partners.functions";
 import { partnerQuoteFingerprint, type PartnerCartItem } from "@/lib/partners";
 import { lookupCepWithFallback } from "@/lib/cep";
 import { formatBRL } from "@/lib/cart";
@@ -44,7 +38,7 @@ export function PurchaseWorkspace({
   const query = usePartnerProducts();
   const navigate = useNavigate();
   const calculate = useServerFn(quotePartnerPurchase);
-  const createOrder = useServerFn(createPixOrder);
+  const createOrder = useServerFn(submitPartnerSale);
   const {
     cart,
     setCart,
@@ -92,8 +86,6 @@ export function PurchaseWorkspace({
   const [busy, setBusy] = useState(false);
   const [lookupBusy, setLookupBusy] = useState(false);
   const [search, setSearch] = useState("");
-  const [method, setMethod] = useState<"pix" | "boleto" | "card">("pix");
-  const [installments, setInstallments] = useState<CardInstallments>(1);
   const [now, setNow] = useState(Date.now());
   const input = {
     ...address,
@@ -116,9 +108,6 @@ export function PurchaseWorkspace({
     return () => clearInterval(timer);
   }, [quote]);
   const expired = !!quote && Date.parse(quote.expires_at) <= now;
-  const payment = quote
-    ? computePaymentTotals(quote.net, method, method === "card" ? installments : null)
-    : null;
   const products = query.data || [];
   const filtered = products
     .filter(
@@ -215,27 +204,17 @@ export function PurchaseWorkspace({
     try {
       const result = await createOrder({
         data: {
-          ...address,
+          ...input,
           ...customer,
           partner_quote_id: quote.id,
           partner_customer_details: {
             ...extra,
             ...(differentBilling ? { cobranca: billing } : {}),
           },
-          items: cart.map((item) => ({
-            product_id: item.product_id,
-            quantity: item.quantity,
-            selected_options: item.selected_options,
-            unit_price: products.find((p) => p.id === item.product_id)?.price || 0,
-          })),
-          shipping_cost: quote.shipping.valor,
-          shipping_service: quote.shipping.servico,
-          shipping_deadline_days: quote.shipping.prazoDias,
-          fulfillment_method: fulfillment,
-          payment_method: method,
-          card_installments: method === "card" ? installments : undefined,
         },
       });
+      setCart([]);
+      toast.success("Pedido enviado. A Dukamp entrará em contato com o cliente.");
       await navigate({ to: "/parceiro/vendas/$id", params: { id: result.orderId } });
     } catch (e) {
       toast.error((e as Error).message);
@@ -259,11 +238,11 @@ export function PurchaseWorkspace({
   return (
     <>
       <PageHeading
-        title={mode === "simulate" ? "Simular compra" : "Registrar compra"}
+        title={mode === "simulate" ? "Simular compra" : "Registrar venda"}
         description={
           mode === "simulate"
-            ? "Monte o pedido, informe o endereço e consulte o total, o frete e sua comissão."
-            : "Preencha os dados essenciais do cliente e gere um pagamento para a conta da Dukamp."
+            ? "Monte o pedido, informe o endereço e consulte os produtos, o frete e o total."
+            : "Envie o pedido sem pagamento. A Dukamp confirmará a compra diretamente com o cliente."
         }
       />
       {query.isPending ? (
@@ -599,16 +578,12 @@ export function PurchaseWorkspace({
                       </Field>
                     )}
                     <Row label="Total comercial" value={formatBRL(quote.gross)} />
-                    <Row label="Sua comissão (10%)" value={formatBRL(quote.commission)} />
-                    <div className="border-t pt-3 font-semibold">
-                      <Row label="Saldo à Dukamp" value={formatBRL(quote.net)} />
-                    </div>
+                    <Row label="Sua comissão" value="Definida pela Dukamp após aprovação" />
                   </>
                 )}
               </div>
               <p className="mt-5 rounded-lg bg-primary/5 p-3 text-xs leading-relaxed text-muted-foreground">
-                A loja recebe o valor comercial do cliente, retém sua comissão e paga o saldo à
-                Dukamp. A comissão descontada não gera um segundo repasse.
+                Você registra sem pagar. A Dukamp contata o cliente e confirma a compra. O administrador aceita a venda e informa sua comissão. Pagamento das comissões aprovadas no mês até o 10º dia útil do mês seguinte, pela chave Pix cadastrada.
               </p>
               {quote && (
                 <p
@@ -622,54 +597,15 @@ export function PurchaseWorkspace({
             </div>
             {mode === "register" ? (
               <div className="space-y-4 rounded-xl border bg-card p-5">
-                <h2 className="font-semibold">Pagamento à Dukamp</h2>
-                <Field label="Forma de pagamento">
-                  <select
-                    className={fieldClass}
-                    value={method}
-                    onChange={(e) => setMethod(e.target.value as typeof method)}
-                  >
-                    <option value="pix">Pix</option>
-                    <option value="boleto">Boleto</option>
-                    <option value="card">Cartão de crédito</option>
-                  </select>
-                </Field>
-                {method === "card" && (
-                  <Field label="Parcelamento">
-                    <select
-                      className={fieldClass}
-                      value={installments}
-                      onChange={(e) => setInstallments(Number(e.target.value) as CardInstallments)}
-                    >
-                      {([1, 2, 3] as const).map((n) => (
-                        <option key={n} value={n}>
-                          {n}x · taxa{" "}
-                          {(CARD_FEE_TABLE[n] * 100).toLocaleString("pt-BR", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
-                          %
-                        </option>
-                      ))}
-                    </select>
-                  </Field>
-                )}
-                {payment && (
-                  <div className="space-y-2 text-sm">
-                    {payment.feeAmount > 0 && (
-                      <Row label="Taxa de cartão" value={formatBRL(payment.feeAmount)} />
-                    )}
-                    <div className="font-bold">
-                      <Row label="Valor a pagar à Dukamp" value={formatBRL(payment.total)} />
-                    </div>
-                  </div>
-                )}
+                <h2 className="font-semibold">Enviar pedido para confirmação</h2>
+                <p className="text-sm text-muted-foreground">
+                  Nenhum pagamento será cobrado neste registro. O administrador receberá os produtos, os valores, o frete e a ficha completa do cliente.
+                </p>
                 <Button type="submit" className="w-full" disabled={busy || !quote || expired}>
-                  {busy ? "Registrando..." : "Registrar e gerar pagamento"}
+                  {busy ? "Enviando..." : "Registrar venda sem pagamento"}
                 </Button>
                 <p className="text-xs text-muted-foreground">
-                  O pedido entra em produção após a confirmação do pagamento. Acompanhe o andamento
-                  em Gerenciar vendas.
+                  Acompanhe a confirmação da venda e a comissão em Gerenciar vendas.
                 </p>
               </div>
             ) : (

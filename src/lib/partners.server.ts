@@ -327,6 +327,7 @@ export async function authorizePartnerCheckout(
     .single();
   check(result.error);
   const quote = result.data! as PartnerStoredQuote;
+
   if (!quote || quote.payload.fingerprint !== partnerQuoteFingerprint(data))
     throw new Error("Os produtos ou o endereço mudaram. Simule a compra novamente.");
   if (!quote.order_id && Date.parse(quote.expires_at) <= Date.now())
@@ -341,6 +342,8 @@ export async function authorizePartnerCheckout(
       throw new Error("Produto indisponível. Simule a compra novamente.");
     current.data.forEach(assertDukampPartnerProduct);
   }
+  // New registrations require commercial approval and never start an online charge.
+  if (!quote.order_id) throw new Error("Registre a venda sem pagamento no painel de parceiro. A Dukamp confirmará o pedido com o cliente.");
   const { createHash } = await import("node:crypto");
   const requestHash = createHash("sha256")
     .update(
@@ -388,14 +391,8 @@ export async function getPartnerSales(
   let partnerId = input.partnerId;
   if (input.admin) await requirePartnerAdmin(db, userId);
   else partnerId = (await requirePartner(db, userId)).id;
-  let query = (db as any)
-    .from("orders")
-    .select(
-      "id,order_number,partner_id,partner_name,customer_name,cidade,estado,created_at,payment_status,delivery_status,refund_status,partner_gross_total,partner_commission_amount,total,subtotal,shipping_cost,tax_amount,fulfillment_method,payment_method,origin_store_id,origin_partner_id,origin_commission_amount",
-      { count: "exact" },
-    )
-    .or("partner_id.not.is.null,origin_partner_id.not.is.null");
-  if (partnerId) query = query.or(`partner_id.eq.${partnerId},origin_partner_id.eq.${partnerId}`);
+  let query = db.from("partner_sales_feed").select("id,partner_id,created_at,payload", { count: "exact" });
+  if (partnerId) query = query.eq("partner_id", partnerId);
   const result = await query
     .order("created_at", { ascending: false })
     .order("id")
@@ -416,7 +413,7 @@ export async function getPartnerSales(
     if (summary.data!.length < 1000) break;
   }
   return {
-    orders: result.data!.map(normalizePartnerOrder) as PartnerOrder[],
+    orders: result.data!.map(row => normalizePartnerOrder(row.payload)) as PartnerOrder[],
     count: result.count as number,
     summaries,
   };
@@ -426,6 +423,19 @@ export async function getPartnerSale(userId: string, orderId: string, admin = fa
   let partnerId: string | undefined;
   if (admin) await requirePartnerAdmin(db, userId);
   else partnerId = (await requirePartner(db, userId)).id;
+  let requestQuery = db.from("partner_sales_feed").select("payload").eq("id", orderId);
+  if (partnerId) requestQuery = requestQuery.eq("partner_id", partnerId);
+  const request = await requestQuery.maybeSingle();
+  check(request.error);
+  if (request.data?.payload?.request_kind === "approval") {
+    const payload = request.data.payload;
+    if (admin) {
+      const contact = await db.from("dukamp_partners").select("pix_key").eq("id", payload.partner_id).single();
+      check(contact.error);
+      payload.partner_pix_key = contact.data?.pix_key || "";
+    }
+    return payload as PartnerOrder;
+  }
   let query = (db as any)
     .from("orders")
     .select("*,order_items(*)")

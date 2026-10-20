@@ -1,3 +1,5 @@
+import { PartnerPixField } from "@/components/partners/PartnerPixField";
+import { PartnerSales } from "@/components/partners/PartnerSales";
 import { CustomerFields, EMPTY_CUSTOMER, newCheckoutSecrets } from "./StoreShared";
 import { useEffect, useState, type ReactNode } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -9,9 +11,6 @@ import {
   saveStoreProduct,
   archiveStoreProduct,
   uploadStoreImage,
-  connectStorePayments,
-  disconnectStorePayments,
-  startStoreOAuth,
   registerStoreSale,
   updateStoreSale,
 } from "@/lib/storefronts.functions";
@@ -111,24 +110,27 @@ export function StoreManagement({ section = "visao-geral" }: { section?: string 
           key={section + data.store.updated_at}
           section={section}
           store={data.store}
-          oauthAvailable={data.oauth_available}
         />
       ) : section === "estoque" ? (
         <Inventory products={data.products} />
       ) : section === "vendas/nova" ? (
         <ManualSale store={data.store} products={data.products} />
       ) : section === "vendas/historico" ? (
+        <>
+        <PartnerSales />
+        <h2 className="text-lg font-semibold">Histórico anterior da loja</h2>
         <StoreSales
           orders={data.orders}
           page={page}
           pages={Math.max(1, Math.ceil(data.orderCount / 30))}
           setPage={setPage}
         />
+        </>
       ) : section === "vendas/painel" || section === "visao-geral" ? (
         <>
           <PageHeading
             title={section === "visao-geral" ? "Visão geral do meu site" : "Visão geral das vendas"}
-            description="Acompanhe os resultados da sua loja. Produtos próprios recebem na sua conta, sem comissão para a Dukamp."
+            description="Acompanhe sua loja. Novos registros de venda são confirmados pela Dukamp e a comissão aparece em Gerenciar vendas."
           />
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {[
@@ -156,7 +158,6 @@ export function StoreManagement({ section = "visao-geral" }: { section?: string 
               <div className="space-y-3 text-sm">
                 {[
                   [data.store.published, "Site publicado"],
-                  [data.store.payment_connected, "Mercado Pago conectado"],
                   [
                     data.products.some((p) => p.active && p.stock > 0),
                     "Produtos próprios disponíveis",
@@ -186,9 +187,7 @@ export function StoreManagement({ section = "visao-geral" }: { section?: string 
                 {data.summary.units} unidades em estoque · {data.summary.pending} pedidos aguardando
                 pagamento. Visitas contam um navegador por loja por dia.
               </p>
-              <p className="mt-3 text-xs text-muted-foreground">
-                As taxas normais do Mercado Pago se aplicam aos recebimentos da loja.
-              </p>
+              <p className="mt-3 text-xs text-muted-foreground">Cadastre sua chave Pix nas definições. As novas vendas registradas no painel aguardam confirmação da Dukamp e comissão definida pelo administrador.</p>
             </Panel>
           </div>
           <StoreSales orders={data.orders.slice(0, 5)} compact />
@@ -272,20 +271,13 @@ function ImageUpload({
 function StoreEditors({
   section,
   store,
-  oauthAvailable,
 }: {
   section: string;
   store: Store;
-  oauthAvailable: boolean;
 }) {
   const [form, setForm] = useState<StoreConfig>(() => storeConfigSchema.parse(store)),
-    [footerSlug, setFooterSlug] = useState<string>(FOOTER_PAGES[0].slug),
-    [token, setToken] = useState(""),
-    [ack, setAck] = useState(false);
+    [footerSlug, setFooterSlug] = useState<string>(FOOTER_PAGES[0].slug);
   const save = useServerFn(saveStoreConfig),
-    connect = useServerFn(connectStorePayments),
-    disconnect = useServerFn(disconnectStorePayments),
-    oauth = useServerFn(startStoreOAuth),
     qc = useQueryClient();
   const refresh = () => qc.invalidateQueries({ queryKey: ["my-store"] });
   const mutation = useMutation({
@@ -296,25 +288,6 @@ function StoreEditors({
     },
     onError: (e) => toast.error(errorMessage(e)),
   });
-  const connection = useMutation({
-    mutationFn: async () => {
-      if (!ack) throw new Error("Confirme que a conta recebedora pertence à sua empresa.");
-      return connect({ data: { access_token: token, ack_owner: true } });
-    },
-    onSuccess: () => {
-      setToken("");
-      refresh();
-      toast.success("Mercado Pago conectado.");
-    },
-    onError: (e) => toast.error(errorMessage(e)),
-  });
-  const [connecting, setConnecting] = useState(false);
-  useEffect(() => {
-    const status = new URLSearchParams(window.location.search).get("conexao");
-    if (status === "ok") toast.success("Mercado Pago conectado.");
-    else if (status === "erro")
-      toast.error("A autorização não foi concluída. Tente conectar novamente.");
-  }, []);
   const field = (k: keyof StoreConfig, label: string, multiline = false) => (
     <Field label={label}>
       {multiline ? (
@@ -395,100 +368,7 @@ function StoreEditors({
                 compartilhou. Preencha o contato nas configurações antes de publicar.
               </p>
             </Panel>
-            <Panel>
-              <h2 className="mb-4 flex items-center gap-2 font-semibold">
-                <Link2 size={18} />
-                Recebimento pelo Mercado Pago
-              </h2>
-              {store.payment_connected ? (
-                <div className="space-y-4">
-                  <p className="text-sm text-primary">
-                    Conta conectada: <strong>{store.payment_account}</strong>
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Pix, QR Code e cartão dos seus produtos são recebidos nesta conta. A Dukamp não
-                    cobra comissão. Desconectar impede novos pagamentos; pedidos emitidos continuam
-                    sendo acompanhados.
-                  </p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={async () => {
-                      try {
-                        await disconnect();
-                        await refresh();
-                        toast.success("Novos pagamentos foram desabilitados.");
-                      } catch (e) {
-                        toast.error(errorMessage(e));
-                      }
-                    }}
-                  >
-                    Desconectar recebimentos
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    Conecte a conta da sua empresa para habilitar o checkout. As taxas do Mercado
-                    Pago são aplicadas normalmente.
-                  </p>
-                  {oauthAvailable && (
-                    <Button
-                      type="button"
-                      disabled={connecting}
-                      onClick={async () => {
-                        setConnecting(true);
-                        try {
-                          const r = await oauth();
-                          window.location.assign(r.url);
-                        } catch (e) {
-                          toast.error(errorMessage(e));
-                          setConnecting(false);
-                        }
-                      }}
-                    >
-                      Autorizar no Mercado Pago
-                    </Button>
-                  )}
-                  <details open={!oauthAvailable} className="rounded-lg border p-4">
-                    <summary className="cursor-pointer text-sm font-medium">
-                      Conectar com credencial de produção
-                    </summary>
-                    <div className="mt-4 space-y-4">
-                      <p className="text-xs text-muted-foreground">
-                        Na sua conta Mercado Pago, acesse Developers → Suas integrações →
-                        Credenciais de produção. O Access Token fica protegido no servidor e não é
-                        exibido depois de salvo.
-                      </p>
-                      <Field label="Access Token de produção">
-                        <Input
-                          type="password"
-                          value={token}
-                          autoComplete="off"
-                          placeholder="APP_USR-..."
-                          onChange={(e) => setToken(e.target.value)}
-                        />
-                      </Field>
-                      <label className="flex gap-2 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={ack}
-                          onChange={(e) => setAck(e.target.checked)}
-                        />
-                        Confirmo que esta é a conta recebedora da minha empresa.
-                      </label>
-                      <Button
-                        type="button"
-                        onClick={() => connection.mutate()}
-                        disabled={connection.isPending || !token || !ack}
-                      >
-                        {connection.isPending ? "Validando conta..." : "Conectar conta"}
-                      </Button>
-                    </div>
-                  </details>
-                </div>
-              )}
-            </Panel>
+            <PartnerPixField />
           </>
         )}
         {section === "configuracoes" && (
@@ -975,7 +855,8 @@ function ManualSale({ store, products }: { store: Store; products: StoreProduct[
       setSecrets(newCheckoutSecrets());
       setItems([]);
       setCustomer({ ...EMPTY_CUSTOMER });
-      toast.success(`Venda ${r.order_number} registrada e estoque atualizado.`);
+      qc.invalidateQueries({ queryKey: ["partner-sales"] });
+      toast.success(`Pedido ${r.order_number} enviado para confirmação da Dukamp.`);
     },
     onError: (e) => toast.error(errorMessage(e)),
   });
@@ -983,7 +864,7 @@ function ManualSale({ store, products }: { store: Store; products: StoreProduct[
     <>
       <PageHeading
         title="Registrar venda da loja"
-        description="Registre uma venda recebida fora do site. O estoque será baixado, sem gerar nova cobrança."
+        description="Registre o pedido sem pagamento. A Dukamp entrará em contato com o cliente, confirmará a compra e definirá sua comissão."
       />
       <form
         className="space-y-5"
@@ -1070,7 +951,7 @@ function ManualSale({ store, products }: { store: Store; products: StoreProduct[
             Produtos: {storeMoney(subtotal)} · Frete: {storeMoney(shipping)}
           </p>
           <p className="my-3 text-xl font-semibold">
-            Total recebido: {storeMoney(subtotal + shipping)}
+            Total do pedido: {storeMoney(subtotal + shipping)}
           </p>
           {shippingError && (
             <p role="alert" className="mb-3 text-sm text-destructive">
@@ -1078,7 +959,7 @@ function ManualSale({ store, products }: { store: Store; products: StoreProduct[
             </p>
           )}
           <Button type="submit" disabled={save.isPending || !items.length || !!shippingError}>
-            {save.isPending ? "Registrando..." : "Confirmar venda já recebida"}
+            {save.isPending ? "Registrando..." : "Registrar venda sem pagamento"}
           </Button>
         </Panel>
       </form>

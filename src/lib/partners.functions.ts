@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
-import { partnerSchema, partnerSettingsSchema, partnerAddressSchema } from "./partners";
+import { partnerSchema, partnerSettingsSchema, partnerAddressSchema, partnerCustomerDetailsSchema } from "./partners";
 import { optionChoicesSchema } from "./product-options";
 
 export const partnerQuoteSchema = partnerAddressSchema.extend({
@@ -90,3 +90,35 @@ export const partnerSale = createServerFn({ method: "GET" })
     const { getPartnerSale } = await import("./partners.server");
     return getPartnerSale(context.userId, data.id, data.admin);
   });
+
+export const partnerRequestSchema = partnerQuoteSchema.extend({
+  partner_quote_id: z.string().uuid(),
+  customer_name: z.string().trim().min(2).max(120),
+  email: z.string().trim().email().max(180),
+  phone: z.string().trim().min(8).max(30),
+  cpf_cnpj: z.string().transform(v => v.replace(/\D/g, "")).refine(v => /^\d{11}$|^\d{14}$/.test(v), "Informe CPF ou CNPJ."),
+  referencia_entrega: z.string().trim().max(300).optional(),
+  pessoa_autorizada: z.string().trim().max(120).optional(),
+  partner_customer_details: partnerCustomerDetailsSchema,
+});
+export const submitPartnerSale = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((data: unknown) => partnerRequestSchema.parse(data))
+  .handler(async ({ data, context }) => (await import("./partner-requests.server")).submitPartnerRequest(context.userId, data));
+export const reviewPartnerSale = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((data: unknown) => z.object({
+    id: z.string().uuid(), action: z.enum(["approve", "reject", "delivery"]),
+    commission: z.number().finite().min(0).max(9999999999).multipleOf(0.01).optional(),
+    reason: z.string().trim().min(3).max(1000).optional(),
+    status: z.enum(["preparando", "pronto", "a_caminho", "entregue"]).optional(),
+  }).superRefine((v, c) => {
+    if (v.action === "approve" && v.commission == null) c.addIssue({ code: "custom", path: ["commission"], message: "Informe a comissão em reais." });
+    if (v.action === "reject" && !v.reason) c.addIssue({ code: "custom", path: ["reason"], message: "Informe o motivo da recusa." });
+    if (v.action === "delivery" && !v.status) c.addIssue({ code: "custom", path: ["status"], message: "Informe a etapa da entrega." });
+  }).parse(data))
+  .handler(async ({ data, context }) => (await import("./partner-requests.server")).reviewPartnerRequest(context.userId, data));
+export const savePartnerPix = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((data: unknown) => z.object({ pix_key: z.string().trim().max(180) }).parse(data))
+  .handler(async ({ data, context }) => (await import("./partner-requests.server")).updatePartnerPix(context.userId, data.pix_key));

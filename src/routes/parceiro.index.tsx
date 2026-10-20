@@ -1,3 +1,4 @@
+import { PartnerPixField } from "@/components/partners/PartnerPixField";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, PackageSearch, Calculator, ShoppingCart } from "lucide-react";
 import { usePartnerData, PageHeading, SummaryCards } from "@/components/partners/PartnerUi";
@@ -13,6 +14,7 @@ function PartnerHome() {
         description={settings.welcome_message}
       />
       <SummaryCards summaries={[summary]} />
+      <div className="mb-6"><PartnerPixField /></div>
       <div className="mb-6 grid gap-4 md:grid-cols-3">
         {[
           {
@@ -24,13 +26,13 @@ function PartnerHome() {
           {
             to: "/parceiro/simular",
             title: "Simular uma compra",
-            text: "Confira produtos, frete e sua comissão.",
+            text: "Confira produtos, frete e o valor da compra.",
             icon: Calculator,
           },
           {
             to: "/parceiro/registrar",
-            title: "Registrar compra",
-            text: "Cadastre o cliente e gere o pagamento.",
+            title: "Registrar venda",
+            text: "Envie o pedido sem pagamento para confirmação da Dukamp.",
             icon: ShoppingCart,
           },
         ].map((c) => (

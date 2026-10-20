@@ -47,39 +47,11 @@ export const uploadStoreImage = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) =>
     (await import("./storefronts.server")).uploadImage(context.userId, data),
   );
-export const connectStorePayments = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .validator((v: unknown) =>
-    z
-      .object({
-        access_token: z
-          .string()
-          .trim()
-          .min(20)
-          .max(500)
-          .regex(/^APP_USR-/, "Use o Access Token de produção da sua conta."),
-        ack_owner: z.literal(true),
-      })
-      .parse(v),
-  )
-  .handler(async ({ context, data }) =>
-    (await import("./storefronts.server")).connectCredentials(context.userId, data.access_token),
-  );
-export const disconnectStorePayments = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) =>
-    (await import("./storefronts.server")).disconnectPayments(context.userId),
-  );
-export const startStoreOAuth = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) =>
-    (await import("./storefronts.server")).beginOAuth(context.userId),
-  );
 export const registerStoreSale = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((v: unknown) => storeCheckoutSchema.parse(v))
   .handler(async ({ context, data }) =>
-    (await import("./storefronts.server")).createStoreOrder(data, context.userId),
+    (await import("./partner-requests.server")).submitStoreRequest(context.userId, data),
   );
 export const updateStoreSale = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
