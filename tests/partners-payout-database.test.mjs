@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createPartnerDatabase } from './fixtures/partner-database.mjs';
 const source=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
-const payoutMigration='supabase/changes/partner_commission_payouts.sql';
+const payoutMigration='supabase/migrations/20261020201404_partner_commission_payouts.sql';
 const a='00000000-0000-4000-8000-000000000001',b='00000000-0000-4000-8000-000000000002',admin='00000000-0000-4000-8000-000000000003',
  store='10000000-0000-4000-8000-000000000001',product='20000000-0000-4000-8000-000000000001';
 test('commission payout ledger resets only unpaid credits, preserves sales, records audit and prevents duplicate or stale settlement',async()=>{
