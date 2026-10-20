@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
@@ -18,11 +18,12 @@ export function PartnerRequestDetails({ order: o, admin, refresh }: { order: Par
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [delivery, setDelivery] = useState(o.delivery_status);
+  useEffect(() => { setDelivery(o.delivery_status); }, [o.delivery_status]);
   const approved = o.approval_status === "approved", pending = o.approval_status === "pending";
   async function act(action: "approve" | "reject" | "delivery") {
     if (busy) return;
-    if (action === "approve" && (commission.trim() === "" || !Number.isFinite(Number(commission)) || Number(commission) < 0 || Number(commission) > Number(o.total))) {
-      toast.error("Informe a comissão em reais, entre zero e o total da venda."); return;
+    if (action === "approve" && (commission.trim() === "" || !Number.isFinite(Number(commission)) || Number(commission) < 0 || Number(commission) > Number(o.total) || Math.abs(Number(commission) * 100 - Math.round(Number(commission) * 100)) > 0.000001)) {
+      toast.error("Informe a comissão em reais, com até duas casas decimais, entre zero e o total da venda."); return;
     }
     setBusy(true);
     try {

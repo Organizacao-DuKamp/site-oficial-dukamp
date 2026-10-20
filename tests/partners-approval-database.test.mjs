@@ -54,6 +54,24 @@ test('approval ledger: tenant access, unpaid submission, idempotency, admin-only
     for(const signature of ['submit_partner_sale_request(uuid,uuid,uuid,uuid,uuid,text,jsonb,jsonb,numeric,numeric)','review_partner_sale_request(uuid,uuid,text,numeric,text,text)'])
       assert.equal((await db.query('SELECT has_function_privilege($1,$2,\'EXECUTE\') allowed',[role,'public.'+signature])).rows[0].allowed,false);
   }
+
+  // The central Dukamp catalog uses the same approval flow without creating a paid order.
+  await db.query("INSERT INTO public.products(id,name,price,stock,active) VALUES($1,'DUKAMP Ração fixture',50,5,true)",[product]);
+  const quoteId=crypto.randomUUID();
+  await db.query("INSERT INTO public.dukamp_partner_quotes(id,partner_id,payload,subtotal,shipping_cost,gross_total,commission_amount,net_total,expires_at) VALUES($1,$2,'{}',100,20,120,12,108,now()+interval '15 minutes')",[quoteId,a]);
+  const factory=(await db.query("SELECT public.submit_partner_sale_request($1,$2,$3,NULL,$3,'factory',$4,$5,100,20) r",[a,a,quoteId,details,items])).rows[0].r;
+  assert.equal(factory.store_id,null);assert.equal(factory.quote_id,quoteId);
+  assert.equal(Number((await db.query("SELECT stock FROM public.products WHERE id=$1",[product])).rows[0].stock),5);
+  await review(admin,factory.id,'approve',9.99);
+  await review(admin,factory.id,'approve',9.99);
+  assert.equal(Number((await db.query("SELECT stock FROM public.products WHERE id=$1",[product])).rows[0].stock),3);
+  assert.equal(Number((await db.query("SELECT count(*) n FROM public.orders")).rows[0].n),0);
+  assert.equal(Number((await db.query("SELECT count(*) n FROM public.web_order_sales")).rows[0].n),0);
+  const factoryFeed=(await db.query("SELECT payload FROM public.partner_sales_feed WHERE id=$1",[factory.id])).rows[0].payload;
+  assert.equal(factoryFeed.request_kind,'approval');assert.equal(Number(factoryFeed.partner_commission_amount),9.99);
+  const replay=(await db.query("SELECT public.submit_partner_sale_request($1,$2,$3,NULL,$3,'factory',$4,$5,100,20) r",[a,a,quoteId,details,items])).rows[0].r;
+  assert.equal(replay.id,factory.id);
+
   await db.query('UPDATE public.dukamp_partners SET active=false WHERE id=$1',[a]);
   await assert.rejects(submit(a,a,'inactive',crypto.randomUUID()),/desativado/);
  } finally { await db.close(); }

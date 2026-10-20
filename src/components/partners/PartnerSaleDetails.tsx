@@ -36,9 +36,9 @@ export function PartnerSaleDetails({
     queryFn: () => fetch({ data: { id: orderId, admin } }),
     enabled: !!user,
     refetchInterval: (q) =>
-      ["pending", "in_process"].includes(q.state.data?.payment_status ?? "") ? 8000 : false,
+      (q.state.data?.request_kind === "approval" ? q.state.data.approval_status === "pending" : ["pending", "in_process"].includes(q.state.data?.payment_status ?? "")) ? 8000 : false,
   });
-  const status = query.data?.payment_status;
+  const status = query.data ? `${query.data.payment_status}:${query.data.approval_status || ""}:${query.data.partner_commission_amount}` : undefined;
   useEffect(() => {
     if (!status) return;
     void Promise.all([

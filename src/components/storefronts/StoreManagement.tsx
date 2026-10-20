@@ -190,6 +190,8 @@ export function StoreManagement({ section = "visao-geral" }: { section?: string 
               <p className="mt-3 text-xs text-muted-foreground">Cadastre sua chave Pix nas definições. As novas vendas registradas no painel aguardam confirmação da Dukamp e comissão definida pelo administrador.</p>
             </Panel>
           </div>
+          <PartnerSales />
+          <h2 className="text-lg font-semibold">Últimas vendas do histórico anterior</h2>
           <StoreSales orders={data.orders.slice(0, 5)} compact />
         </>
       ) : (
