@@ -33,6 +33,7 @@ export function PartnerRequestDetails({ order: o, admin, refresh }: { order: Par
         ...(action === "delivery" ? { status: delivery as "preparando" | "pronto" | "a_caminho" | "entregue" } : {}),
       } });
       await Promise.all(["partner-sale","partner-sales","partner-area","admin-partners","partner-products","my-store"].map(key => client.invalidateQueries({ queryKey: [key] })));
+      await client.invalidateQueries({ queryKey: ["admin", "pending-partner-sales-count"] });
       await refresh();
       toast.success(action === "approve" ? "Venda aceita e comissão registrada." : action === "reject" ? "Venda recusada." : "Entrega atualizada.");
     } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }

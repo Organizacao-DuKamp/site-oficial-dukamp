@@ -122,3 +122,10 @@ export const savePartnerPix = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((data: unknown) => z.object({ pix_key: z.string().trim().max(180) }).parse(data))
   .handler(async ({ data, context }) => (await import("./partner-requests.server")).updatePartnerPix(context.userId, data.pix_key));
+
+export const adminPendingPartnerSales = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { countPendingPartnerSales } = await import("./partners.server");
+    return countPendingPartnerSales(context.userId);
+  });

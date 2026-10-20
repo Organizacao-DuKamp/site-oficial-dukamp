@@ -120,3 +120,31 @@ test('commercial approval recognizes a manually assigned commission without a pa
  for(const approval_status of ['pending','rejected']) assert.equal(recognizedPartnerSale({...order,approval_status}),false);
  assert.equal(recognizedPartnerSale({...order,delivery_status:'cancelada'}),false);
 });
+
+test('pending partner-sale notification is admin-only, excludes reviewed sales and reports query errors', async () => {
+ const sales=[{approval_status:'pending'},{approval_status:'approved'},{approval_status:'pending'},{approval_status:'rejected'}];
+ let admin=false, reads=0, failure=false;
+ globalThis.__partnersDb={
+  rpc:async()=>({data:admin,error:null}),
+  from(table){
+   reads++;assert.equal(table,'partner_sale_requests');
+   let status;
+   const query={
+    select(fields,options){assert.equal(options.head,true);assert.equal(options.count,'exact');return query;},
+    eq(field,value){assert.equal(field,'approval_status');status=value;return query;},
+    then(resolve,reject){return Promise.resolve({
+     data:null,count:sales.filter(s=>s.approval_status===status).length,
+     error:failure?{message:'Contagem indisponível'}:null
+    }).then(resolve,reject);}
+   };return query;
+  }
+ };
+ await assert.rejects(server.countPendingPartnerSales('partner-user'),/administradores/);
+ assert.equal(reads,0);
+ admin=true;
+ assert.equal(await server.countPendingPartnerSales('admin-user'),2);
+ sales.splice(0,sales.length);
+ assert.equal(await server.countPendingPartnerSales('admin-user'),0);
+ failure=true;
+ await assert.rejects(server.countPendingPartnerSales('admin-user'),/Contagem indisponível/);
+});

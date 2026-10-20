@@ -2,6 +2,8 @@ import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-route
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { adminPendingPartnerSales } from "@/lib/partners.functions";
 import { useAuth } from "@/lib/auth";
 import { PROTECTED_ADMIN_EMAIL } from "@/lib/constants";
 import { supabase } from "@/integrations/supabase/client";
@@ -110,7 +112,24 @@ async function countPendingRequests() {
   return (passwordRecoveries.count ?? 0) + (accountRequests.count ?? 0) + (saleRequests.count ?? 0);
 }
 
-function SidebarContent({ pathname, currentSearch, onNavigate, signOut, isMaster, isDukampMaster, pendingRequests }: {
+function PendingPartnerSalesBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+  const label = count === 1 ? "1 venda pendente de confirmação" : `${count} vendas pendentes de confirmação`;
+  return (
+    <span
+      role="status"
+      aria-live="polite"
+      aria-label={label}
+      title={label}
+      className="inline-flex min-w-7 shrink-0 items-center justify-center gap-1 rounded-full bg-destructive px-1.5 py-0.5 text-[10px] font-bold leading-none text-destructive-foreground"
+    >
+      <Bell className="h-3 w-3" aria-hidden="true" />
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
+
+function SidebarContent({ pathname, currentSearch, onNavigate, signOut, isMaster, isDukampMaster, pendingRequests, pendingPartnerSales }: {
   pathname: string;
   currentSearch: Record<string, unknown>;
   onNavigate?: () => void;
@@ -118,6 +137,7 @@ function SidebarContent({ pathname, currentSearch, onNavigate, signOut, isMaster
   isMaster: boolean;
   isDukampMaster: boolean;
   pendingRequests: number;
+  pendingPartnerSales: number;
 }) {
   const items = NAV.filter(n => (!n.masterOnly || isMaster) && (!isGroup(n) || !n.dukampOnly || isDukampMaster));
   return (
@@ -140,6 +160,7 @@ function SidebarContent({ pathname, currentSearch, onNavigate, signOut, isMaster
                 <summary className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm cursor-pointer list-none ${groupActive ? "bg-accent" : "hover:bg-accent"}`}>
                   <n.icon className="h-4 w-4" />
                   <span className="flex-1">{n.label}</span>
+                  {n.basePath === "/admin/parceiros" && <PendingPartnerSalesBadge count={pendingPartnerSales} />}
                   <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" />
                 </summary>
                 <div className="mt-1 ml-3 pl-3 border-l space-y-1">
@@ -157,7 +178,9 @@ function SidebarContent({ pathname, currentSearch, onNavigate, signOut, isMaster
                         onClick={onNavigate}
                         className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm ${active ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}
                       >
-                        <c.icon className="h-3.5 w-3.5" /> {c.label}
+                        <c.icon className="h-3.5 w-3.5 shrink-0" />
+                        <span className="flex-1">{c.label}</span>
+                        {c.to === "/admin/parceiros/vendas" && <PendingPartnerSalesBadge count={pendingPartnerSales} />}
                       </Link>
                     );
                   })}
@@ -211,6 +234,14 @@ function AdminLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const currentSearch = useRouterState({ select: (s) => s.location.search as Record<string, unknown> });
   const [mobileOpen, setMobileOpen] = useState(false);
+  const fetchPendingPartnerSales = useServerFn(adminPendingPartnerSales);
+  const pendingPartnerSales = useQuery({
+    queryKey: ["admin", "pending-partner-sales-count", user?.id],
+    queryFn: () => fetchPendingPartnerSales(),
+    enabled: !!user && isAdmin,
+    staleTime: 5_000,
+    refetchInterval: 15_000,
+  });
   const pendingRequests = useQuery({
     queryKey: ["admin", "pending-requests-count"],
     queryFn: countPendingRequests,
@@ -258,7 +289,7 @@ function AdminLayout() {
   return (
     <div className="min-h-screen flex bg-muted/30">
       <aside className="hidden lg:flex w-60 bg-sidebar border-r flex-col shrink-0">
-        <SidebarContent pathname={pathname} currentSearch={currentSearch} signOut={signOut} isMaster={isMasterAdmin} isDukampMaster={isMasterAdmin && user.email?.toLowerCase() === PROTECTED_ADMIN_EMAIL} pendingRequests={pendingRequestCount} />
+        <SidebarContent pathname={pathname} currentSearch={currentSearch} signOut={signOut} isMaster={isMasterAdmin} isDukampMaster={isMasterAdmin && user.email?.toLowerCase() === PROTECTED_ADMIN_EMAIL} pendingRequests={pendingRequestCount} pendingPartnerSales={pendingPartnerSales.data ?? 0} />
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -277,6 +308,7 @@ function AdminLayout() {
                 signOut={signOut}
                 isMaster={isMasterAdmin} isDukampMaster={isMasterAdmin && user.email?.toLowerCase() === PROTECTED_ADMIN_EMAIL}
                 pendingRequests={pendingRequestCount}
+                pendingPartnerSales={pendingPartnerSales.data ?? 0}
               />
             </SheetContent>
           </Sheet>

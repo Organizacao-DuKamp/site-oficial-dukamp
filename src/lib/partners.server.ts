@@ -475,3 +475,14 @@ function normalizePartnerOrder(order: any) {
     partner_customer_details: order.partner_customer_details || {},
   };
 }
+
+export async function countPendingPartnerSales(userId: string): Promise<number> {
+  const db = database(userId);
+  await requirePartnerAdmin(db, userId);
+  const result = await db
+    .from("partner_sale_requests")
+    .select("id", { count: "exact", head: true })
+    .eq("approval_status", "pending");
+  check(result.error);
+  return result.count ?? 0;
+}
