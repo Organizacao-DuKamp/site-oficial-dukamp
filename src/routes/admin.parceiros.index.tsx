@@ -40,8 +40,8 @@ function PartnerOverview() {
                   "Parceiro / informações",
                   "Vendas confirmadas",
                   "Faturamento",
-                  "Comissão",
-                  "Pago à Dukamp",
+                  "Comissão a receber",
+                  "Valor líquido das vendas",
                 ].map((t) => (
                   <th key={t} className="whitespace-nowrap p-4 font-medium">
                     {t}
@@ -84,7 +84,7 @@ function PartnerOverview() {
                       {formatBRL(Number(s?.gross_total || 0))}
                     </td>
                     <td className="whitespace-nowrap p-4 tabular-nums">
-                      {formatBRL(Number(s?.commission_total || 0))}
+                      {formatBRL(Number(s?.commission_balance || 0))}
                     </td>
                     <td className="whitespace-nowrap p-4 tabular-nums">
                       {formatBRL(Number(s?.dukamp_total || 0))}

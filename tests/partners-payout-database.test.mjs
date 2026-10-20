@@ -30,6 +30,10 @@ test('commission payout ledger resets only unpaid credits, preserves sales, reco
   await sale(5);
   await assert.rejects(pay(old),/saldo ou a chave Pix mudou/i);
   assert.equal(Number((await db.query('SELECT count(*) n FROM public.partner_commission_payouts')).rows[0].n),0);
+  const keyPreview=await account();
+  await db.query("UPDATE public.dukamp_partners SET pix_key='changed@example.invalid' WHERE id=$1",[a]);
+  await assert.rejects(pay(keyPreview),/saldo ou a chave Pix mudou/i);
+  await db.query("UPDATE public.dukamp_partners SET pix_key='fixture@example.invalid' WHERE id=$1",[a]);
   const preview=await account(), key=crypto.randomUUID(), beforeStock=await stock();
   const receipt=(await pay(preview,key)).rows[0].p;
   assert.equal(Number(receipt.amount),32.24);assert.equal(await stock(),beforeStock);
@@ -42,7 +46,8 @@ test('commission payout ledger resets only unpaid credits, preserves sales, reco
   assert.equal(audit.length,1);assert.equal(audit[0].actor_id,admin);assert.equal(Number(audit[0].after_data.amount),32.24);assert.equal(audit[0].after_data.partner_name,'fixture-a');
   assert.equal((await pay(preview,key)).rows[0].p.id,receipt.id);
   await assert.rejects(pay(preview,key,admin,30),/outra|outro pagamento/);
-  await assert.rejects(pay(current),/não possui comissão/);
+  await assert.rejects(pay(current),/valor de comissão válido/);
+  await assert.rejects(pay(current,crypto.randomUUID(),admin,1),/não possui comissão/);
   await sale(7.5);
   assert.equal((await pay(preview,key)).rows[0].p.id,receipt.id);assert.equal(Number((await account()).balance),7.5);
   const next=await account();await pay(next);
