@@ -16,7 +16,8 @@ export function PartnerCommissionAccount({ partnerId }: { partnerId?: string }) 
   const query = useQuery({
     queryKey: ["partner-commission-account", user?.id, partnerId || "own", page],
     queryFn: () => fetch({ data: { partnerId, page } }),
-    enabled: !!user, refetchInterval: 15000, staleTime: 5000,
+    enabled: !!user, refetchInterval: partnerId ? false : 15000, staleTime: 5000,
+    refetchOnWindowFocus: !partnerId, refetchOnReconnect: !partnerId,
   });
   useEffect(() => {
     if (!query.data) return;
@@ -46,7 +47,10 @@ export function PartnerCommissionAccount({ partnerId }: { partnerId?: string }) 
       {partnerId && <div className="space-y-3 rounded-lg border p-4">
         <p className="break-all text-sm">Chave Pix: <strong>{query.data.pix_key || "Não cadastrada"}</strong></p>
         <p className="text-sm text-muted-foreground">Após fazer o Pix de {formatBRL(query.data.balance)} para {query.data.partner_name}, confirme abaixo para dar baixa nas comissões pendentes. O pagamento ficará registrado na auditoria e no histórico do parceiro.</p>
-        <Button type="button" disabled={busy || query.isFetching || query.data.balance <= 0} onClick={settle}>{busy ? "Confirmando..." : "Confirmar pagamento da comissão"}</Button>
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" disabled={busy || query.isFetching || query.data.balance <= 0} onClick={settle}>{busy ? "Confirmando..." : "Confirmar pagamento da comissão"}</Button>
+          <Button type="button" variant="outline" disabled={busy || query.isFetching} onClick={() => query.refetch()}>Atualizar saldo</Button>
+        </div>
       </div>}
       {!partnerId && <p className="text-xs text-muted-foreground">As comissões aprovadas no mês são pagas até o 10º dia útil do mês seguinte. Após a confirmação do Pix pela administração, o saldo é atualizado e o pagamento aparece neste histórico.</p>}
       <div className="overflow-x-auto">
