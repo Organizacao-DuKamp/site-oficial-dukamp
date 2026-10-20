@@ -1,20 +1,30 @@
 import { seoHead, PUBLIC_PAGES } from "@/lib/seo";
 import { activeCatalogs, listedProducts } from "@/lib/catalog-queries";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { ProductCard } from "@/components/site/ProductCard";
 import { Button } from "@/components/ui/button";
+import { LoaderCircle } from "lucide-react";
 
 type Search = { q?: string; categoria?: string; page?: number };
 const PAGE_SIZE = 24;
 
 export const Route = createFileRoute("/produtos/")({
   loaderDeps: ({ search }) => search,
-  loader: async ({ deps }) => {
-    const catalogs = await activeCatalogs();
+  loader: async ({ deps, context }) => {
+    const catalogsPromise = context.queryClient.ensureQueryData({ queryKey: ["catalogs"], queryFn: activeCatalogs });
+    const loadProducts = (catId?: string) => context.queryClient.ensureQueryData({
+      queryKey: ["products", { q: deps.q, catId, page: deps.page || 1 }],
+      queryFn: () => listedProducts({ q: deps.q, catId, page: deps.page }),
+    });
+    // A normal search does not need to wait for the categories request.
+    if (!deps.categoria) {
+      const [catalogs, products] = await Promise.all([catalogsPromise, loadProducts()]);
+      return { catalogs, products, category: undefined };
+    }
+    const catalogs = await catalogsPromise;
     const category = catalogs.find(c => c.slug === deps.categoria);
-    const products = deps.categoria && !category ? { rows: [], count: 0 } : await listedProducts({ q: deps.q, catId: category?.id, page: deps.page });
+    const products = category ? await loadProducts(category.id) : { rows: [], count: 0 };
     return { catalogs, products, category };
   },
   head: ({ loaderData, match }) => {
@@ -29,19 +39,30 @@ export const Route = createFileRoute("/produtos/")({
     page: Number.isSafeInteger(Number(s.page)) && Number(s.page) > 0 ? Math.min(Number(s.page), 100000) : 1,
   }),
   component: Page,
+  pendingMs: 150,
+  pendingMinMs: 150,
+  pendingComponent: ProductsPending,
 });
+
+function ProductsPending() {
+  return (
+    <SiteLayout>
+      <div role="status" aria-live="polite" className="mb-6 flex items-center gap-3 rounded-xl border bg-card p-4">
+        <LoaderCircle aria-hidden="true" className="h-5 w-5 animate-spin text-primary" />
+        <p className="font-medium">Buscando produtos...</p>
+      </div>
+      <div aria-hidden="true" className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        {Array.from({ length: 10 }, (_, i) => <div key={i} className="h-72 animate-pulse rounded-xl border bg-muted" />)}
+      </div>
+    </SiteLayout>
+  );
+}
 
 function Page() {
   const { q, categoria, page = 1 } = Route.useSearch();
   const initial = Route.useLoaderData();
-  const cats = useQuery({ queryKey: ["catalogs"], queryFn: activeCatalogs, initialData: initial.catalogs });
-  const catId = cats.data?.find(c => c.slug === categoria)?.id;
-  const prods = useQuery({
-    queryKey: ["products", { q, catId, page }],
-    initialData: initial.products,
-    queryFn: () => categoria && !catId ? Promise.resolve({ rows: [], count: 0 }) : listedProducts({ q, catId, page }),
-  });
-  const total = prods.data?.count ?? 0;
+  const products = initial.products;
+  const total = products.count;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
@@ -50,9 +71,9 @@ function Page() {
       {q && <p className="text-sm text-muted-foreground mb-4">Resultados para "{q}"</p>}
       {categoria && <p className="text-sm text-muted-foreground mb-4">Categoria: {categoria}</p>}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-        {prods.data?.rows.map((p) => <ProductCard key={p.id} p={p as any} />)}
+        {products.rows.map((p) => <ProductCard key={p.id} p={p as any} />)}
       </div>
-      {prods.data && prods.data.rows.length === 0 && (
+      {products.rows.length === 0 && (
         <p className="text-muted-foreground">Nenhum produto encontrado.</p>
       )}
       {totalPages > 1 && (

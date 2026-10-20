@@ -1,4 +1,5 @@
 import { readProductOptions } from "./product-options";
+import { DUKAMP_MANUFACTURED_FILTER, isDukampManufacturedProduct } from "./dukamp-products";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getRequest, setResponseHeader } from "@tanstack/react-start/server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
@@ -261,9 +262,10 @@ export async function publicStore(slug: string, orderPage = false) {
     db()
       .from("products")
       .select(
-        "id,name,slug,code,images,description,options,price,consumer_price,producer_price,on_sale,sale_consumer_price,sale_producer_price,stock,featured,catalogs(name,slug)",
+        "id,name,brand,slug,code,images,description,options,price,consumer_price,producer_price,on_sale,sale_consumer_price,sale_producer_price,stock,featured,catalogs(name,slug)",
       )
       .eq("active", true)
+      .or(DUKAMP_MANUFACTURED_FILTER)
       .order("featured", { ascending: false })
       .order("name")
       .limit(1000),
@@ -276,7 +278,7 @@ export async function publicStore(slug: string, orderPage = false) {
       StoreProduct,
       "cost" | "store_id" | "created_at"
     >[],
-    dukamp: (orderPage ? [] : ok(dukamp)).map((p) => {
+    dukamp: (orderPage ? [] : ok(dukamp)).filter(isDukampManufacturedProduct).map((p) => {
       const catalog = Array.isArray(p.catalogs) ? p.catalogs[0] : p.catalogs;
       return {
         id: String(p.id),

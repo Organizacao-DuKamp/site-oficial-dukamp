@@ -1,4 +1,5 @@
 import { partnerAmounts, partnerCustomerDetailsSchema } from "./partners";
+import { assertDukampPartnerProduct } from "./dukamp-products";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { normalizeTaxCode, roundMoney } from "@/lib/tax";
@@ -594,7 +595,7 @@ export const createPixOrder = createServerFn({ method: "POST" })
     const { data: prods, error: productError } = await supa
       .from("products")
       .select(
-        "id,name,code,options,price,consumer_price,producer_price,on_sale,sale_consumer_price,sale_producer_price,peso,altura,largura,comprimento,stock,active,tax_code,catalogs(name,slug)",
+        "id,name,brand,code,options,price,consumer_price,producer_price,on_sale,sale_consumer_price,sale_producer_price,peso,altura,largura,comprimento,stock,active,tax_code,catalogs(name,slug)",
       )
       .in("id", ids);
     if (productError) throw new Error(productError.message);
@@ -619,6 +620,7 @@ export const createPixOrder = createServerFn({ method: "POST" })
     const orderItems = data.items.map((item) => {
       const product = prods.find((p: any) => p.id === item.product_id) as any;
       if (!product.active) throw new Error(`Produto indisponível: ${product.name}`);
+      if (partnerCheckout || storeOrigin) assertDukampPartnerProduct(product);
       if ((product.stock ?? 0) < (quantities.get(item.product_id) ?? 0)) throw new Error(`Estoque insuficiente: ${product.name}`);
       const selectedOptions = resolveOptionSelections(product.options, item.selected_options);
 

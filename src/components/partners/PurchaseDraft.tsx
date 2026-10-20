@@ -1,5 +1,6 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useState,
   type Dispatch,
@@ -7,6 +8,7 @@ import {
   type SetStateAction,
 } from "react";
 import type { PartnerCartItem } from "@/lib/partners";
+import { mergePartnerCartLines } from "@/lib/partner-cart";
 export const emptyPartnerAddress = {
   cep: "",
   rua: "",
@@ -31,7 +33,10 @@ type Draft = {
 };
 const DraftContext = createContext<Draft | null>(null);
 export function PurchaseDraftProvider({ children }: { children: ReactNode }) {
-  const [cart, setCart] = useState<PartnerCartLine[]>([]);
+  const [cart, updateCart] = useState<PartnerCartLine[]>([]);
+  const setCart: Dispatch<SetStateAction<PartnerCartLine[]>> = useCallback((next) => {
+    updateCart((current) => mergePartnerCartLines(typeof next === "function" ? next(current) : next));
+  }, []);
   const [address, setAddress] = useState(emptyPartnerAddress);
   const [fulfillment, setFulfillment] = useState<"delivery" | "pickup">("delivery");
   const [coordinates, setCoordinates] = useState({ latitude: "", longitude: "" });

@@ -29,7 +29,7 @@ function Products() {
     <>
       <PageHeading
         title="Consultar produto"
-        description="Catálogo ativo da Dukamp, com fotos, preços ao consumidor e disponibilidade para venda."
+        description="Produtos fabricados pela Dukamp: rações, proteinados, núcleos e suplementos, com preços e disponibilidade."
         action={
           <Button variant="outline" onClick={() => query.refetch()} disabled={query.isFetching}>
             Atualizar estoque

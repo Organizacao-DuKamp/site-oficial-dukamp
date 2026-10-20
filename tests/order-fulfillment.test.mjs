@@ -15,12 +15,14 @@ const notifyUrl = moduleUrl('export function paymentNotificationUrl() { return "
 const sellerUrl = moduleUrl(source('src/lib/order-seller.server.ts'));
 const optionsUrl = moduleUrl(source('src/lib/product-options.ts').replace('\"zod\"',JSON.stringify(import.meta.resolve('zod'))));
 const partnersUrl = moduleUrl(source('src/lib/partners.ts').replace('"zod"',JSON.stringify(import.meta.resolve('zod'))));
+const manufacturingUrl = moduleUrl(source('src/lib/dukamp-products.ts'));
 const partnerCheckoutUrl = moduleUrl('export const authorizePartnerCheckout=(...args)=>globalThis.__partnerCheckout(...args);');
 const providerUrl = moduleUrl('export const applyProviderPayment=async()=>null;');
 const checkout = source('src/lib/checkout.functions.ts');
 const checkoutSource = `
 const z = globalThis.__fulfillmentZ;
 import { partnerAmounts, partnerCustomerDetailsSchema } from ${JSON.stringify(partnersUrl)};
+import { assertDukampPartnerProduct } from ${JSON.stringify(manufacturingUrl)};
 import { PICKUP_SERVICE, checkoutFieldValid } from ${JSON.stringify(fulfillmentUrl)};
 import { normalizeTaxCode, roundMoney } from ${JSON.stringify(taxUrl)};
 import { priceForAccount } from ${JSON.stringify(pricingUrl)};
@@ -36,7 +38,7 @@ const fixture = {
  cep:'',rua:'',numero:'',bairro:'',cidade:'',estado:'',items:[{product_id:'00000000-0000-4000-8000-000000000001',quantity:2,unit_price:1}],
  seller_id:null,shipping_cost:999,shipping_service:'forged shipping',shipping_deadline_days:30,fulfillment_method:'pickup',payment_method:'card',card_installments:1,
 };
-function setupDb(validToken=true, options=[]) {
+function setupDb(validToken=true, options=[], name='DUKAMP Test Product') {
  globalThis.__fulfillmentRequest = new Request('https://fixture.invalid/checkout',{headers:{authorization:'Bearer fixture-token'}});
  const writes=[];
  globalThis.__fulfillmentDb = {
@@ -49,7 +51,7 @@ function setupDb(validToken=true, options=[]) {
     insert(value) { insert=value; writes.push({table,value}); return chain; },
     update(value) { writes.push({table,value,update:true}); return chain; },
     single:async()=>({data:{...insert,id:'00000000-0000-4000-8000-000000000002',order_number:'TEST'}}),
-    then(resolve,reject) { return Promise.resolve({data:table==='products' ? [{id:fixture.items[0].product_id,name:'Test Product',code:'TEST',options,consumer_price:10,price:10,stock:10,active:true,tax_code:'040'}] : null}).then(resolve,reject); },
+    then(resolve,reject) { return Promise.resolve({data:table==='products' ? [{id:fixture.items[0].product_id,name,code:'TEST',options,consumer_price:10,price:10,stock:10,active:true,tax_code:'040'}] : null}).then(resolve,reject); },
    }; return chain;
   },
  };
@@ -175,6 +177,17 @@ test('repeating a completed partner checkout returns the existing charge without
  const writes=setupDb();globalThis.__partnerCheckout=async()=>({quote:{},partner:{},existingOrder:{id:'existing-order',order_number:'EXISTING',mp_payment_id:'123',total:63,subtotal:20,tax_amount:0,shipping_cost:50}});
  const result=await createPixOrder({...fixture,partner_quote_id:'00000000-0000-4000-8000-000000000003'});
  assert.equal(result.orderId,'existing-order');assert.equal(writes.length,0);
+});
+test('checkout enforces DuKamp manufacturing even if partner quote authorization already succeeded',async()=>{
+ const writes=setupDb(true,[],'ACURA 25ML');
+ globalThis.__partnerCheckout=async()=>({partner:{id:'partner-a'},quote:{payload:{shipping:{servico:'Retirar na loja',prazoDias:0}},shipping_cost:0},existingOrder:null});
+ await assert.rejects(createPixOrder({...fixture,partner_quote_id:'00000000-0000-4000-8000-000000000003'}),/somente produtos fabricados/);
+ assert.equal(writes.length,0);
+});
+test('the regular public checkout still accepts third-party products without a partner referral',async()=>{
+ const writes=setupDb(true,[],'ACURA 25ML');
+ await createPixOrder(fixture);
+ assert.equal(writes.find(w=>w.table==='orders').value.subtotal,20);
 });
 
 test('online Dukamp purchase records store referral without deducting customer payment',async()=>{

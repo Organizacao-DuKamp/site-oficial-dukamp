@@ -1,8 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ShoppingCart, Search, User, LogOut, LayoutDashboard, MessageCircle, UserCircle, Plus } from "lucide-react";
-import { useState } from "react";
+import { ShoppingCart, User, LogOut, LayoutDashboard, MessageCircle, UserCircle, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { ProductSearch } from "./ProductSearch";
 import { useCart } from "@/lib/cart";
 import { useAuth } from "@/lib/auth";
 import { useSupport } from "@/lib/support";
@@ -33,13 +32,7 @@ export function Header() {
   const { user, isAdmin, accountType, signOut } = useAuth();
   const { ticket, openChat } = useSupport();
   
-  const [q, setQ] = useState("");
   const navigate = useNavigate();
-
-  function onSearch(e: React.FormEvent) {
-    e.preventDefault();
-    if (q.trim()) navigate({ to: "/produtos", search: { q: q.trim() } as any });
-  }
 
 
 
@@ -70,17 +63,7 @@ export function Header() {
             />
           </Link>
 
-          <form onSubmit={onSearch} className="flex-1 max-w-xl hidden md:flex">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Buscar produtos..."
-                className="pl-9"
-              />
-            </div>
-          </form>
+          <ProductSearch className="hidden min-w-0 flex-1 max-w-xl md:flex" />
 
           <div className="flex items-center gap-1 ml-auto">
             {user ? (
@@ -178,12 +161,7 @@ export function Header() {
           </div>
         </div>
 
-        <form onSubmit={onSearch} className="pb-3 md:hidden">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar..." className="pl-9" />
-          </div>
-        </form>
+        <ProductSearch className="flex pb-3 md:hidden" />
       </div>
     </header>
   );

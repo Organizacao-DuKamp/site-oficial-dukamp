@@ -57,8 +57,13 @@ export function PurchaseWorkspace({
   } = usePurchaseDraft();
   const initialProductApplied = useRef(false);
   useEffect(() => {
-    if (!initialProduct || initialProductApplied.current) return;
+    if (!initialProduct || initialProductApplied.current || !query.isSuccess) return;
     initialProductApplied.current = true;
+    const product = query.data.find((p) => p.id === initialProduct);
+    if (!product || product.stock < 1 || product.price <= 0) {
+      toast.error("Produto indisponível no catálogo de fabricação Dukamp.");
+      return;
+    }
     setCart((current) =>
       current.some((item) => item.product_id === initialProduct)
         ? current
@@ -68,11 +73,11 @@ export function PurchaseWorkspace({
               key: crypto.randomUUID(),
               product_id: initialProduct,
               quantity: 1,
-              selected_options: [],
+              selected_options: readProductOptions(product.options).filter((o) => o.values.length === 1).map((o) => ({ option_id: o.id, value_id: o.values[0].id })),
             },
           ],
     );
-  }, [initialProduct, setCart]);
+  }, [initialProduct, setCart, query.isSuccess, query.data]);
   const [customer, setCustomer] = useState(emptyCustomer);
   const [extra, setExtra] = useState({
     inscricao_estadual: "",
@@ -131,15 +136,28 @@ export function PurchaseWorkspace({
     0,
   );
   function addProduct(id: string) {
-    setCart((current) => [
-      ...current,
-      { key: crypto.randomUUID(), product_id: id, quantity: 1, selected_options: [] },
-    ]);
+    const product = products.find((p) => p.id === id);
+    if (!product || product.stock < 1) return;
+    setCart((current) => {
+      const quantity = current.filter((line) => line.product_id === id).reduce((sum, line) => sum + line.quantity, 0);
+      if (quantity >= product.stock) return current;
+      return [...current, {
+        key: crypto.randomUUID(), product_id: id, quantity: 1,
+        selected_options: readProductOptions(product.options).filter((o) => o.values.length === 1).map((o) => ({ option_id: o.id, value_id: o.values[0].id })),
+      }];
+    });
   }
   function changeLine(key: string, changes: Partial<CartLine>) {
-    setCart((current) =>
-      current.map((line) => (line.key === key ? { ...line, ...changes } : line)),
-    );
+    setCart((current) => {
+      const line = current.find((row) => row.key === key);
+      if (!line) return current;
+      const product = products.find((p) => p.id === line.product_id);
+      if (changes.quantity !== undefined) {
+        const otherQuantity = current.filter((row) => row.product_id === line.product_id && row.key !== key).reduce((sum, row) => sum + row.quantity, 0);
+        if (!Number.isSafeInteger(changes.quantity) || changes.quantity < 1 || changes.quantity + otherQuantity > (product?.stock || 0)) return current;
+      }
+      return current.map((row) => row.key === key ? { ...row, ...changes } : row);
+    });
   }
   async function lookup() {
     const cep = address.cep.replace(/\D/g, "");
@@ -274,8 +292,9 @@ export function PurchaseWorkspace({
                   <button
                     key={p.id}
                     type="button"
+                    disabled={cart.filter((line) => line.product_id === p.id).reduce((sum, line) => sum + line.quantity, 0) >= p.stock}
                     onClick={() => addProduct(p.id)}
-                    className="flex items-center gap-3 rounded-lg border p-3 text-left text-sm hover:border-primary/40"
+                    className="flex items-center gap-3 rounded-lg border p-3 text-left text-sm hover:border-primary/40 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {p.images?.[0] && (
                       <img className="h-10 w-10 shrink-0 object-contain" src={p.images[0]} alt="" />

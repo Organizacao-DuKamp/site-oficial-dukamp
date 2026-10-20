@@ -15,14 +15,15 @@ const auth=moduleUrl('function check(e){if(e)throw new Error(e.message)}\n'+part
 const tax=moduleUrl(source('src/lib/tax.ts'));
 const pricing=moduleUrl(source('src/lib/pricing.ts').replaceAll('"./tax"',JSON.stringify(tax)));
 const options=moduleUrl(source('src/lib/product-options.ts').replaceAll('"zod"',JSON.stringify(import.meta.resolve('zod'))));
-const server=await import(moduleUrl(source('src/lib/storefronts.server.ts').replaceAll('"@tanstack/react-start/server"',JSON.stringify(request)).replaceAll('"@/integrations/supabase/client.server"',JSON.stringify(admin)).replaceAll('"./partners.server"',JSON.stringify(auth)).replaceAll('"./storefronts"',JSON.stringify(modelUrl)).replaceAll('"./storefront-secrets.server"',JSON.stringify(secrets)).replaceAll('"./pricing"',JSON.stringify(pricing)).replaceAll('"./product-options"',JSON.stringify(options)).replaceAll('"sanitize-html"',JSON.stringify(import.meta.resolve('sanitize-html')))));
+const manufacturing=moduleUrl(source('src/lib/dukamp-products.ts'));
+const server=await import(moduleUrl(source('src/lib/storefronts.server.ts').replaceAll('"./dukamp-products"',JSON.stringify(manufacturing)).replaceAll('"@tanstack/react-start/server"',JSON.stringify(request)).replaceAll('"@/integrations/supabase/client.server"',JSON.stringify(admin)).replaceAll('"./partners.server"',JSON.stringify(auth)).replaceAll('"./storefronts"',JSON.stringify(modelUrl)).replaceAll('"./storefront-secrets.server"',JSON.stringify(secrets)).replaceAll('"./pricing"',JSON.stringify(pricing)).replaceAll('"./product-options"',JSON.stringify(options)).replaceAll('"sanitize-html"',JSON.stringify(import.meta.resolve('sanitize-html')))));
 const a='00000000-0000-4000-8000-000000000001',b='00000000-0000-4000-8000-000000000002';
 const partner={id:a,user_id:'user-a',active:true,deleted_at:null,cnpj:'11222333000181',razao_social:'AgroPet'};
 const cfg=model.storeConfigSchema.parse({name:'AgroPet',slug:'agropet',published:true,email:'agropet@example.invalid',phone:'17999999999',address:'Rua Fixture, 1'});
 const store={id:a,partner_id:a,name:cfg.name,slug:cfg.slug,published:true,payment_connected:true,payment_account:'Conta Fixture',config:cfg,created_at:'2026-10-20T00:00:00Z',updated_at:'2026-10-20T00:00:00Z'};
 function fakeDb(tables,rpc=()=>({data:true,error:null})){
  return {rpc:async(name,args)=>rpc(name,args),from(table){let filters=[],operation='select',value,projection='*';const chain={
- select(cols='*'){projection=cols;return chain},eq(k,v){filters.push(r=>r[k]===v);return chain},is(k,v){filters.push(r=>r[k]===v);return chain},gt(k,v){filters.push(r=>r[k]>v);return chain},lt(k,v){filters.push(r=>r[k]<v);return chain},order(){return chain},range(){return chain},limit(){return chain},
+ select(cols='*'){projection=cols;return chain},or(){return chain},eq(k,v){filters.push(r=>r[k]===v);return chain},is(k,v){filters.push(r=>r[k]===v);return chain},gt(k,v){filters.push(r=>r[k]>v);return chain},lt(k,v){filters.push(r=>r[k]<v);return chain},order(){return chain},range(){return chain},limit(){return chain},
  insert(v){operation='insert';value=v;return chain},upsert(v){operation='upsert';value=v;return chain},update(v){operation='update';value=v;return chain},delete(){operation='delete';return chain},
  result(single=false,maybe=false){let rows=(tables[table]||[]).filter(r=>filters.every(f=>f(r)));
  if(operation==='insert'){const row={id:crypto.randomSecret().slice(0,32),...value};(tables[table]||=[]).push(row);rows=[row];}
@@ -61,6 +62,11 @@ test('owner is derived from authenticated user; another store product cannot be 
 });
 test('public catalog excludes private costs and partner identity, with immutable Dukamp entries',async()=>{
  const data=tables();globalThis.__storeDb=fakeDb(data);const result=await server.publicStore('agropet');assert.equal(result.products.length,1);assert.equal(result.products[0].cost,undefined);assert.equal(result.products[0].store_id,undefined);assert.equal(result.store.partner_id,undefined);assert.equal(result.store.encrypted_token,undefined);
+});
+test('partner storefront exposes only DuKamp-manufactured catalog entries and preserves the store own stock',async()=>{
+ const data=tables();data.products=[{id:'own',name:'DUKAMP Ração Baby',active:true,options:[],price:20,stock:5,images:[]},{id:'ade',name:'ADITIVO ADEKAMP GOLD',active:true,options:[],price:30,stock:5,images:[]},{id:'foreign',name:'ACURA 25ML',active:true,options:[],price:10,stock:5,images:[]}];
+ globalThis.__storeDb=fakeDb(data);const result=await server.publicStore('agropet');
+ assert.deepEqual(result.dukamp.map(p=>p.id),['own','ade']);assert.equal(result.products.length,1);
 });
 test('connecting payment account validates company, stores only ciphertext and returns no secret',async()=>{
  const data=tables();globalThis.__storeDb=fakeDb(data);const savedFetch=globalThis.fetch;try{globalThis.fetch=async()=>new Response(JSON.stringify({id:123,nickname:'Loja Fixture',site_id:'MLB',identification:{type:'CNPJ',number:partner.cnpj}}));const result=await server.connectCredentials('user-a','APP_USR-fixture-only');assert.deepEqual(result,{account:'Loja Fixture'});assert.equal(crypto.openSecret(data.partner_store_credentials[0].encrypted_token),'APP_USR-fixture-only');assert.ok(!JSON.stringify(data.partner_store_credentials).includes('APP_USR-fixture-only'));assert.equal(data.partner_store_credentials[0].collector_id,'123');}finally{globalThis.fetch=savedFetch;}

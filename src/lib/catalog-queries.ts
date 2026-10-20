@@ -16,9 +16,9 @@ export async function categoryProducts(catalogId: string) {
   }
 }
 export async function listedProducts({ q, catId, page = 1 }: { q?: string; catId?: string; page?: number }) {
-  let query = supabase.from("products").select("*,catalogs(name,slug)", { count: "exact" }).eq("active", true).gt("stock", 0);
+  let query = supabase.from("products").select(PRODUCT_COLS, { count: "exact" }).eq("active", true).gt("stock", 0);
   if (catId) query = query.eq("catalog_id", catId);
-  if (q) query = query.ilike("name", `%${q}%`);
+  if (q?.trim()) query = query.ilike("name", `%${q.trim().replace(/[\\%_]/g, "\\$&")}%`);
   const { data, count, error } = await query.order("category_position", { nullsFirst: false }).order("created_at", { ascending: false }).order("id").range((page - 1) * 24, page * 24 - 1);
   if (error) throw error;
   return { rows: data || [], count: count || 0 };

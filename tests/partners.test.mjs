@@ -9,21 +9,24 @@ const {partnerAmounts,validCnpj,partnerLoginEmail,partnerSchema,partnerQuoteFing
 const taxUrl=moduleUrl(source('src/lib/tax.ts'));
 const pricingUrl=moduleUrl(source('src/lib/pricing.ts').replaceAll('"./tax"',JSON.stringify(taxUrl)));
 const optionsUrl=moduleUrl(source('src/lib/product-options.ts').replaceAll('"zod"',JSON.stringify(import.meta.resolve('zod'))));
+const manufacturingUrl=moduleUrl(source('src/lib/dukamp-products.ts'));
 const requestUrl=moduleUrl('export const getRequest=()=>new Request("https://fixture.invalid");');
 const auditUrl=moduleUrl('export const createAuditedAdminClient=()=>globalThis.__partnersDb;');
 const ownShippingUrl=moduleUrl('export const calculateDukampShipping=async options=>globalThis.__ownShipping(options);');
 const shippingUrl=moduleUrl('export const calculateShipping=async options=>globalThis.__publicShipping(options);');
 const server=await import(moduleUrl(source('src/lib/partners.server.ts')
  .replaceAll('"./partners"',JSON.stringify(partnersUrl)).replaceAll('"./pricing"',JSON.stringify(pricingUrl))
+ .replaceAll('"./dukamp-products"',JSON.stringify(manufacturingUrl))
  .replaceAll('"./product-options"',JSON.stringify(optionsUrl)).replaceAll('"./audit.server"',JSON.stringify(auditUrl))
  .replaceAll('"@tanstack/react-start/server"',JSON.stringify(requestUrl)).replaceAll('"./dukamp-shipping.functions"',JSON.stringify(ownShippingUrl))
  .replaceAll('"./checkout.functions"',JSON.stringify(shippingUrl))));
 const address={cep:'15150104',rua:'Rua de teste',numero:'10',bairro:'Centro',cidade:'Monte Aprazível',estado:'SP',complemento:''};
 const item={product_id:'00000000-0000-4000-8000-000000000001',quantity:2,selected_options:[]};
+const ownProduct={id:item.product_id,name:'DUKAMP Ração Fixture',stock:3,active:true,options:[],price:100,consumer_price:100};
 const input={...address,items:[item],fulfillment_method:'delivery'};
 function fakeDb(tables,admin=false){
  return {rpc:async()=>({data:admin}),from(table){let filters=[];let inserted;const chain={
-  select(){return chain},eq(key,value){filters.push(row=>row[key]===value);return chain},is(key,value){filters.push(row=>row[key]===value);return chain},in(key,values){filters.push(row=>values.includes(row[key]));return chain},
+  select(){return chain},or(){return chain},order(){return chain},range(){return chain},eq(key,value){filters.push(row=>row[key]===value);return chain},is(key,value){filters.push(row=>row[key]===value);return chain},in(key,values){filters.push(row=>values.includes(row[key]));return chain},
   insert(value){inserted=value;(tables[table]||=[]).push({id:'generated-quote',...value});return chain},
   async single(){const rows=(tables[table]||[]).filter(row=>filters.every(f=>f(row)));return {data:inserted?{id:'generated-quote',...inserted}:rows[0]||null}},
   async maybeSingle(){return chain.single()},
@@ -60,7 +63,7 @@ test('only approved, uncancelled and unrefunded sales count toward commission',(
  for(const change of [{payment_status:'pending'},{payment_status:'in_process'},{payment_status:'refunded'},{delivery_status:'cancelada'},{refund_status:'requested'},{refund_status:'refunded'}])assert.equal(recognizedPartnerSale({...paid,...change}),false);
 });
 test('authorization rejects other tenants, expired/modified quotes and deactivated partners',async()=>{
- const db=fakeDb({dukamp_partners:[partner],dukamp_partner_quotes:[quote]});
+ const db=fakeDb({dukamp_partners:[partner],dukamp_partner_quotes:[quote],products:[ownProduct]});
  assert.equal((await server.authorizePartnerCheckout(db,'user-a',checkout)).partner.id,'partner-a');
  await assert.rejects(server.authorizePartnerCheckout(db,null,checkout),/Entre no painel/);
  await assert.rejects(server.authorizePartnerCheckout(db,'user-b',checkout),/não autorizado/);
@@ -70,14 +73,14 @@ test('authorization rejects other tenants, expired/modified quotes and deactivat
  await assert.rejects(server.requirePartnerAdmin(db,'user-a'),/administradores/);
 });
 test('consumed quotes allow only the exact same checkout request',async()=>{
- const authorized=await server.authorizePartnerCheckout(fakeDb({dukamp_partners:[partner],dukamp_partner_quotes:[quote]}),'user-a',checkout);
+ const authorized=await server.authorizePartnerCheckout(fakeDb({dukamp_partners:[partner],dukamp_partner_quotes:[quote],products:[ownProduct]}),'user-a',checkout);
  const consumed={...quote,order_id:'order-a',checkout_hash:authorized.requestHash,expires_at:'2020-01-01'};
  const db=fakeDb({dukamp_partners:[partner],dukamp_partner_quotes:[consumed],orders:[{id:'order-a',partner_id:'partner-a',payment_status:'pending'}]});
  assert.equal((await server.authorizePartnerCheckout(db,'user-a',checkout)).existingOrder.id,'order-a');
  for(const change of [{customer_name:'Another customer'},{payment_method:'boleto'},{partner_customer_details:{observacoes:'changed'}}])await assert.rejects(server.authorizePartnerCheckout(db,'user-a',{...checkout,...change}),/já possui/);
 });
 test('simulation derives prices and freight server-side and aggregates stock across variants',async()=>{
- const tables={dukamp_partners:[partner],products:[{id:item.product_id,name:'Fixture product',stock:3,active:true,options:[],price:100,consumer_price:100}],dukamp_partner_quotes:[]};
+ const tables={dukamp_partners:[partner],products:[ownProduct],dukamp_partner_quotes:[]};
  globalThis.__partnersDb=fakeDb(tables);globalThis.__ownShipping=async()=>({option:null,status:{eligible:false}});globalThis.__publicShipping=async()=>({opcoes:[{servico:'SEDEX',valor:80,prazoDias:2},{servico:'PAC',valor:50,prazoDias:5}]});
  const result=await server.quotePurchase('user-a',input);
  assert.equal(result.subtotal,200);assert.equal(result.shipping.valor,50);assert.equal(result.gross,250);assert.equal(result.commission,25);assert.equal(result.net,225);
@@ -85,4 +88,24 @@ test('simulation derives prices and freight server-side and aggregates stock acr
  await assert.rejects(server.quotePurchase('user-a',{...input,shipping_service:'free'}),/Frete inválido/);
  await assert.rejects(server.quotePurchase('user-a',{...input,items:[item,item]}),/estoque insuficiente/);
  assert.equal(tables.dukamp_partner_quotes.length,2);
+});
+
+test('partner catalog excludes third-party medicines, electronics and other feed brands',async()=>{
+ const tables={dukamp_partners:[partner],products:[ownProduct,
+  {...ownProduct,id:'ade',name:'ADITIVO ADEKAMP GOLD 10KG'},
+  {...ownProduct,id:'branded',name:'Suplemento mineral',brand:'Dukamp'},
+  {...ownProduct,id:'medicine',name:'ACURA 25ML'},
+  {...ownProduct,id:'electronics',name:'Adaptador USB Bluetooth CSR 5.0'},
+  {...ownProduct,id:'foreign-feed',name:'Ração de outra fábrica',brand:'Outra marca',catalogs:{name:'Rações para Gado de Corte'}}]};
+ globalThis.__partnersDb=fakeDb(tables);
+ assert.deepEqual((await server.getPartnerProducts('user-a')).map(p=>p.id),[ownProduct.id,'ade','branded']);
+});
+
+test('third-party products fail simulation and an old quote cannot authorize a new checkout',async()=>{
+ const products=[{...ownProduct,name:'ACURA 25ML'}];
+ const tables={dukamp_partners:[partner],products,dukamp_partner_quotes:[quote]};
+ globalThis.__partnersDb=fakeDb(tables);
+ await assert.rejects(server.quotePurchase('user-a',input),/somente produtos fabricados/);
+ await assert.rejects(server.authorizePartnerCheckout(fakeDb(tables),'user-a',checkout),/somente produtos fabricados/);
+ assert.equal(tables.dukamp_partner_quotes.length,1);
 });

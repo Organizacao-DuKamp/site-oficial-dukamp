@@ -22,6 +22,7 @@ import {
   type PartnerSettings,
 } from "./partners";
 import { priceForAccount } from "./pricing";
+import { assertDukampPartnerProduct, DUKAMP_MANUFACTURED_FILTER, isDukampManufacturedProduct } from "./dukamp-products";
 import { productQuantities, readProductOptions, resolveOptionSelections } from "./product-options";
 
 function database(userId: string) {
@@ -199,15 +200,16 @@ export async function getPartnerProducts(userId: string) {
     const { data, error } = await db
       .from("products")
       .select(
-        "id,name,code,images,stock,options,price,consumer_price,producer_price,on_sale,sale_producer_price,catalogs(name,slug)",
+        "id,name,brand,code,images,stock,options,price,consumer_price,producer_price,on_sale,sale_producer_price,catalogs(name,slug)",
       )
       .eq("active", true)
+      .or(DUKAMP_MANUFACTURED_FILTER)
       .order("name")
       .order("id")
       .range(offset, offset + 999);
     check(error);
     rows.push(
-      ...data!.map((p: PartnerProduct & PricingProduct) => ({
+      ...data!.filter(isDukampManufacturedProduct).map((p: PartnerProduct & PricingProduct) => ({
         id: p.id,
         name: p.name,
         code: p.code,
@@ -229,7 +231,7 @@ export async function quotePurchase(userId: string, input: PartnerQuoteInput) {
   const { data: products, error } = await db
     .from("products")
     .select(
-      "id,name,active,stock,options,price,consumer_price,producer_price,on_sale,sale_producer_price,catalogs(name,slug)",
+      "id,name,brand,active,stock,options,price,consumer_price,producer_price,on_sale,sale_producer_price,catalogs(name,slug)",
     )
     .in("id", [...new Set(input.items.map((i) => i.product_id))]);
   check(error);
@@ -241,6 +243,7 @@ export async function quotePurchase(userId: string, input: PartnerQuoteInput) {
       throw new Error(
         `Produto indisponível ou estoque insuficiente: ${product?.name || item.product_id}`,
       );
+    assertDukampPartnerProduct(product);
     resolveOptionSelections(product.options, item.selected_options);
     const price = priceForAccount(product, "cliente");
     if (!Number.isFinite(price) || price <= 0)
@@ -328,6 +331,16 @@ export async function authorizePartnerCheckout(
     throw new Error("Os produtos ou o endereço mudaram. Simule a compra novamente.");
   if (!quote.order_id && Date.parse(quote.expires_at) <= Date.now())
     throw new Error("A simulação expirou. Calcule novamente.");
+  // Revalidate old quotes too: a quote issued before the catalog restriction
+  // must not authorize a new third-party order.
+  if (!quote.order_id) {
+    const ids = [...new Set(data.items.map((item) => item.product_id))];
+    const current = await db.from("products").select("id,name,brand,active").in("id", ids);
+    check(current.error);
+    if (current.data?.length !== ids.length || current.data.some((p) => !p.active))
+      throw new Error("Produto indisponível. Simule a compra novamente.");
+    current.data.forEach(assertDukampPartnerProduct);
+  }
   const { createHash } = await import("node:crypto");
   const requestHash = createHash("sha256")
     .update(

@@ -13,6 +13,10 @@ O parceiro consulta o catálogo ativo com fotos/preços/estoque, simula uma comp
 
 ## Comissão e pagamento
 
+O catálogo da parceria é restrito aos produtos fabricados pela Dukamp (rações, proteinados, núcleos, suplementos e a linha de aditivos ADEKAMP). A regra usa a marca e a identificação do fabricante no nome dos cadastros legados; pertencer a uma categoria de rações não basta. A listagem, a simulação, as cotações anteriores ainda sem pedido e o checkout validam a restrição no servidor. A vitrine parceira aplica a mesma regra à seção de produtos Dukamp.
+
+No carrinho do parceiro, novas inclusões do mesmo produto e das mesmas opções somam a quantidade em uma linha. Alternativas diferentes permanecem separadas. As quantidades totais por produto respeitam o estoque, inclusive quando existem opções diferentes. O login do parceiro usa a logo oficial no desktop e no celular.
+
 A regra implementada segue a última solicitação: **a cobrança à Dukamp desconta 10% de produtos + frete**. A comissão é retida pela loja, sem um segundo pagamento da Dukamp ao parceiro.
 
 Exemplo: R$ 1.000 em produtos + R$ 100 de frete = R$ 1.100 comerciais; comissão de R$ 110; saldo à Dukamp de R$ 990. No cartão, as mesmas taxas do checkout são acrescentadas ao saldo de R$ 990. A taxa não aumenta a base de comissão.

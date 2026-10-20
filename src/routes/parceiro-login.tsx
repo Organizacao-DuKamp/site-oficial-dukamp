@@ -6,6 +6,7 @@ import { partnerLoginEmail, partnerUsernameSchema } from "@/lib/partners";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field } from "@/components/partners/PartnerUi";
+import dukampLogo from "@/assets/dukamp-logo.webp";
 export const Route = createFileRoute("/parceiro-login")({
   ssr: false,
   head: () => ({ meta: [{ title: "Acesso do parceiro — Dukamp" }] }),
@@ -75,8 +76,8 @@ function PartnerLogin() {
   return (
     <main className="grid min-h-screen bg-muted/30 lg:grid-cols-2">
       <section className="hidden flex-col justify-between bg-primary p-12 text-primary-foreground lg:flex">
-        <Link to="/" className="text-2xl font-bold">
-          Dukamp Saúde Animal
+        <Link to="/" aria-label="DuKamp — início" className="w-fit rounded-xl bg-white p-3 shadow-sm">
+          <img src={dukampLogo} alt="DuKamp Saúde Animal" width={216} height={72} className="h-16 w-auto object-contain" />
         </Link>
         <div>
           <Store className="mb-8 h-12 w-12 opacity-80" />
@@ -93,8 +94,8 @@ function PartnerLogin() {
       </section>
       <section className="flex items-center justify-center p-6">
         <div className="w-full max-w-sm">
-          <Link to="/" className="text-sm font-bold text-primary lg:hidden">
-            Dukamp Saúde Animal
+          <Link to="/" aria-label="DuKamp — início" className="inline-block lg:hidden">
+            <img src={dukampLogo} alt="DuKamp Saúde Animal" width={180} height={60} className="h-14 w-auto object-contain" />
           </Link>
           <div className="mb-6 mt-8 grid h-12 w-12 place-items-center rounded-xl bg-primary/10 text-primary">
             <ShieldCheck />
