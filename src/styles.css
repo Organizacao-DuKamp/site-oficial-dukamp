@@ -293,7 +293,7 @@ main[data-quotes-expanded] { container-type: inline-size; container-name: mainCo
 .partner-dashboard .partner-workspace table :is(th, td) { border-color: #d7e0d8; }
 .partner-dashboard .partner-workspace table td { vertical-align: top; }
 .partner-dashboard .partner-page-heading h1 { color: #173b2b; }
-.partner-dashboard :is(a, button, summary):focus-visible { outline: 3px solid #b8954c; outline-offset: 3px; }
+.partner-dashboard :is(a, button, summary):focus-visible { outline: 3px solid #8a6928; outline-offset: 3px; }
 .partner-dashboard .partner-sidebar :is(a, button):focus-visible { outline-color: #e7c77f; }
 .partner-dashboard .partner-home-hero {
   position: relative; overflow: hidden; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
@@ -331,7 +331,7 @@ main[data-quotes-expanded] { container-type: inline-size; container-name: mainCo
 .partner-dashboard .partner-shortcut-icon { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 11px; color: #275c3c; background: #e4eee2; }
 .partner-dashboard .partner-shortcut:nth-child(2) .partner-shortcut-icon { color: #4a637b; background: #e9eef3; }
 .partner-dashboard .partner-shortcut:nth-child(3) .partner-shortcut-icon { color: #806031; background: #f4eddc; }
-.partner-dashboard .partner-step { color: #778b7d; font-size: 12px; font-weight: 500; }
+.partner-dashboard .partner-step { color: #63776a; font-size: 12px; font-weight: 500; }
 .partner-dashboard .partner-shortcut h3 { font-weight: 650; font-size: 15px; color: #1b392b; }
 .partner-dashboard .partner-shortcut p { flex: 1; margin-top: 6px; color: #53685b; font-size: 12px; line-height: 1.65; }
 .partner-dashboard .partner-shortcut-link { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 20px; padding-top: 14px; border-top: 1px solid #e3e9e2; color: #225a3c; font-size: 12px; font-weight: 600; }
