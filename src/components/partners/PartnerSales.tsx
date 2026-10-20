@@ -156,7 +156,7 @@ export function PartnerSales({ admin = false }: { admin?: boolean }) {
                           </span>
                           <p className="mt-1 text-[11px] text-muted-foreground">
                             {recognizedPartnerSale(o)
-                              ? "Confirmada"
+                              ? (o.commission_paid_at ? "Paga" : "Confirmada")
                               : o.payment_status === "refunded" ||
                                   o.delivery_status === "cancelada" ||
                                   o.refund_status !== "none"

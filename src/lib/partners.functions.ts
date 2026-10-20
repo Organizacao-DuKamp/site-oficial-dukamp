@@ -129,3 +129,20 @@ export const adminPendingPartnerSales = createServerFn({ method: "GET" })
     const { countPendingPartnerSales } = await import("./partners.server");
     return countPendingPartnerSales(context.userId);
   });
+
+export const partnerCommissionAccount = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .validator((data: unknown) => z.object({
+    partnerId: z.string().uuid().optional(),
+    page: z.number().int().min(1).max(100000).default(1),
+  }).parse(data ?? {}))
+  .handler(async ({ data, context }) => (await import("./partner-commissions.server")).loadPartnerCommissionAccount(context.userId, data));
+
+export const confirmPartnerCommissionPayment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((data: unknown) => z.object({
+    partnerId: z.string().uuid(), requestId: z.string().uuid(),
+    amount: z.number().finite().positive().max(9999999999).multipleOf(0.01),
+    balanceToken: z.string().regex(/^[a-f0-9]{32}$/),
+  }).parse(data))
+  .handler(async ({ data, context }) => (await import("./partner-commissions.server")).settlePartnerCommission(context.userId, data));

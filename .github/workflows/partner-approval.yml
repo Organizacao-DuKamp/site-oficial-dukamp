@@ -15,6 +15,6 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: node --test tests/partners*.test.mjs tests/partner-cart.test.mjs tests/storefronts*.test.mjs tests/order-fulfillment.test.mjs
+      - run: node --test tests/partners*.test.mjs tests/partner-cart.test.mjs tests/storefronts*.test.mjs tests/order-fulfillment.test.mjs tests/audit-presentation.test.mjs
       - run: node scripts/check-types-against-base.mjs
       - run: npm run build

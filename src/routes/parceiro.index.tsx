@@ -1,3 +1,4 @@
+import { PartnerCommissionAccount } from "@/components/partners/PartnerCommissionAccount";
 import { PartnerPixField } from "@/components/partners/PartnerPixField";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, PackageSearch, Calculator, ShoppingCart } from "lucide-react";
@@ -15,6 +16,7 @@ function PartnerHome() {
       />
       <SummaryCards summaries={[summary]} />
       <div className="mb-6"><PartnerPixField /></div>
+      <div className="mb-6"><PartnerCommissionAccount /></div>
       <div className="mb-6 grid gap-4 md:grid-cols-3">
         {[
           {

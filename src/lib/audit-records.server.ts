@@ -1,6 +1,6 @@
 import { auditRecord, isAuditUuid, type AuditRow } from "./audit-presentation";
 
-const PREVIEW_KEYS = ["name","full_name","customer_name","cliente","title","titulo","descricao","code","codigo","order_number","key","status","delivery_status","refund_status","user_id","order_id"];
+const PREVIEW_KEYS = ["partner_name","name","full_name","customer_name","cliente","title","titulo","descricao","code","codigo","order_number","key","status","delivery_status","refund_status","user_id","order_id"];
 export const AUDIT_LIST_COLUMNS = "id,created_at,actor_id,actor_name,actor_email,actor_ip,action,entity_table,entity_id,changed_fields,source," +
   ["before","after"].flatMap(side => PREVIEW_KEYS.map(key => `${side}_${key}:${side}_data->>${key}`)).join(",");
 

@@ -1,3 +1,5 @@
+import { PartnerCommissionAccount } from "@/components/partners/PartnerCommissionAccount";
+import { formatBRL } from "@/lib/cart";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -194,10 +196,11 @@ function PartnersManagement() {
                   {p.rua}, {p.numero} · {p.bairro}
                 </p>
               </div>
+              <p className="mb-4 text-sm">Comissão a receber: <strong>{formatBRL(Number(query.data.summaries.find(s => s.partner_id === p.id)?.commission_balance || 0))}</strong></p>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => edit(p)}>
                   <Pencil className="mr-2 h-4 w-4" />
-                  Editar{p.deleted_at ? " / reativar" : ""}
+                  Gerenciar{p.deleted_at ? " / reativar" : ""}
                 </Button>
                 {!p.deleted_at && (
                   <Button disabled={busy} variant="ghost" size="sm" onClick={() => remove(p)}>
@@ -218,11 +221,12 @@ function PartnersManagement() {
       >
         <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-3xl">
           <DialogHeader>
-            <DialogTitle>{form?.id ? "Editar parceria" : "Criar parceiro Dukamp"}</DialogTitle>
+            <DialogTitle>{form?.id ? "Gerenciar parceria" : "Criar parceiro Dukamp"}</DialogTitle>
             <DialogDescription>
               Campos com * são obrigatórios. A senha fica protegida no sistema de autenticação.
             </DialogDescription>
           </DialogHeader>
+          {form?.id && <PartnerCommissionAccount key={form.id} partnerId={form.id} />}
           {form && (
             <form onSubmit={submit} className="space-y-6">
               <section>

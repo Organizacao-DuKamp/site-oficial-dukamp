@@ -48,3 +48,14 @@ test('linked products and categories are displayed by name without replacing per
  assert.equal(auditValue('category_id',adminId,row.people),'Vermífugos');
  assert.equal(auditValue('closed_by',adminId,row.people),'Administrador Eduardo');
 });
+
+test('partner commission receipt identifies the partner, payment action, amount and administrator',()=>{
+ const receipt={...event,action:'insert',entity_table:'partner_commission_payouts',before_data:null,
+  after_data:{partner_name:'Agro Fixture',amount:32.24,paid_by:adminId,paid_at:'2026-10-20T17:00:00Z',pix_key_snapshot:'fixture@example.invalid',request_token:'private',balance_token:'private'},
+  changed_fields:['partner_name','amount','paid_by','paid_at','pix_key_snapshot','request_token','balance_token']};
+ assert.equal(auditSummary(receipt),'Confirmou o pagamento da comissão do parceiro');
+ assert.equal(auditRecord(receipt),'Comissão de Agro Fixture');
+ const fields=auditChanges(receipt);assert.equal(fields.some(f=>f.field.includes('token')),false);
+ assert.match(auditValue('amount',32.24),/32,24/);
+ assert.equal(auditValue('paid_by',adminId,receipt.people),'Administrador Eduardo');
+});

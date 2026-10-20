@@ -55,7 +55,8 @@ export function PartnerRequestDetails({ order: o, admin, refresh }: { order: Par
       </div>)}
       {amount("Produtos", o.subtotal)}{amount(`Frete (${o.shipping_service || "a confirmar"})`, o.shipping_cost)}{amount("Total da venda", o.total)}
       <p className="flex justify-between gap-3 border-t pt-3"><span>Comissão do parceiro</span><strong>{approved ? formatBRL(Number(o.partner_commission_amount)) : pending ? "A definir após confirmação" : "Não devida"}</strong></p>
-      {approved && o.commission_payout_month && <p>Pagamento previsto até o 10º dia útil de {new Date(o.commission_payout_month + "T12:00:00").toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}.</p>}
+      {approved && o.commission_paid_at && <p className="text-primary">Comissão paga em {new Date(o.commission_paid_at).toLocaleString("pt-BR")}.</p>}
+      {approved && !o.commission_paid_at && o.commission_payout_month && <p>Pagamento previsto até o 10º dia útil de {new Date(o.commission_payout_month + "T12:00:00").toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}.</p>}
       <p className="text-xs text-muted-foreground">Comissões aprovadas no mês: pagamento pela chave Pix até o 10º dia útil do mês seguinte.</p>
       {admin && <p className="break-all">Chave Pix do parceiro: <strong>{o.partner_pix_key || "Ainda não cadastrada"}</strong></p>}
     </section>

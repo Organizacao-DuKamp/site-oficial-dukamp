@@ -203,6 +203,8 @@ export type PartnerSummary = {
   paid_orders: number;
   gross_total: number;
   commission_total: number;
+  commission_balance: number;
+  commission_paid_total: number;
   dukamp_total: number;
 };
 export type PartnerProduct = {
@@ -236,6 +238,7 @@ export type PartnerOrder = Omit<
   request_kind?: "approval";
   approval_status?: "pending" | "approved" | "rejected";
   commission_payout_month?: string | null;
+  commission_paid_at?: string | null;
   approved_at?: string | null;
   rejection_reason?: string | null;
   source_store_id?: string | null;

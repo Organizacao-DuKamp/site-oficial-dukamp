@@ -1,4 +1,5 @@
 export const AUDIT_AREAS: Record<string, string> = {
+  dukamp_partners: "Parceiros DuKamp", partner_sale_requests: "Vendas de parceiros", partner_commission_payouts: "Pagamentos de comissões de parceiros",
   web_order_sales: "Vendas pagas pelo site",
   products: "Produtos do site", erp_products: "Produtos do ERP", orders: "Pedidos", order_items: "Itens dos pedidos",
   dukamp_stock_items: "Estoque DuKamp", admin_access: "Acessos administrativos", profiles: "Contas", user_roles: "Permissões",
@@ -16,6 +17,7 @@ export const AUDIT_AREAS: Record<string, string> = {
 };
 export const AUDIT_ACTIONS: Record<string, string> = { insert: "Cadastro", update: "Alteração", delete: "Exclusão", admin_login: "Entrada no painel" };
 const FIELDS: Record<string, string> = {
+  partner_name: "Parceiro", partner_id: "Parceiro vinculado", paid_by: "Administrador que confirmou", paid_sales_count: "Vendas quitadas", pix_key_snapshot: "Chave Pix no pagamento",
   delivery_address: "Endereço de entrega", referencia_entrega: "Referência para entrega", pessoa_autorizada: "Pessoa autorizada a receber",
   seller_id: "Vendedor", seller_record_id: "Vendedor responsável", seller_name: "Nome do vendedor", seller_code: "Código do vendedor",
   web_registered: "Cliente cadastrado pelo site", payment_total: "Total pago", cost_amount: "Custo dos produtos", weight_kg: "Peso em kg", paid_at: "Pagamento confirmado em", erp_stock_synced_at: "Estoque do ERP atualizado em",
@@ -105,6 +107,7 @@ export function auditFields(row: AuditRow) {
 export function auditRecord(row: AuditRow) {
   if (row.record_label) return row.record_label;
   const data = row.after_data || row.before_data || {};
+  if (row.entity_table === "partner_commission_payouts") return `Comissão de ${data.partner_name || "parceiro"}`;
   if (row.entity_table === "admin_access") return "Painel administrativo";
   if (row.entity_table === "support_tickets") return `Atendimento${data.user_id && row.people?.[String(data.user_id)] ? ` de ${row.people[String(data.user_id)]}` : " ao cliente"}`;
   if (row.entity_table === "orders") return `Pedido ${data.order_number || "do cliente"}`;
@@ -116,6 +119,7 @@ export function auditRecord(row: AuditRow) {
   return AUDIT_AREAS[row.entity_table] || "Registro do site";
 }
 export function auditSummary(row: AuditRow) {
+  if (row.entity_table === "partner_commission_payouts" && row.action === "insert") return "Confirmou o pagamento da comissão do parceiro";
   if (row.action === "admin_login") return "Entrou no painel administrativo";
   const before = row.before_data || {}; const after = row.after_data || {};
   if (row.action === "update" && row.entity_table === "support_tickets" && before.status !== after.status) {

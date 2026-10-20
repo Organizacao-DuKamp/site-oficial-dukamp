@@ -28,3 +28,13 @@ O histórico e as novas solicitações compartilham uma consulta paginada no ban
 - Testes PostgreSQL com PGlite: migrações reais, privilégio de acesso, isolamento entre parceiros, idempotência, aprovação administrativa, comissão manual, recusa e baixa de estoque transacional.
 - Testes do servidor: preços/frete autoritativos, catálogo Dukamp, parceiro inativo, dados alterados, permissões da chave Pix e das comissões.
 - Compilação de produção em execução remota no GitHub Actions, sem credenciais de produção e sem pagamentos reais.
+
+## Confirmação de pagamento das comissões
+
+Em **Gerenciar parceiros → Gerenciar**, o administrador confere a chave Pix e o saldo e usa **Confirmar pagamento da comissão** depois de fazer a transferência. A ação registra o valor quitado, data, administrador, parceiro, chave Pix daquele momento e as vendas incluídas.
+
+A baixa zera o saldo das comissões pendentes daquele conjunto de vendas. Não apaga nem altera as comissões originais: preserva vendas, faturamento e histórico. Novas comissões aprovadas voltam a compor o saldo. Comissões antigas já retidas em checkouts assistidos não são pagas novamente.
+
+A página inicial do parceiro mostra o saldo, o total pago e o histórico paginado. A venda também indica quando sua comissão foi paga. A confirmação é registrada na auditoria administrativa com identificação do responsável.
+
+A operação é restrita a administradores, transacional e idempotente. O valor e a lista de vendas são conferidos novamente na confirmação; se o saldo mudou desde a conferência, o administrador precisa atualizar e verificar o Pix. Vendas quitadas não entram em outra baixa.

@@ -80,7 +80,7 @@ export function SummaryCards({
       icon: partners == null ? Package : Store,
     },
     { label: "Faturamento comercial", value: formatBRL(sum("gross_total")), icon: TrendingUp },
-    { label: "Comissões reconhecidas", value: formatBRL(sum("commission_total")), icon: Wallet },
+    { label: "Comissões a receber", value: formatBRL(sum("commission_balance")), icon: Wallet },
     { label: "Valor líquido das vendas", value: formatBRL(sum("dukamp_total")), icon: Package },
   ];
   return (
