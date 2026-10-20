@@ -13,6 +13,7 @@ export type CartItem = {
   quantity: number;
   selectedOptions?: SelectedOption[];
   slug?: string;
+  storeSlug?: string;
   optionError?: string;
 };
 

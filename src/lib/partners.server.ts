@@ -375,14 +375,14 @@ export async function getPartnerSales(
   let partnerId = input.partnerId;
   if (input.admin) await requirePartnerAdmin(db, userId);
   else partnerId = (await requirePartner(db, userId)).id;
-  let query = db
+  let query = (db as any)
     .from("orders")
     .select(
-      "id,order_number,partner_id,partner_name,customer_name,cidade,estado,created_at,payment_status,delivery_status,refund_status,partner_gross_total,partner_commission_amount,total,fulfillment_method,payment_method",
+      "id,order_number,partner_id,partner_name,customer_name,cidade,estado,created_at,payment_status,delivery_status,refund_status,partner_gross_total,partner_commission_amount,total,subtotal,shipping_cost,tax_amount,fulfillment_method,payment_method,origin_store_id,origin_partner_id,origin_commission_amount",
       { count: "exact" },
     )
-    .not("partner_id", "is", null);
-  if (partnerId) query = query.eq("partner_id", partnerId);
+    .or("partner_id.not.is.null,origin_partner_id.not.is.null");
+  if (partnerId) query = query.or(`partner_id.eq.${partnerId},origin_partner_id.eq.${partnerId}`);
   const result = await query
     .order("created_at", { ascending: false })
     .order("id")
@@ -402,19 +402,23 @@ export async function getPartnerSales(
     summaries.push(...(summary.data! as PartnerSummary[]));
     if (summary.data!.length < 1000) break;
   }
-  return { orders: result.data! as PartnerOrder[], count: result.count as number, summaries };
+  return {
+    orders: result.data!.map(normalizePartnerOrder) as PartnerOrder[],
+    count: result.count as number,
+    summaries,
+  };
 }
 export async function getPartnerSale(userId: string, orderId: string, admin = false) {
   const db = database(userId);
   let partnerId: string | undefined;
   if (admin) await requirePartnerAdmin(db, userId);
   else partnerId = (await requirePartner(db, userId)).id;
-  let query = db
+  let query = (db as any)
     .from("orders")
     .select("*,order_items(*)")
     .eq("id", orderId)
-    .not("partner_id", "is", null);
-  if (partnerId) query = query.eq("partner_id", partnerId);
+    .or("partner_id.not.is.null,origin_partner_id.not.is.null");
+  if (partnerId) query = query.or(`partner_id.eq.${partnerId},origin_partner_id.eq.${partnerId}`);
   const result = await query.maybeSingle();
   check(result.error);
   if (!result.data!) throw new Error("Venda não encontrada.");
@@ -433,5 +437,18 @@ export async function getPartnerSale(userId: string, orderId: string, admin = fa
   }
   // Do not expose provider internals/shipping error logs to partner sessions.
   const { shipping_error, correios_prepostagem_id, mp_status_updated_at, ...publicOrder } = order;
-  return publicOrder as PartnerOrder;
+  return normalizePartnerOrder(publicOrder) as PartnerOrder;
+}
+
+function normalizePartnerOrder(order: any) {
+  if (!order.origin_store_id) return order;
+  return {
+    ...order,
+    partner_id: order.origin_partner_id,
+    partner_name: order.partner_name || "Loja online parceira",
+    partner_gross_total:
+      Number(order.subtotal) + Number(order.shipping_cost) + Number(order.tax_amount || 0),
+    partner_commission_amount: Number(order.origin_commission_amount),
+    partner_customer_details: order.partner_customer_details || {},
+  };
 }

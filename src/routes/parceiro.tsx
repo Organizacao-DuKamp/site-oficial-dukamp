@@ -9,6 +9,8 @@ import {
   Menu,
   LogOut,
   Store,
+  Globe,
+  ChevronDown,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { usePartnerData, ErrorNotice } from "@/components/partners/PartnerUi";
@@ -29,6 +31,8 @@ function PartnerLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const query = usePartnerData();
   const [open, setOpen] = useState(false);
+  const [siteOpen, setSiteOpen] = useState(pathname.startsWith("/parceiro/site"));
+  const [salesOpen, setSalesOpen] = useState(pathname.startsWith("/parceiro/site/vendas"));
   useEffect(() => {
     if (!loading && !user) nav({ to: "/parceiro-login" });
   }, [loading, user, nav]);
@@ -81,7 +85,7 @@ function PartnerLayout() {
           </div>
         </Link>
       </div>
-      <nav className="flex-1 space-y-1 p-3">
+      <nav className="flex-1 space-y-1 overflow-y-auto p-3">
         {links.map((l) => (
           <Link
             key={l.to}
@@ -93,6 +97,72 @@ function PartnerLayout() {
             {l.label}
           </Link>
         ))}
+        <button
+          type="button"
+          aria-expanded={siteOpen}
+          onClick={() => setSiteOpen((v) => !v)}
+          className={`flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm ${pathname.startsWith("/parceiro/site") ? "bg-primary/10 text-primary" : "hover:bg-accent"}`}
+        >
+          <Globe className="h-4 w-4" />
+          <span className="flex-1">Gerenciar meu site</span>
+          <ChevronDown className={`h-4 w-4 transition-transform ${siteOpen ? "rotate-180" : ""}`} />
+        </button>
+        {siteOpen && (
+          <div className="ml-5 space-y-1 border-l pl-3">
+            {[
+              ["definicoes", "Definições"],
+              ["estoque", "Estoque"],
+              ["vendas", "Vendas"],
+              ["visao-geral", "Visão geral"],
+              ["footer", "Footer"],
+              ["navbar", "Navbar"],
+              ["configuracoes", "Configurações"],
+            ].map(([section, label]) =>
+              section === "vendas" ? (
+                <div key={section}>
+                  <button
+                    type="button"
+                    aria-expanded={salesOpen}
+                    onClick={() => setSalesOpen((v) => !v)}
+                    className="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm hover:bg-accent"
+                  >
+                    Vendas
+                    <ChevronDown className={`h-3 w-3 ${salesOpen ? "rotate-180" : ""}`} />
+                  </button>
+                  {salesOpen && (
+                    <div className="ml-3 space-y-1 border-l pl-2">
+                      {[
+                        ["painel", "Visão geral das vendas"],
+                        ["nova", "Registrar venda"],
+                        ["historico", "Histórico de vendas"],
+                      ].map(([key, text]) => (
+                        <Link
+                          key={key}
+                          to="/parceiro/site/$"
+                          params={{ _splat: `vendas/${key}` }}
+                          onClick={() => setOpen(false)}
+                          className={`block rounded-md px-3 py-2 text-xs ${pathname === `/parceiro/site/vendas/${key}` ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}
+                        >
+                          {text}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Link
+                  key={section}
+                  to="/parceiro/site/$"
+                  params={{ _splat: section }}
+                  onClick={() => setOpen(false)}
+                  className={`block rounded-md px-3 py-2 text-sm ${pathname === `/parceiro/site/${section}` ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}
+                >
+                  {label}
+                </Link>
+              ),
+            )}
+          </div>
+        )}
       </nav>
       <div className="border-t p-4">
         <p className="mb-3 text-xs text-muted-foreground">Dukamp Saúde Animal</p>
@@ -133,7 +203,9 @@ function PartnerLayout() {
           </Sheet>
           <p className="text-sm font-semibold">{settings.title}</p>
           <span className="ml-auto rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-            Comissão de 10%
+            {pathname.startsWith("/parceiro/site")
+              ? "Minha loja · sem comissão Dukamp"
+              : "Comissão de 10%"}
           </span>
         </header>
         <main className="mx-auto max-w-7xl p-4 sm:p-7">

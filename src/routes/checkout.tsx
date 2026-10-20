@@ -449,6 +449,7 @@ function CheckoutPage() {
     const r = await createOrder({
       data: {
         ...form,
+        storefront_slug: items[0]?.storeSlug && items.every(i=>i.storeSlug===items[0].storeSlug) ? items[0].storeSlug : undefined,
         seller_id: sellerChoice ?? null,
         items: items.map((i) => ({ product_id: i.id, quantity: i.quantity, unit_price: i.price, selected_options: choicesForSelections(i.selectedOptions) })),
         shipping_cost: frete?.valor ?? 0,
