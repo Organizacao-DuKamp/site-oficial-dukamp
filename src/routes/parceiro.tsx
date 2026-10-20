@@ -22,7 +22,7 @@ const links = [
   { to: "/parceiro", label: "Visão geral", icon: LayoutDashboard },
   { to: "/parceiro/produtos", label: "Consultar produto", icon: PackageSearch },
   { to: "/parceiro/simular", label: "Simular compra", icon: Calculator },
-  { to: "/parceiro/registrar", label: "Registrar compra", icon: ShoppingCart },
+  { to: "/parceiro/registrar", label: "Registrar venda", icon: ShoppingCart },
   { to: "/parceiro/vendas", label: "Gerenciar vendas", icon: ClipboardList },
 ];
 function PartnerLayout() {
@@ -204,8 +204,8 @@ function PartnerLayout() {
           <p className="text-sm font-semibold">{settings.title}</p>
           <span className="ml-auto rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
             {pathname.startsWith("/parceiro/site")
-              ? "Minha loja · sem comissão Dukamp"
-              : "Comissão de 10%"}
+              ? "Minha loja parceira"
+              : "Comissão definida pela Dukamp"}
           </span>
         </header>
         <main className="mx-auto max-w-7xl p-4 sm:p-7">

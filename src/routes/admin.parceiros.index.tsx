@@ -38,7 +38,7 @@ function PartnerOverview() {
               <tr>
                 {[
                   "Parceiro / informações",
-                  "Pedidos pagos",
+                  "Vendas confirmadas",
                   "Faturamento",
                   "Comissão",
                   "Pago à Dukamp",
