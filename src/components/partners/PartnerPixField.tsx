@@ -1,3 +1,4 @@
+import { Landmark, CalendarClock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
@@ -16,8 +17,8 @@ export function PartnerPixField() {
   useEffect(() => { if (data) setKey(data.partner.pix_key || ""); }, [data?.partner.pix_key]);
   if (isPending) return <p>Carregando chave Pix...</p>;
   if (error || !data) return <p role="alert">Não foi possível carregar sua chave Pix.</p>;
-  return <section className="rounded-xl border bg-card p-5">
-    <h2 className="mb-4 font-semibold">Recebimento de comissões</h2>
+  return <section className="partner-pix-panel rounded-xl border bg-card p-5">
+    <div className="partner-pix-heading mb-4"><span className="partner-pix-icon"><Landmark size={21} /></span><div><h2 className="font-semibold">Recebimento de comissões</h2><span className="partner-pix-status" data-state={data.partner.pix_key ? "ready" : "missing"}>{data.partner.pix_key ? "Chave cadastrada" : "Cadastre sua chave Pix"}</span></div></div>
     <Field label="Chave Pix">
       <Input value={key} maxLength={180} autoComplete="off" placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória" onChange={e => setKey(e.target.value)} />
     </Field>
@@ -31,8 +32,6 @@ export function PartnerPixField() {
         } catch (e) { toast.error((e as Error).message); }
         finally { setBusy(false); }
       }}>{busy ? "Salvando..." : "Salvar chave Pix"}</Button>
-    <p className="mt-4 text-sm text-muted-foreground">
-      As comissões aprovadas no mês são pagas até o 10º dia útil do mês seguinte nesta chave Pix. O valor é definido pela Dukamp ao aceitar cada venda e aparece em Gerenciar vendas.
-    </p>
+    <div className="partner-pix-deadline mt-5"><CalendarClock size={18} aria-hidden="true" /><p><strong>Até o 10º dia útil</strong><span>Comissões aprovadas no mês são pagas no mês seguinte, nesta chave Pix.</span></p></div>
   </section>;
 }

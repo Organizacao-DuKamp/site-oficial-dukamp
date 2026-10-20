@@ -37,12 +37,12 @@ export function PartnerCommissionAccount({ partnerId }: { partnerId?: string }) 
       toast.error((error as Error).message);
     } finally { setBusy(false); }
   }
-  return <section className="space-y-4 rounded-xl border bg-card p-5">
-    <h2 className="font-semibold">Comissões e histórico de pagamentos</h2>
+  return <section className="partner-financial-panel space-y-4 rounded-xl border bg-card p-5">
+    <h2 className="partner-panel-title font-semibold">Comissões e histórico de pagamentos</h2>
     {query.isPending ? <p className="text-sm">Carregando comissões...</p> : query.error ? <ErrorNotice error={query.error} retry={() => query.refetch()} /> : query.data && <>
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-lg bg-primary/5 p-4"><p className="text-sm text-muted-foreground">Comissão a receber</p><p className="mt-1 text-2xl font-bold">{formatBRL(query.data.balance)}</p></div>
-        <div className="rounded-lg bg-muted/50 p-4"><p className="text-sm text-muted-foreground">Comissões pagas</p><p className="mt-1 text-2xl font-bold">{formatBRL(query.data.paid_total)}</p></div>
+        <div className="partner-balance-tile rounded-lg bg-primary/5 p-4"><p className="text-sm text-muted-foreground">Comissão a receber</p><p className="mt-1 text-2xl font-bold">{formatBRL(query.data.balance)}</p></div>
+        <div className="partner-paid-tile rounded-lg bg-muted/50 p-4"><p className="text-sm text-muted-foreground">Comissões pagas</p><p className="mt-1 text-2xl font-bold">{formatBRL(query.data.paid_total)}</p></div>
       </div>
       {partnerId && <div className="space-y-3 rounded-lg border p-4">
         <p className="break-all text-sm">Chave Pix: <strong>{query.data.pix_key || "Não cadastrada"}</strong></p>
@@ -53,7 +53,7 @@ export function PartnerCommissionAccount({ partnerId }: { partnerId?: string }) 
         </div>
       </div>}
       {!partnerId && <p className="text-xs text-muted-foreground">As comissões aprovadas no mês são pagas até o 10º dia útil do mês seguinte. Após a confirmação do Pix pela administração, o saldo é atualizado e o pagamento aparece neste histórico.</p>}
-      <div className="overflow-x-auto">
+      <div className="partner-payment-history overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead><tr className="border-b"><th className="p-3">Pagamento confirmado em</th><th className="p-3">Valor pago</th><th className="p-3">Vendas quitadas</th><th className="p-3">Chave Pix no pagamento</th></tr></thead>
           <tbody>{query.data.history.map(payment => <tr key={payment.id} className="border-b"><td className="whitespace-nowrap p-3">{new Date(payment.paid_at).toLocaleString("pt-BR")}</td><td className="whitespace-nowrap p-3 font-medium">{formatBRL(Number(payment.amount))}</td><td className="p-3">{payment.paid_sales_count}</td><td className="break-all p-3">{payment.pix_key_snapshot || "Não informada"}</td></tr>)}</tbody>

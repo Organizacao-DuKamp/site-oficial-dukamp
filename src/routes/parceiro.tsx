@@ -15,7 +15,8 @@ import {
 import { useAuth } from "@/lib/auth";
 import { usePartnerData, ErrorNotice } from "@/components/partners/PartnerUi";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import dukampLogo from "@/assets/dukamp-logo.webp";
 import { PurchaseDraftProvider } from "@/components/partners/PurchaseDraft";
 export const Route = createFileRoute("/parceiro")({ ssr: false, component: PartnerLayout });
 const links = [
@@ -66,8 +67,10 @@ function PartnerLayout() {
   const { partner, settings } = query.data;
   const sidebar = (
     <>
-      <div className="border-b p-5">
-        <Link to="/parceiro" className="flex items-center gap-3" onClick={() => setOpen(false)}>
+      <div className="partner-sidebar-brand">
+        <Link to="/parceiro" onClick={() => setOpen(false)} aria-label="DuKamp — painel do parceiro" className="partner-brand-logo"><img src={dukampLogo} alt="DuKamp Saúde Animal" width={150} height={50} /></Link>
+        <p className="partner-sidebar-eyebrow">Área de parceiros</p>
+        <Link to="/parceiro" className="partner-store-identity flex items-center gap-3" onClick={() => setOpen(false)}>
           {partner.logo_url ? (
             <img
               src={partner.logo_url}
@@ -81,17 +84,19 @@ function PartnerLayout() {
           )}
           <div className="min-w-0">
             <p className="truncate text-sm font-bold">{partner.razao_social}</p>
-            <p className="text-xs text-muted-foreground">Parceiro Dukamp</p>
+            <p className="partner-sidebar-caption">Sua loja parceira</p>
           </div>
         </Link>
       </div>
-      <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+      <nav aria-label="Menu do parceiro" className="partner-sidebar-nav flex-1 space-y-1 overflow-y-auto p-3">
+        <p className="partner-nav-label">Sua operação</p>
         {links.map((l) => (
           <Link
             key={l.to}
             to={l.to}
             onClick={() => setOpen(false)}
-            className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm ${pathname === l.to || (l.to !== "/parceiro" && pathname.startsWith(l.to + "/")) ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}
+            aria-current={pathname === l.to || (l.to !== "/parceiro" && pathname.startsWith(l.to + "/")) ? "page" : undefined}
+            className={`partner-nav-item flex items-center gap-3 rounded-lg px-3 py-3 text-sm ${pathname === l.to || (l.to !== "/parceiro" && pathname.startsWith(l.to + "/")) ? "is-active" : ""}`}
           >
             <l.icon className="h-4 w-4" />
             {l.label}
@@ -101,14 +106,14 @@ function PartnerLayout() {
           type="button"
           aria-expanded={siteOpen}
           onClick={() => setSiteOpen((v) => !v)}
-          className={`flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm ${pathname.startsWith("/parceiro/site") ? "bg-primary/10 text-primary" : "hover:bg-accent"}`}
+          className={`partner-nav-item partner-site-menu flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm ${pathname.startsWith("/parceiro/site") ? "is-active" : ""}`}
         >
           <Globe className="h-4 w-4" />
           <span className="flex-1">Gerenciar meu site</span>
           <ChevronDown className={`h-4 w-4 transition-transform ${siteOpen ? "rotate-180" : ""}`} />
         </button>
         {siteOpen && (
-          <div className="ml-5 space-y-1 border-l pl-3">
+          <div className="partner-subnav ml-5 space-y-1 border-l pl-3">
             {[
               ["definicoes", "Definições"],
               ["estoque", "Estoque"],
@@ -124,13 +129,13 @@ function PartnerLayout() {
                     type="button"
                     aria-expanded={salesOpen}
                     onClick={() => setSalesOpen((v) => !v)}
-                    className="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm hover:bg-accent"
+                    className="partner-nav-item flex w-full items-center justify-between rounded-md px-3 py-2 text-sm"
                   >
                     Vendas
                     <ChevronDown className={`h-3 w-3 ${salesOpen ? "rotate-180" : ""}`} />
                   </button>
                   {salesOpen && (
-                    <div className="ml-3 space-y-1 border-l pl-2">
+                    <div className="partner-subnav ml-3 space-y-1 border-l pl-2">
                       {[
                         ["painel", "Visão geral das vendas"],
                         ["nova", "Registrar venda"],
@@ -141,7 +146,8 @@ function PartnerLayout() {
                           to="/parceiro/site/$"
                           params={{ _splat: `vendas/${key}` }}
                           onClick={() => setOpen(false)}
-                          className={`block rounded-md px-3 py-2 text-xs ${pathname === `/parceiro/site/vendas/${key}` ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}
+                          aria-current={pathname === `/parceiro/site/vendas/${key}` ? "page" : undefined}
+                          className={`partner-nav-item block rounded-md px-3 py-2 text-xs ${pathname === `/parceiro/site/vendas/${key}` ? "is-active" : ""}`}
                         >
                           {text}
                         </Link>
@@ -155,7 +161,8 @@ function PartnerLayout() {
                   to="/parceiro/site/$"
                   params={{ _splat: section }}
                   onClick={() => setOpen(false)}
-                  className={`block rounded-md px-3 py-2 text-sm ${pathname === `/parceiro/site/${section}` ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}
+                  aria-current={pathname === `/parceiro/site/${section}` ? "page" : undefined}
+                  className={`partner-nav-item block rounded-md px-3 py-2 text-sm ${pathname === `/parceiro/site/${section}` ? "is-active" : ""}`}
                 >
                   {label}
                 </Link>
@@ -164,14 +171,14 @@ function PartnerLayout() {
           </div>
         )}
       </nav>
-      <div className="border-t p-4">
-        <p className="mb-3 text-xs text-muted-foreground">Dukamp Saúde Animal</p>
+      <div className="partner-sidebar-footer border-t p-4">
+        <p className="partner-sidebar-caption mb-3">Olá, {partner.nome_completo.split(" ")[0]}</p>
         <button
           onClick={async () => {
             await signOut();
             await nav({ to: "/parceiro-login" });
           }}
-          className="flex items-center gap-2 text-sm"
+          className="partner-signout flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-sm"
         >
           <LogOut className="h-4 w-4" />
           Sair do painel
@@ -180,12 +187,12 @@ function PartnerLayout() {
     </>
   );
   return (
-    <div className="flex min-h-screen bg-muted/30">
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r bg-card lg:flex">
+    <div className="partner-dashboard flex min-h-screen">
+      <aside className="partner-sidebar sticky top-0 hidden h-screen w-64 shrink-0 flex-col lg:flex">
         {sidebar}
       </aside>
       <div className="min-w-0 flex-1">
-        <header className="flex h-16 items-center gap-3 border-b bg-card px-4 sm:px-7">
+        <header className="partner-topbar flex min-h-18 items-center gap-3 border-b px-4 py-3 sm:px-8">
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
               <Button
@@ -197,18 +204,20 @@ function PartnerLayout() {
                 <Menu />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="flex w-72 flex-col p-0">
+            <SheetContent side="left" className="partner-dashboard partner-sidebar flex w-72 flex-col p-0 [&>button]:text-white">
+              <SheetTitle className="sr-only">Menu do parceiro</SheetTitle>
+              <SheetDescription className="sr-only">Navegue pelo painel e gerencie suas vendas e comissões.</SheetDescription>
               {sidebar}
             </SheetContent>
           </Sheet>
-          <p className="text-sm font-semibold">{settings.title}</p>
-          <span className="ml-auto rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+          <div className="min-w-0"><p className="partner-topbar-caption">Seu espaço de negócios</p><p className="truncate text-sm font-semibold">{settings.title}</p></div>
+          <span className="partner-account-label ml-auto hidden shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold sm:inline-flex">
             {pathname.startsWith("/parceiro/site")
               ? "Minha loja parceira"
-              : "Comissão definida pela Dukamp"}
+              : "Parceiro DuKamp"}
           </span>
         </header>
-        <main className="mx-auto max-w-7xl p-4 sm:p-7">
+        <main className="partner-workspace mx-auto max-w-7xl p-4 sm:p-6 xl:p-8">
           <PurchaseDraftProvider key={user.id}>
             <Outlet />
           </PurchaseDraftProvider>

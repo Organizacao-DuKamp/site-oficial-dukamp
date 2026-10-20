@@ -55,7 +55,7 @@ export function PageHeading({
   action?: ReactNode;
 }) {
   return (
-    <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+    <div className="partner-page-heading mb-6 flex flex-wrap items-start justify-between gap-3">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{description}</p>
@@ -85,18 +85,18 @@ export function SummaryCards({
   ];
   return (
     <>
-      <div className="mb-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="partner-summary-grid mb-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {cards.map((c) => (
-          <div key={c.label} className="rounded-xl border bg-card p-4">
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <div key={c.label} data-highlight={c.label === "Comissões a receber" ? "commission" : undefined} className="partner-summary-card rounded-xl border bg-card p-4">
+            <div className="partner-summary-label flex items-center justify-between text-xs text-muted-foreground">
               <span>{c.label}</span>
               <c.icon className="h-4 w-4" />
             </div>
-            <div className="mt-3 text-2xl font-bold tabular-nums">{c.value}</div>
+            <div className="partner-summary-value mt-3 text-2xl font-bold tabular-nums">{c.value}</div>
           </div>
         ))}
       </div>
-      <p className="mb-6 text-xs text-muted-foreground">
+      <p className="partner-summary-note mb-6 text-xs text-muted-foreground">
         Vendas aceitas pela Dukamp e histórico de pedidos pagos. Novas comissões são definidas pelo administrador ao aceitar a venda. As aprovadas no mês são pagas até o 10º dia útil do mês seguinte. Pedidos aguardando análise ou recusados não geram comissão.
       </p>
     </>
