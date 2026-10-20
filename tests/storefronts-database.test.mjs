@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createPartnerDatabase} from './fixtures/partner-database.mjs';
-const migration=readFileSync(new URL('../supabase/migrations/20261020011449_partner_storefronts.sql',import.meta.url),'utf8');
+const migration=readFileSync(new URL('../supabase/migrations/20261020015653_partner_storefronts.sql',import.meta.url),'utf8');
 const a='00000000-0000-4000-8000-000000000001',b='00000000-0000-4000-8000-000000000002',sa='10000000-0000-4000-8000-000000000001',sb='10000000-0000-4000-8000-000000000002',pa='20000000-0000-4000-8000-000000000001',pb='20000000-0000-4000-8000-000000000002';
 test('store PostgreSQL transactions isolate tenants, reserve stock atomically, charge authoritative totals and reconcile once',async()=>{
  const db=await createPartnerDatabase();try{
