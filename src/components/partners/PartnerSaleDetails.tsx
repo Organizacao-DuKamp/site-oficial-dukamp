@@ -151,7 +151,7 @@ export function PartnerSaleDetails({
         </p>
         {o.cancellation_reason && <p className="mt-2 text-sm">Motivo: {o.cancellation_reason}</p>}
       </div>
-      {!admin && !paid && !stopped && (
+      {!admin && !o.origin_store_id && !paid && !stopped && (
         <div className="rounded-xl border bg-card p-5">
           <h2 className="mb-4 text-lg font-semibold">
             Pagamento à Dukamp · {formatBRL(Number(o.total))}
@@ -233,14 +233,22 @@ export function PartnerSaleDetails({
           <Amount label="Produtos" amount={o.subtotal} />
           <Amount label={`Frete (${o.shipping_service})`} amount={o.shipping_cost} />
           <Amount label="Total comercial" amount={o.partner_gross_total} />
-          <Amount label="Comissão retida pela loja (10%)" amount={o.partner_commission_amount} />
+          <Amount
+            label={
+              o.origin_store_id
+                ? "Comissão da loja a repassar (10%)"
+                : "Comissão retida pela loja (10%)"
+            }
+            amount={o.partner_commission_amount}
+          />
           <Amount label="Taxa de cartão" amount={o.payment_fee} />
           <div className="border-t pt-3 font-bold">
             <Amount label="Pagamento à Dukamp" amount={o.total} />
           </div>
           <p className="pt-2 text-xs text-muted-foreground">
-            A comissão já foi descontada do pagamento à Dukamp e não gera outro repasse. É
-            reconhecida apenas em vendas pagas, sem cancelamento ou reembolso.
+            {o.origin_store_id
+              ? "Compra feita pelo consumidor no site da loja: a Dukamp recebe o total e a comissão fica registrada para repasse à parceira após aprovação, sem cancelamento ou reembolso."
+              : "A comissão já foi descontada do pagamento à Dukamp e não gera outro repasse. É reconhecida apenas em vendas pagas, sem cancelamento ou reembolso."}
           </p>
         </div>
       </section>

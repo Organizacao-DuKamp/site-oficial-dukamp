@@ -176,3 +176,13 @@ test('repeating a completed partner checkout returns the existing charge without
  const result=await createPixOrder({...fixture,partner_quote_id:'00000000-0000-4000-8000-000000000003'});
  assert.equal(result.orderId,'existing-order');assert.equal(writes.length,0);
 });
+
+test('online Dukamp purchase records store referral without deducting customer payment',async()=>{
+ const writes=setupDb();process.env.MERCADO_PAGO_ACCESS_TOKEN='fixture-only';
+ const originUrl=moduleUrl('export async function resolveStoreOrigin(){return {storeId:"store-fixture",partnerId:"partner-fixture"}}');
+ const {createPixOrder:onlineCheckout}=await import(moduleUrl(checkoutSource.replaceAll('./storefronts.server',originUrl).replaceAll('./partners.server',partnerCheckoutUrl).replaceAll('@/lib/mercadopago-payment.server',providerUrl).replaceAll('@/lib/order-seller.server',sellerUrl).replaceAll('@/lib/audit.server',auditUrl).replaceAll('@tanstack/react-start/server',requestUrl).replaceAll('@/lib/mercadopago-notifications.server',notifyUrl)));
+ await onlineCheckout({...fixture,storefront_slug:'fixture-store'});
+ const order=writes.find(w=>w.table==='orders').value;
+ assert.equal(order.origin_store_id,'store-fixture');assert.equal(order.origin_partner_id,'partner-fixture');
+ assert.equal(order.origin_commission_amount,2);assert.equal(order.payment_base_amount,20);assert.equal(order.total,21);assert.equal(order.partner_id,undefined);
+});

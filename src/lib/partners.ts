@@ -232,6 +232,8 @@ export type PartnerOrder = Omit<
 > & {
   partner_id: string;
   partner_quote_id: string;
+  origin_store_id?: string | null;
+  origin_commission_amount?: number;
   partner_name: string;
   partner_gross_total: number;
   partner_commission_amount: number;

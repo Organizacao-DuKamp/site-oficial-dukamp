@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LojaRouteImport } from './routes/$loja'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CarrinhoRouteImport } from './routes/carrinho'
@@ -27,6 +28,8 @@ import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
 import { Route as SobreRouteImport } from './routes/sobre'
 import { Route as UnidadesRouteImport } from './routes/unidades'
 import { Route as VendedorRouteImport } from './routes/vendedor'
+import { Route as LojaIndexRouteImport } from './routes/$loja.index'
+import { Route as LojaSplatRouteImport } from './routes/$loja.$'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAnunciosRouteImport } from './routes/admin.anuncios'
 import { Route as AdminAtendimentosRouteImport } from './routes/admin.atendimentos'
@@ -58,6 +61,7 @@ import { Route as ParceiroIndexRouteImport } from './routes/parceiro.index'
 import { Route as ParceiroProdutosRouteImport } from './routes/parceiro.produtos'
 import { Route as ParceiroRegistrarRouteImport } from './routes/parceiro.registrar'
 import { Route as ParceiroSimularRouteImport } from './routes/parceiro.simular'
+import { Route as ParceiroSiteRouteImport } from './routes/parceiro.site'
 import { Route as PedidoIdRouteImport } from './routes/pedido.$id'
 import { Route as ProdutosIndexRouteImport } from './routes/produtos.index'
 import { Route as ProdutosSlugRouteImport } from './routes/produtos.$slug'
@@ -91,6 +95,8 @@ import { Route as ApiAdminPasswordRecoveryRouteImport } from './routes/api/admin
 import { Route as ApiAdminSellerMarginReportRouteImport } from './routes/api/admin/seller-margin-report'
 import { Route as ApiAdminSellerMarginReportsRouteImport } from './routes/api/admin/seller-margin-reports'
 import { Route as ApiAdminSupportTicketsRouteImport } from './routes/api/admin/support-tickets'
+import { Route as ApiPartnerStoreOauthRouteImport } from './routes/api/partner-store/oauth'
+import { Route as ApiPartnerStoreWebhookRouteImport } from './routes/api/partner-store/webhook'
 import { Route as ApiPublicInitAdminRouteImport } from './routes/api/public/init-admin'
 import { Route as ApiPublicMercadopagoWebhookRouteImport } from './routes/api/public/mercadopago-webhook'
 import { Route as ApiPublicPasswordRecoveryRouteImport } from './routes/api/public/password-recovery'
@@ -101,6 +107,8 @@ import { Route as ApiSellerAreaAzulRouteImport } from './routes/api/seller/area-
 import { Route as ApiSellerChatRouteImport } from './routes/api/seller/chat'
 import { Route as ApiSellerClientsRouteImport } from './routes/api/seller/clients'
 import { Route as ApiSellerQuotesRouteImport } from './routes/api/seller/quotes'
+import { Route as ParceiroSiteIndexRouteImport } from './routes/parceiro.site.index'
+import { Route as ParceiroSiteSplatRouteImport } from './routes/parceiro.site.$'
 import { Route as ParceiroVendasIndexRouteImport } from './routes/parceiro.vendas.index'
 import { Route as ParceiroVendasIdRouteImport } from './routes/parceiro.vendas.$id'
 import { Route as VendedorOrcamentosIndexRouteImport } from './routes/vendedor.orcamentos.index'
@@ -110,6 +118,11 @@ import { Route as VendedorOrcamentosNovoRouteImport } from './routes/vendedor.or
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LojaRoute = LojaRouteImport.update({
+  id: '/$loja',
+  path: '/$loja',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -196,6 +209,16 @@ const VendedorRoute = VendedorRouteImport.update({
   id: '/vendedor',
   path: '/vendedor',
   getParentRoute: () => rootRouteImport,
+} as any)
+const LojaIndexRoute = LojaIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => LojaRoute,
+} as any)
+const LojaSplatRoute = LojaSplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => LojaRoute,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
@@ -352,6 +375,11 @@ const ParceiroRegistrarRoute = ParceiroRegistrarRouteImport.update({
 const ParceiroSimularRoute = ParceiroSimularRouteImport.update({
   id: '/simular',
   path: '/simular',
+  getParentRoute: () => ParceiroRoute,
+} as any)
+const ParceiroSiteRoute = ParceiroSiteRouteImport.update({
+  id: '/site',
+  path: '/site',
   getParentRoute: () => ParceiroRoute,
 } as any)
 const PedidoIdRoute = PedidoIdRouteImport.update({
@@ -525,6 +553,16 @@ const ApiAdminSupportTicketsRoute = ApiAdminSupportTicketsRouteImport.update({
   path: '/api/admin/support-tickets',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPartnerStoreOauthRoute = ApiPartnerStoreOauthRouteImport.update({
+  id: '/api/partner-store/oauth',
+  path: '/api/partner-store/oauth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPartnerStoreWebhookRoute = ApiPartnerStoreWebhookRouteImport.update({
+  id: '/api/partner-store/webhook',
+  path: '/api/partner-store/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicInitAdminRoute = ApiPublicInitAdminRouteImport.update({
   id: '/api/public/init-admin',
   path: '/api/public/init-admin',
@@ -578,6 +616,16 @@ const ApiSellerQuotesRoute = ApiSellerQuotesRouteImport.update({
   path: '/api/seller/quotes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ParceiroSiteIndexRoute = ParceiroSiteIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ParceiroSiteRoute,
+} as any)
+const ParceiroSiteSplatRoute = ParceiroSiteSplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => ParceiroSiteRoute,
+} as any)
 const ParceiroVendasIndexRoute = ParceiroVendasIndexRouteImport.update({
   id: '/vendas/',
   path: '/vendas/',
@@ -607,6 +655,7 @@ const VendedorOrcamentosNovoRoute = VendedorOrcamentosNovoRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/$loja': typeof LojaRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/carrinho': typeof CarrinhoRoute
@@ -624,6 +673,7 @@ export interface FileRoutesByFullPath {
   '/sobre': typeof SobreRoute
   '/unidades': typeof UnidadesRoute
   '/vendedor': typeof VendedorRouteWithChildren
+  '/$loja/$': typeof LojaSplatRoute
   '/admin/anuncios': typeof AdminAnunciosRoute
   '/admin/atendimentos': typeof AdminAtendimentosRoute
   '/admin/atualizar-valores': typeof AdminAtualizarValoresRoute
@@ -651,12 +701,14 @@ export interface FileRoutesByFullPath {
   '/parceiro/produtos': typeof ParceiroProdutosRoute
   '/parceiro/registrar': typeof ParceiroRegistrarRoute
   '/parceiro/simular': typeof ParceiroSimularRoute
+  '/parceiro/site': typeof ParceiroSiteRouteWithChildren
   '/pedido/$id': typeof PedidoIdRoute
   '/produtos/$slug': typeof ProdutosSlugRoute
   '/vendedor/area-azul': typeof VendedorAreaAzulRoute
   '/vendedor/chat': typeof VendedorChatRoute
   '/vendedor/clientes': typeof VendedorClientesRoute
   '/vendedor/minha-conta': typeof VendedorMinhaContaRoute
+  '/$loja/': typeof LojaIndexRoute
   '/admin/': typeof AdminIndexRoute
   '/catalogos/': typeof CatalogosIndexRoute
   '/equipe-de-vendas/': typeof EquipeDeVendasIndexRoute
@@ -686,6 +738,8 @@ export interface FileRoutesByFullPath {
   '/api/admin/seller-margin-report': typeof ApiAdminSellerMarginReportRoute
   '/api/admin/seller-margin-reports': typeof ApiAdminSellerMarginReportsRoute
   '/api/admin/support-tickets': typeof ApiAdminSupportTicketsRoute
+  '/api/partner-store/oauth': typeof ApiPartnerStoreOauthRoute
+  '/api/partner-store/webhook': typeof ApiPartnerStoreWebhookRoute
   '/api/public/init-admin': typeof ApiPublicInitAdminRoute
   '/api/public/mercadopago-webhook': typeof ApiPublicMercadopagoWebhookRoute
   '/api/public/password-recovery': typeof ApiPublicPasswordRecoveryRoute
@@ -696,11 +750,13 @@ export interface FileRoutesByFullPath {
   '/api/seller/chat': typeof ApiSellerChatRoute
   '/api/seller/clients': typeof ApiSellerClientsRoute
   '/api/seller/quotes': typeof ApiSellerQuotesRoute
+  '/parceiro/site/$': typeof ParceiroSiteSplatRoute
   '/parceiro/vendas/$id': typeof ParceiroVendasIdRoute
   '/vendedor/orcamentos/$quoteId': typeof VendedorOrcamentosQuoteIdRoute
   '/vendedor/orcamentos/novo': typeof VendedorOrcamentosNovoRoute
   '/admin/contas/': typeof AdminContasIndexRoute
   '/admin/parceiros/': typeof AdminParceirosIndexRoute
+  '/parceiro/site/': typeof ParceiroSiteIndexRoute
   '/parceiro/vendas/': typeof ParceiroVendasIndexRoute
   '/vendedor/orcamentos/': typeof VendedorOrcamentosIndexRoute
 }
@@ -718,6 +774,7 @@ export interface FileRoutesByTo {
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/sobre': typeof SobreRoute
   '/unidades': typeof UnidadesRoute
+  '/$loja/$': typeof LojaSplatRoute
   '/admin/anuncios': typeof AdminAnunciosRoute
   '/admin/atendimentos': typeof AdminAtendimentosRoute
   '/admin/atualizar-valores': typeof AdminAtualizarValoresRoute
@@ -750,6 +807,7 @@ export interface FileRoutesByTo {
   '/vendedor/chat': typeof VendedorChatRoute
   '/vendedor/clientes': typeof VendedorClientesRoute
   '/vendedor/minha-conta': typeof VendedorMinhaContaRoute
+  '/$loja': typeof LojaIndexRoute
   '/admin': typeof AdminIndexRoute
   '/catalogos': typeof CatalogosIndexRoute
   '/equipe-de-vendas': typeof EquipeDeVendasIndexRoute
@@ -779,6 +837,8 @@ export interface FileRoutesByTo {
   '/api/admin/seller-margin-report': typeof ApiAdminSellerMarginReportRoute
   '/api/admin/seller-margin-reports': typeof ApiAdminSellerMarginReportsRoute
   '/api/admin/support-tickets': typeof ApiAdminSupportTicketsRoute
+  '/api/partner-store/oauth': typeof ApiPartnerStoreOauthRoute
+  '/api/partner-store/webhook': typeof ApiPartnerStoreWebhookRoute
   '/api/public/init-admin': typeof ApiPublicInitAdminRoute
   '/api/public/mercadopago-webhook': typeof ApiPublicMercadopagoWebhookRoute
   '/api/public/password-recovery': typeof ApiPublicPasswordRecoveryRoute
@@ -789,17 +849,20 @@ export interface FileRoutesByTo {
   '/api/seller/chat': typeof ApiSellerChatRoute
   '/api/seller/clients': typeof ApiSellerClientsRoute
   '/api/seller/quotes': typeof ApiSellerQuotesRoute
+  '/parceiro/site/$': typeof ParceiroSiteSplatRoute
   '/parceiro/vendas/$id': typeof ParceiroVendasIdRoute
   '/vendedor/orcamentos/$quoteId': typeof VendedorOrcamentosQuoteIdRoute
   '/vendedor/orcamentos/novo': typeof VendedorOrcamentosNovoRoute
   '/admin/contas': typeof AdminContasIndexRoute
   '/admin/parceiros': typeof AdminParceirosIndexRoute
+  '/parceiro/site': typeof ParceiroSiteIndexRoute
   '/parceiro/vendas': typeof ParceiroVendasIndexRoute
   '/vendedor/orcamentos': typeof VendedorOrcamentosIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/$loja': typeof LojaRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/carrinho': typeof CarrinhoRoute
@@ -817,6 +880,7 @@ export interface FileRoutesById {
   '/sobre': typeof SobreRoute
   '/unidades': typeof UnidadesRoute
   '/vendedor': typeof VendedorRouteWithChildren
+  '/$loja/$': typeof LojaSplatRoute
   '/admin/anuncios': typeof AdminAnunciosRoute
   '/admin/atendimentos': typeof AdminAtendimentosRoute
   '/admin/atualizar-valores': typeof AdminAtualizarValoresRoute
@@ -844,12 +908,14 @@ export interface FileRoutesById {
   '/parceiro/produtos': typeof ParceiroProdutosRoute
   '/parceiro/registrar': typeof ParceiroRegistrarRoute
   '/parceiro/simular': typeof ParceiroSimularRoute
+  '/parceiro/site': typeof ParceiroSiteRouteWithChildren
   '/pedido/$id': typeof PedidoIdRoute
   '/produtos/$slug': typeof ProdutosSlugRoute
   '/vendedor/area-azul': typeof VendedorAreaAzulRoute
   '/vendedor/chat': typeof VendedorChatRoute
   '/vendedor/clientes': typeof VendedorClientesRoute
   '/vendedor/minha-conta': typeof VendedorMinhaContaRoute
+  '/$loja/': typeof LojaIndexRoute
   '/admin/': typeof AdminIndexRoute
   '/catalogos/': typeof CatalogosIndexRoute
   '/equipe-de-vendas/': typeof EquipeDeVendasIndexRoute
@@ -879,6 +945,8 @@ export interface FileRoutesById {
   '/api/admin/seller-margin-report': typeof ApiAdminSellerMarginReportRoute
   '/api/admin/seller-margin-reports': typeof ApiAdminSellerMarginReportsRoute
   '/api/admin/support-tickets': typeof ApiAdminSupportTicketsRoute
+  '/api/partner-store/oauth': typeof ApiPartnerStoreOauthRoute
+  '/api/partner-store/webhook': typeof ApiPartnerStoreWebhookRoute
   '/api/public/init-admin': typeof ApiPublicInitAdminRoute
   '/api/public/mercadopago-webhook': typeof ApiPublicMercadopagoWebhookRoute
   '/api/public/password-recovery': typeof ApiPublicPasswordRecoveryRoute
@@ -889,11 +957,13 @@ export interface FileRoutesById {
   '/api/seller/chat': typeof ApiSellerChatRoute
   '/api/seller/clients': typeof ApiSellerClientsRoute
   '/api/seller/quotes': typeof ApiSellerQuotesRoute
+  '/parceiro/site/$': typeof ParceiroSiteSplatRoute
   '/parceiro/vendas/$id': typeof ParceiroVendasIdRoute
   '/vendedor/orcamentos/$quoteId': typeof VendedorOrcamentosQuoteIdRoute
   '/vendedor/orcamentos/novo': typeof VendedorOrcamentosNovoRoute
   '/admin/contas/': typeof AdminContasIndexRoute
   '/admin/parceiros/': typeof AdminParceirosIndexRoute
+  '/parceiro/site/': typeof ParceiroSiteIndexRoute
   '/parceiro/vendas/': typeof ParceiroVendasIndexRoute
   '/vendedor/orcamentos/': typeof VendedorOrcamentosIndexRoute
 }
@@ -901,6 +971,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/$loja'
     | '/admin'
     | '/auth'
     | '/carrinho'
@@ -918,6 +989,7 @@ export interface FileRouteTypes {
     | '/sobre'
     | '/unidades'
     | '/vendedor'
+    | '/$loja/$'
     | '/admin/anuncios'
     | '/admin/atendimentos'
     | '/admin/atualizar-valores'
@@ -945,12 +1017,14 @@ export interface FileRouteTypes {
     | '/parceiro/produtos'
     | '/parceiro/registrar'
     | '/parceiro/simular'
+    | '/parceiro/site'
     | '/pedido/$id'
     | '/produtos/$slug'
     | '/vendedor/area-azul'
     | '/vendedor/chat'
     | '/vendedor/clientes'
     | '/vendedor/minha-conta'
+    | '/$loja/'
     | '/admin/'
     | '/catalogos/'
     | '/equipe-de-vendas/'
@@ -980,6 +1054,8 @@ export interface FileRouteTypes {
     | '/api/admin/seller-margin-report'
     | '/api/admin/seller-margin-reports'
     | '/api/admin/support-tickets'
+    | '/api/partner-store/oauth'
+    | '/api/partner-store/webhook'
     | '/api/public/init-admin'
     | '/api/public/mercadopago-webhook'
     | '/api/public/password-recovery'
@@ -990,11 +1066,13 @@ export interface FileRouteTypes {
     | '/api/seller/chat'
     | '/api/seller/clients'
     | '/api/seller/quotes'
+    | '/parceiro/site/$'
     | '/parceiro/vendas/$id'
     | '/vendedor/orcamentos/$quoteId'
     | '/vendedor/orcamentos/novo'
     | '/admin/contas/'
     | '/admin/parceiros/'
+    | '/parceiro/site/'
     | '/parceiro/vendas/'
     | '/vendedor/orcamentos/'
   fileRoutesByTo: FileRoutesByTo
@@ -1012,6 +1090,7 @@ export interface FileRouteTypes {
     | '/recuperar-senha'
     | '/sobre'
     | '/unidades'
+    | '/$loja/$'
     | '/admin/anuncios'
     | '/admin/atendimentos'
     | '/admin/atualizar-valores'
@@ -1044,6 +1123,7 @@ export interface FileRouteTypes {
     | '/vendedor/chat'
     | '/vendedor/clientes'
     | '/vendedor/minha-conta'
+    | '/$loja'
     | '/admin'
     | '/catalogos'
     | '/equipe-de-vendas'
@@ -1073,6 +1153,8 @@ export interface FileRouteTypes {
     | '/api/admin/seller-margin-report'
     | '/api/admin/seller-margin-reports'
     | '/api/admin/support-tickets'
+    | '/api/partner-store/oauth'
+    | '/api/partner-store/webhook'
     | '/api/public/init-admin'
     | '/api/public/mercadopago-webhook'
     | '/api/public/password-recovery'
@@ -1083,16 +1165,19 @@ export interface FileRouteTypes {
     | '/api/seller/chat'
     | '/api/seller/clients'
     | '/api/seller/quotes'
+    | '/parceiro/site/$'
     | '/parceiro/vendas/$id'
     | '/vendedor/orcamentos/$quoteId'
     | '/vendedor/orcamentos/novo'
     | '/admin/contas'
     | '/admin/parceiros'
+    | '/parceiro/site'
     | '/parceiro/vendas'
     | '/vendedor/orcamentos'
   id:
     | '__root__'
     | '/'
+    | '/$loja'
     | '/admin'
     | '/auth'
     | '/carrinho'
@@ -1110,6 +1195,7 @@ export interface FileRouteTypes {
     | '/sobre'
     | '/unidades'
     | '/vendedor'
+    | '/$loja/$'
     | '/admin/anuncios'
     | '/admin/atendimentos'
     | '/admin/atualizar-valores'
@@ -1137,12 +1223,14 @@ export interface FileRouteTypes {
     | '/parceiro/produtos'
     | '/parceiro/registrar'
     | '/parceiro/simular'
+    | '/parceiro/site'
     | '/pedido/$id'
     | '/produtos/$slug'
     | '/vendedor/area-azul'
     | '/vendedor/chat'
     | '/vendedor/clientes'
     | '/vendedor/minha-conta'
+    | '/$loja/'
     | '/admin/'
     | '/catalogos/'
     | '/equipe-de-vendas/'
@@ -1172,6 +1260,8 @@ export interface FileRouteTypes {
     | '/api/admin/seller-margin-report'
     | '/api/admin/seller-margin-reports'
     | '/api/admin/support-tickets'
+    | '/api/partner-store/oauth'
+    | '/api/partner-store/webhook'
     | '/api/public/init-admin'
     | '/api/public/mercadopago-webhook'
     | '/api/public/password-recovery'
@@ -1182,17 +1272,20 @@ export interface FileRouteTypes {
     | '/api/seller/chat'
     | '/api/seller/clients'
     | '/api/seller/quotes'
+    | '/parceiro/site/$'
     | '/parceiro/vendas/$id'
     | '/vendedor/orcamentos/$quoteId'
     | '/vendedor/orcamentos/novo'
     | '/admin/contas/'
     | '/admin/parceiros/'
+    | '/parceiro/site/'
     | '/parceiro/vendas/'
     | '/vendedor/orcamentos/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LojaRoute: typeof LojaRouteWithChildren
   AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
   CarrinhoRoute: typeof CarrinhoRoute
@@ -1229,6 +1322,8 @@ export interface RootRouteChildren {
   ApiAdminSellerMarginReportRoute: typeof ApiAdminSellerMarginReportRoute
   ApiAdminSellerMarginReportsRoute: typeof ApiAdminSellerMarginReportsRoute
   ApiAdminSupportTicketsRoute: typeof ApiAdminSupportTicketsRoute
+  ApiPartnerStoreOauthRoute: typeof ApiPartnerStoreOauthRoute
+  ApiPartnerStoreWebhookRoute: typeof ApiPartnerStoreWebhookRoute
   ApiPublicInitAdminRoute: typeof ApiPublicInitAdminRoute
   ApiPublicMercadopagoWebhookRoute: typeof ApiPublicMercadopagoWebhookRoute
   ApiPublicPasswordRecoveryRoute: typeof ApiPublicPasswordRecoveryRoute
@@ -1248,6 +1343,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$loja': {
+      id: '/$loja'
+      path: '/$loja'
+      fullPath: '/$loja'
+      preLoaderRoute: typeof LojaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -1368,6 +1470,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/vendedor'
       preLoaderRoute: typeof VendedorRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/$loja/': {
+      id: '/$loja/'
+      path: '/'
+      fullPath: '/$loja/'
+      preLoaderRoute: typeof LojaIndexRouteImport
+      parentRoute: typeof LojaRoute
+    }
+    '/$loja/$': {
+      id: '/$loja/$'
+      path: '/$'
+      fullPath: '/$loja/$'
+      preLoaderRoute: typeof LojaSplatRouteImport
+      parentRoute: typeof LojaRoute
     }
     '/admin/': {
       id: '/admin/'
@@ -1584,6 +1700,13 @@ declare module '@tanstack/react-router' {
       path: '/simular'
       fullPath: '/parceiro/simular'
       preLoaderRoute: typeof ParceiroSimularRouteImport
+      parentRoute: typeof ParceiroRoute
+    }
+    '/parceiro/site': {
+      id: '/parceiro/site'
+      path: '/site'
+      fullPath: '/parceiro/site'
+      preLoaderRoute: typeof ParceiroSiteRouteImport
       parentRoute: typeof ParceiroRoute
     }
     '/pedido/$id': {
@@ -1817,6 +1940,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminSupportTicketsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/partner-store/oauth': {
+      id: '/api/partner-store/oauth'
+      path: '/api/partner-store/oauth'
+      fullPath: '/api/partner-store/oauth'
+      preLoaderRoute: typeof ApiPartnerStoreOauthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/partner-store/webhook': {
+      id: '/api/partner-store/webhook'
+      path: '/api/partner-store/webhook'
+      fullPath: '/api/partner-store/webhook'
+      preLoaderRoute: typeof ApiPartnerStoreWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/init-admin': {
       id: '/api/public/init-admin'
       path: '/api/public/init-admin'
@@ -1887,6 +2024,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSellerQuotesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/parceiro/site/': {
+      id: '/parceiro/site/'
+      path: '/'
+      fullPath: '/parceiro/site/'
+      preLoaderRoute: typeof ParceiroSiteIndexRouteImport
+      parentRoute: typeof ParceiroSiteRoute
+    }
+    '/parceiro/site/$': {
+      id: '/parceiro/site/$'
+      path: '/$'
+      fullPath: '/parceiro/site/$'
+      preLoaderRoute: typeof ParceiroSiteSplatRouteImport
+      parentRoute: typeof ParceiroSiteRoute
+    }
     '/parceiro/vendas/': {
       id: '/parceiro/vendas/'
       path: '/vendas'
@@ -1924,6 +2075,18 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface LojaRouteChildren {
+  LojaSplatRoute: typeof LojaSplatRoute
+  LojaIndexRoute: typeof LojaIndexRoute
+}
+
+const LojaRouteChildren: LojaRouteChildren = {
+  LojaSplatRoute: LojaSplatRoute,
+  LojaIndexRoute: LojaIndexRoute,
+}
+
+const LojaRouteWithChildren = LojaRoute._addFileChildren(LojaRouteChildren)
 
 interface AdminParceirosRouteChildren {
   AdminParceirosLojasRoute: typeof AdminParceirosLojasRoute
@@ -2021,10 +2184,25 @@ const CatalogosRouteWithChildren = CatalogosRoute._addFileChildren(
   CatalogosRouteChildren,
 )
 
+interface ParceiroSiteRouteChildren {
+  ParceiroSiteSplatRoute: typeof ParceiroSiteSplatRoute
+  ParceiroSiteIndexRoute: typeof ParceiroSiteIndexRoute
+}
+
+const ParceiroSiteRouteChildren: ParceiroSiteRouteChildren = {
+  ParceiroSiteSplatRoute: ParceiroSiteSplatRoute,
+  ParceiroSiteIndexRoute: ParceiroSiteIndexRoute,
+}
+
+const ParceiroSiteRouteWithChildren = ParceiroSiteRoute._addFileChildren(
+  ParceiroSiteRouteChildren,
+)
+
 interface ParceiroRouteChildren {
   ParceiroProdutosRoute: typeof ParceiroProdutosRoute
   ParceiroRegistrarRoute: typeof ParceiroRegistrarRoute
   ParceiroSimularRoute: typeof ParceiroSimularRoute
+  ParceiroSiteRoute: typeof ParceiroSiteRouteWithChildren
   ParceiroIndexRoute: typeof ParceiroIndexRoute
   ParceiroVendasIdRoute: typeof ParceiroVendasIdRoute
   ParceiroVendasIndexRoute: typeof ParceiroVendasIndexRoute
@@ -2034,6 +2212,7 @@ const ParceiroRouteChildren: ParceiroRouteChildren = {
   ParceiroProdutosRoute: ParceiroProdutosRoute,
   ParceiroRegistrarRoute: ParceiroRegistrarRoute,
   ParceiroSimularRoute: ParceiroSimularRoute,
+  ParceiroSiteRoute: ParceiroSiteRouteWithChildren,
   ParceiroIndexRoute: ParceiroIndexRoute,
   ParceiroVendasIdRoute: ParceiroVendasIdRoute,
   ParceiroVendasIndexRoute: ParceiroVendasIndexRoute,
@@ -2085,6 +2264,7 @@ const VendedorRouteWithChildren = VendedorRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LojaRoute: LojaRouteWithChildren,
   AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
   CarrinhoRoute: CarrinhoRoute,
@@ -2121,6 +2301,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminSellerMarginReportRoute: ApiAdminSellerMarginReportRoute,
   ApiAdminSellerMarginReportsRoute: ApiAdminSellerMarginReportsRoute,
   ApiAdminSupportTicketsRoute: ApiAdminSupportTicketsRoute,
+  ApiPartnerStoreOauthRoute: ApiPartnerStoreOauthRoute,
+  ApiPartnerStoreWebhookRoute: ApiPartnerStoreWebhookRoute,
   ApiPublicInitAdminRoute: ApiPublicInitAdminRoute,
   ApiPublicMercadopagoWebhookRoute: ApiPublicMercadopagoWebhookRoute,
   ApiPublicPasswordRecoveryRoute: ApiPublicPasswordRecoveryRoute,

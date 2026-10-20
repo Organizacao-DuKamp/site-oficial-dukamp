@@ -500,6 +500,7 @@ export function computePaymentTotals(
 
 const orderSchema = z.object({
   partner_quote_id: z.string().uuid().optional(),
+  storefront_slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).min(3).max(48).optional(),
   partner_customer_details: partnerCustomerDetailsSchema,
   customer_name: z.string().min(2).max(120),
   email: z.string().email(),
@@ -569,6 +570,8 @@ export const createPixOrder = createServerFn({ method: "POST" })
 
     const { createAuditedAdminClient } = await import("@/lib/audit.server");
     supa = createAuditedAdminClient(authUserId, getRequest());
+    if(data.partner_quote_id && data.storefront_slug) throw new Error("Origem de compra inválida.");
+    const storeOrigin = data.storefront_slug ? await (await import("./storefronts.server")).resolveStoreOrigin(data.storefront_slug) : null;
     const partnerCheckout = data.partner_quote_id
       ? await (await import("./partners.server")).authorizePartnerCheckout(supa, authUserId, data)
       : null;
@@ -665,6 +668,7 @@ export const createPixOrder = createServerFn({ method: "POST" })
 
     const orderPayload = {
         user_id: partnerCheckout ? null : authUserId,
+        ...(storeOrigin ? {origin_store_id:storeOrigin.storeId,origin_partner_id:storeOrigin.partnerId,origin_commission_amount:roundMoney(commercialAmount*.10)}:{}),
         ...(partnerCheckout && partnerTotals ? {
           partner_id: partnerCheckout.partner.id, partner_quote_id: partnerCheckout.quote.id,
           partner_name: partnerCheckout.partner.razao_social, partner_gross_total: partnerTotals.gross,

@@ -1,0 +1,63 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {createPartnerDatabase} from './fixtures/partner-database.mjs';
+const migration=readFileSync(new URL('../supabase/migrations/20261020015653_partner_storefronts.sql',import.meta.url),'utf8');
+const a='00000000-0000-4000-8000-000000000001',b='00000000-0000-4000-8000-000000000002',sa='10000000-0000-4000-8000-000000000001',sb='10000000-0000-4000-8000-000000000002',pa='20000000-0000-4000-8000-000000000001',pb='20000000-0000-4000-8000-000000000002';
+test('store PostgreSQL transactions isolate tenants, reserve stock atomically, charge authoritative totals and reconcile once',async()=>{
+ const db=await createPartnerDatabase();try{
+ await db.exec(migration);
+ await db.query(`INSERT INTO auth.users(id) VALUES($1),($2)`,[a,b]);
+ for(const [id,cnpj,user] of [[a,'11222333000181','fixture-a'],[b,'22333444000181','fixture-b']])await db.query(`INSERT INTO public.dukamp_partners(id,user_id,cnpj,razao_social,nome_completo,username,cep,rua,numero,bairro,cidade,estado) VALUES($1,$1,$2,$3,$3,$3,'15150104','Rua','1','Centro','Monte Aprazível','SP')`,[id,cnpj,user]);
+ const config={pickup_enabled:true,delivery_enabled:true,delivery_fee:12.5,delivery_cep_prefixes:['15150'],free_shipping_from:100};
+ await db.query(`INSERT INTO public.partner_stores(id,partner_id,slug,name,published,payment_connected,config) VALUES($1,$2,'agropet','AgroPet',true,true,$3),($4,$5,'outro-agro','Outra loja',true,true,$3)`,[sa,a,config,sb,b]);
+ await db.query(`INSERT INTO public.partner_store_products(id,store_id,name,price,cost,stock) VALUES($1,$2,'Produto A',19.99,5,10),($3,$4,'Produto B',80,40,2)`,[pa,sa,pb,sb]);
+ for(const table of ['partner_stores','partner_store_credentials','partner_store_oauth_states','partner_store_products','partner_store_orders','partner_store_summary','partner_store_visits','partner_store_rate_limits']){
+  const {rows}=await db.query(`SELECT has_table_privilege('anon',$1,'SELECT') a,has_table_privilege('authenticated',$1,'SELECT') b`,['public.'+table]);assert.equal(rows[0].a,false,table);assert.equal(rows[0].b,false,table);
+ }
+ assert.equal((await db.query(`SELECT has_function_privilege('authenticated','public.create_partner_store_order(uuid,uuid,text,text,jsonb,jsonb,text,text,text)','EXECUTE') allowed`)).rows[0].allowed,false);
+ const request='30000000-0000-4000-8000-000000000001',customer={name:'Cliente Fixture',cep:'15150104',email:'fixture@example.invalid'};
+ const create=(store,request,items,source='online',hash='hash',fulfillment='delivery')=>db.query(`SELECT public.create_partner_store_order($1,$2,$3,'access-hash',$4,$5,$6,$7,$8) AS o`,[store,request,hash,customer,items,fulfillment,source==='manual'?'manual':'pix',source]);
+ const first=(await create(sa,request,[{product_id:pa,quantity:1,unit_price:0},{product_id:pa,quantity:2}])).rows[0].o;
+ assert.equal(Number(first.subtotal),59.97);assert.equal(Number(first.shipping_cost),12.5);assert.equal(Number(first.total),72.47);
+ const stock=async()=>Number((await db.query(`SELECT stock FROM public.partner_store_products WHERE id=$1`,[pa])).rows[0].stock);
+ assert.equal(await stock(),7);
+ const claim=()=>db.query(`SELECT public.claim_partner_store_payment($1,$2) c`,[sa,first.id]);
+ assert.equal((await claim()).rows[0].c.claimed,true);
+ assert.equal((await claim()).rows[0].c.claimed,false);
+ await db.query(`UPDATE public.partner_store_orders SET payment_attempt_started_at=now()-interval '2 minutes' WHERE id=$1`,[first.id]);
+ assert.equal((await claim()).rows[0].c.retry,true);
+ assert.equal((await create(sa,request,[{product_id:pa,quantity:3}])).rows[0].o.id,first.id);assert.equal(await stock(),7);
+ await assert.rejects(create(sa,request,[{product_id:pa,quantity:3}],'online','changed'),/outra|utilizada/i);
+ await assert.rejects(create(sa,crypto.randomUUID(),[{product_id:pb,quantity:1}]),/indisponível/i);assert.equal(await stock(),7);
+ await assert.rejects(create(sa,crypto.randomUUID(),[{product_id:pa,quantity:100}]),/estoque/i);assert.equal(await stock(),7);
+ const reconcile=(status,amount=72.47,at=new Date().toISOString(),payment='999')=>db.query(`SELECT public.reconcile_partner_store_payment($1,$2,$3,$4,$5,$6) o`,[sa,first.id,payment,status,amount,at]);
+ await assert.rejects(reconcile('approved',1),/corresponde/);assert.equal(await stock(),7);
+ const t='2026-10-20T02:00:00Z';assert.equal((await reconcile('approved',72.47,t)).rows[0].o.payment_status,'approved');assert.equal(await stock(),7);
+ await reconcile('approved',72.47,t);assert.equal(await stock(),7);
+ await reconcile('pending',72.47,'2026-10-20T02:01:00Z');assert.equal((await db.query('SELECT payment_status FROM public.partner_store_orders WHERE id=$1',[first.id])).rows[0].payment_status,'approved');
+ await reconcile('refunded',72.47,'2026-10-20T02:02:00Z');assert.equal(await stock(),10);
+ await reconcile('refunded',72.47,'2026-10-20T02:03:00Z');await reconcile('approved',72.47,'2026-10-20T02:04:00Z');assert.equal(await stock(),10);
+ assert.equal((await db.query('SELECT payment_status FROM public.partner_store_orders WHERE id=$1',[first.id])).rows[0].payment_status,'refunded');
+ const manual=(await create(sa,crypto.randomUUID(),[{product_id:pa,quantity:2}],'manual','manual','pickup')).rows[0].o;assert.equal(await stock(),8);assert.equal(manual.payment_status,'approved');
+ await assert.rejects(db.query(`SELECT public.manage_partner_store_order($1,$2,'delete','{}')`,[sb,manual.id]),/não encontrada/);
+ await db.query(`SELECT public.manage_partner_store_order($1,$2,'edit',$3)`,[sa,manual.id,{delivery_status:'entregue',notes:'Nota fixture',customer:{name:'Atualizado'}}]);
+ await db.query(`SELECT public.manage_partner_store_order($1,$2,'delete','{}')`,[sa,manual.id]);assert.equal(await stock(),10);
+ await db.query(`SELECT public.manage_partner_store_order($1,$2,'delete','{}')`,[sa,manual.id]);assert.equal(await stock(),10);
+ const pending=(await create(sa,crypto.randomUUID(),[{product_id:pa,quantity:1}])).rows[0].o;
+ await assert.rejects(db.query(`SELECT public.manage_partner_store_order($1,$2,'delete','{}')`,[sa,pending.id]),/online/);
+ await assert.rejects(db.query(`SELECT public.manage_partner_store_order($1,$2,'edit',$3)`,[sa,pending.id,{delivery_status:'enviado'}]),/pagas/);
+ await assert.rejects(db.query(`SELECT public.cancel_unpaid_partner_store_order($1,$2)`,[sa,pending.id]),/ainda/);
+ await db.query(`UPDATE public.partner_store_orders SET expires_at=now()-interval '2 hours' WHERE id=$1`,[pending.id]);
+ await db.query(`SELECT public.cancel_unpaid_partner_store_order($1,$2)`,[sa,pending.id]);assert.equal(await stock(),10);
+ await assert.rejects(db.query(`SELECT public.reconcile_partner_store_payment($1,$2,'123','approved',32.49,now())`,[sa,pending.id]),/tardio/);
+ const referral=(await db.query(`INSERT INTO public.orders(customer_name,email,phone,cpf_cnpj,cep,rua,numero,bairro,cidade,estado,subtotal,shipping_cost,total,payment_base_amount,payment_fee,origin_store_id,origin_partner_id,origin_commission_amount,payment_status) VALUES('Cliente referral','referral@example.invalid','17999999999','12345678901','15150104','Rua','1','Centro','Monte Aprazível','SP',100,20,120,120,0,$1,$2,12,'approved') RETURNING id`,[sa,a])).rows[0];
+ const credit=(await db.query('SELECT gross_total,commission_total,dukamp_total FROM public.dukamp_partner_sales_summary WHERE partner_id=$1',[a])).rows[0];
+ assert.equal(Number(credit.gross_total),120);assert.equal(Number(credit.commission_total),12);assert.equal(Number(credit.dukamp_total),120);
+ await db.query(`UPDATE public.orders SET refund_status='requested' WHERE id=$1`,[referral.id]);
+ assert.equal(Number((await db.query('SELECT commission_total FROM public.dukamp_partner_sales_summary WHERE partner_id=$1',[a])).rows[0].commission_total),0);
+ await db.query(`UPDATE public.dukamp_partners SET active=false WHERE id=$1`,[a]);
+ await assert.rejects(create(sa,crypto.randomUUID(),[{product_id:pa,quantity:1}]),/indisponível/);assert.equal(await stock(),10);
+ assert.equal(Number((await db.query('SELECT revenue FROM public.partner_store_summary WHERE store_id=$1',[sa])).rows[0].revenue),0);
+ }finally{await db.close();}
+});

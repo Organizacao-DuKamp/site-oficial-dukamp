@@ -37,3 +37,6 @@ dist-ssr
 .env.*
 !.env.example
 echo example-env>>.gitignore
+
+# Supabase CLI cache
+supabase/.temp/
