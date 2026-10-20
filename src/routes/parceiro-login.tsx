@@ -1,8 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Store, ArrowRight, ShieldCheck } from "lucide-react";
+import { Store, ArrowRight, ShieldCheck, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/lib/auth";
-import { partnerLoginEmail } from "@/lib/partners";
+import { partnerLoginEmail, partnerUsernameSchema } from "@/lib/partners";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field } from "@/components/partners/PartnerUi";
@@ -11,24 +11,63 @@ export const Route = createFileRoute("/parceiro-login")({
   head: () => ({ meta: [{ title: "Acesso do parceiro — Dukamp" }] }),
   component: PartnerLogin,
 });
+type LoginNotice = {
+  title: string;
+  description: string;
+  field?: "username" | "credentials";
+  showOtherAccess?: boolean;
+};
 function PartnerLogin() {
   const { user, loading, signIn, signOut } = useAuth();
   const nav = useNavigate();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<LoginNotice | null>(null);
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
+    setError(null);
+    const validated = partnerUsernameSchema.safeParse(username);
+    if (!validated.success) {
+      const isEmail = username.includes("@");
+      setError({
+        title: isEmail ? "Use seu usuário de parceiro" : "Confira o nome de usuário",
+        description: isEmail
+          ? "Neste painel, entre com o usuário fornecido pela Dukamp, sem @ ou domínio de e-mail. Exemplo: agropet."
+          : "O usuário deve ter de 3 a 50 caracteres: letras sem acento, números, ponto, traço ou sublinhado.",
+        field: "username",
+        showOtherAccess: isEmail,
+      });
+      return;
+    }
     setBusy(true);
     try {
-      const result = await signIn(partnerLoginEmail(username), password);
-      if (result.error)
-        throw new Error("Usuário ou senha inválidos. Confira seus dados de acesso.");
+      const result = await signIn(partnerLoginEmail(validated.data), password);
+      if (result.error) {
+        const unavailable = /fetch|network|timeout|temporarily|rate limit|too many/i.test(
+          result.error,
+        );
+        setError(
+          unavailable
+            ? {
+                title: "Não foi possível conectar agora",
+                description: "Aguarde um momento, confira sua conexão e tente novamente.",
+              }
+            : {
+                title: "Não conseguimos confirmar seu acesso",
+                description:
+                  "Confira seu usuário e sua senha e tente novamente. Se precisar, solicite novos dados à equipe Dukamp.",
+                field: "credentials",
+              },
+        );
+        return;
+      }
       await nav({ to: "/parceiro" });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Não foi possível entrar.");
+    } catch {
+      setError({
+        title: "Não foi possível entrar agora",
+        description: "Confira sua conexão e tente novamente em instantes.",
+      });
     } finally {
       setBusy(false);
     }
@@ -86,23 +125,65 @@ function PartnerLogin() {
                   autoComplete="username"
                   autoCapitalize="none"
                   spellCheck={false}
+                  disabled={busy}
+                  aria-invalid={error?.field === "username" || error?.field === "credentials"}
+                  aria-describedby={error?.field ? "partner-login-error-message" : undefined}
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  onChange={(e) => {
+                    setUsername(e.target.value);
+                    setError(null);
+                  }}
                 />
+                <span className="text-xs font-normal text-muted-foreground">
+                  Exemplo: agropet — sem @ ou endereço de e-mail.
+                </span>
               </Field>
               <Field label="Senha" required>
                 <Input
                   required
                   type="password"
                   autoComplete="current-password"
+                  disabled={busy}
+                  aria-invalid={error?.field === "credentials"}
+                  aria-describedby={
+                    error?.field === "credentials" ? "partner-login-error-message" : undefined
+                  }
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setError(null);
+                  }}
                 />
               </Field>
               {error && (
-                <p role="alert" className="text-sm text-destructive">
-                  {error}
-                </p>
+                <div
+                  role="alert"
+                  className={`flex items-start gap-3 rounded-xl border p-4 ${error.field === "username" ? "border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100" : "border-destructive/20 bg-destructive/5 text-foreground"}`}
+                >
+                  <div
+                    className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${error.field === "username" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300" : "bg-destructive/10 text-destructive"}`}
+                  >
+                    <AlertTriangle className="h-4 w-4" aria-hidden="true" />
+                  </div>
+                  <div className="min-w-0 space-y-1.5">
+                    <p className="text-sm font-semibold leading-5">{error.title}</p>
+                    <p
+                      id="partner-login-error-message"
+                      className="text-xs leading-relaxed opacity-85"
+                    >
+                      {error.description}
+                    </p>
+                    {error.showOtherAccess && (
+                      <Link
+                        to="/auth"
+                        className="inline-flex items-center gap-1 pt-1 text-xs font-semibold underline underline-offset-4"
+                      >
+                        Acesso administrativo e de clientes
+                        <ArrowRight className="h-3 w-3" aria-hidden="true" />
+                      </Link>
+                    )}
+                  </div>
+                </div>
               )}
               <Button className="w-full" disabled={busy}>
                 {busy ? "Entrando..." : "Entrar no painel"}
