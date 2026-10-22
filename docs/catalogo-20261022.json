@@ -1,0 +1,400 @@
+{
+  "date": "2026-10-22",
+  "source": "Fotos, vídeos e tabelas enviados pelo responsável da DuKamp. Valores de venda preservados do cadastro existente; estoque de bombas consultado no estoque cadastrado.",
+  "stock_rule": "Tabela enviada: soma Loja Monte + Loja RP. Não contar unidades nas fotografias.",
+  "ready": [
+    {
+      "code": "042790",
+      "name": "Polvilhadeira manual Guarany Mata-Formiga",
+      "asset": "duster",
+      "description": "<p>A polvilhadeira manual Guarany Mata-Formiga é um equipamento para aplicação de produtos em pó, com acionamento por êmbolo e empunhadura em T. Seu formato alongado facilita o manuseio e o direcionamento da aplicação.</p><ul><li>Marca: Guarany.</li><li>Linha: Polvilhadeira Leve.</li><li>Acionamento manual.</li><li>Reservatório inferior e mangueira de saída.</li></ul><p>Venda de uma unidade do equipamento. Produto em pó não incluso. Utilize somente produtos compatíveis e siga as instruções dos fabricantes.</p>",
+      "stock": 18,
+      "brand": "Guarany",
+      "price": 28.03,
+      "producer_price": 28.03,
+      "consumer_price": 28.03,
+      "options": [],
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d"
+    },
+    {
+      "code": "049816",
+      "name": "Carregador de bateria Fazendeiro Sisvoo 12 V 10 A",
+      "asset": "charger",
+      "description": "<p>Carregador de bateria Fazendeiro Sisvoo, identificado no cadastro da loja como 12 V e 10 A. Possui gabinete metálico, alça de transporte, comandos frontais e cabos com garras para conexão à bateria.</p><ul><li>Marca cadastrada: Sisvoo.</li><li>Modelo: Fazendeiro.</li><li>Tensão de bateria cadastrada: 12 V.</li><li>Corrente nominal cadastrada: 10 A.</li></ul><p>Venda por unidade. Confira a tensão de alimentação e a compatibilidade da bateria na identificação do equipamento e no manual antes de conectar.</p>",
+      "stock": 1,
+      "brand": "Sisvoo",
+      "price": 195.55,
+      "producer_price": 195.55,
+      "consumer_price": 195.55,
+      "options": [],
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d"
+    },
+    {
+      "code": "058157",
+      "name": "Bomba submersa Anauger 800 5G 380 W 127 V",
+      "asset": "anauger800",
+      "description": "<p>Bomba submersa Anauger 800 5G, com corpo metálico, saída superior para mangueira, olhal de sustentação e cabo elétrico. Uma opção para integrar sistemas de bombeamento de água, conforme as condições previstas no manual do fabricante.</p><ul><li>Marca: Anauger.</li><li>Modelo: 800 5G.</li><li>Potência indicada na etiqueta do produto: 380 W.</li><li>Tensão: 127 V.</li></ul><p>Venda por unidade. Este modelo é 127 V. Verifique a instalação, a profundidade e as condições de uso no manual.</p>",
+      "stock": 1,
+      "brand": "Anauger",
+      "price": 369.05,
+      "producer_price": 369.05,
+      "consumer_price": 369.05,
+      "options": [],
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d"
+    },
+    {
+      "code": "058084",
+      "name": "Bomba submersa Anauger Ecco 300 W 127 V",
+      "asset": "anaugerecco",
+      "description": "<p>Bomba submersa Anauger Ecco, com corpo metálico, conexão superior para mangueira, olhal de sustentação e cabo elétrico. Indicada para compor instalações de bombeamento de água de acordo com as especificações do fabricante.</p><ul><li>Marca: Anauger.</li><li>Linha: Ecco.</li><li>Potência cadastrada: 300 W.</li><li>Tensão: 127 V.</li></ul><p>Venda por unidade. Confira a tensão e consulte o manual para definir as condições de instalação e operação.</p>",
+      "stock": 2,
+      "brand": "Anauger",
+      "price": 260.65,
+      "producer_price": 260.65,
+      "consumer_price": 260.65,
+      "options": [],
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d"
+    },
+    {
+      "code": "062057",
+      "name": "Bomba d’água periférica Foxlux 1/2 CV 127 V",
+      "asset": "fox127",
+      "description": "<p>Bomba d’água periférica Foxlux de 1/2 CV, com carcaça laranja, motor com aletas e base para fixação. Desenvolvida para integrar instalações de transferência de água conforme as especificações do equipamento.</p><ul><li>Marca: Foxlux.</li><li>Tipo: periférica.</li><li>Potência: 1/2 CV.</li><li>Tensão deste item: 127 V.</li></ul><p>Venda por unidade. Escolha a tensão compatível com a instalação e siga as orientações do fabricante.</p>",
+      "stock": 1,
+      "brand": "Foxlux",
+      "price": 149.55,
+      "producer_price": 149.55,
+      "consumer_price": 149.55,
+      "options": [],
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d"
+    },
+    {
+      "code": "062065",
+      "name": "Bomba d’água periférica Foxlux 1/2 CV 220 V",
+      "asset": "fox220",
+      "description": "<p>Bomba d’água periférica Foxlux de 1/2 CV, com carcaça laranja, motor com aletas e base para fixação. Desenvolvida para integrar instalações de transferência de água conforme as especificações do equipamento.</p><ul><li>Marca: Foxlux.</li><li>Tipo: periférica.</li><li>Potência: 1/2 CV.</li><li>Tensão deste item: 220 V.</li></ul><p>Venda por unidade. Escolha a tensão compatível com a instalação e siga as orientações do fabricante.</p>",
+      "stock": 1,
+      "brand": "Foxlux",
+      "price": 198.75,
+      "producer_price": 198.75,
+      "consumer_price": 198.75,
+      "options": [],
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d"
+    },
+    {
+      "code": "051918",
+      "name": "Tênis slip-on Saygon 1800 bordô — Nº 34",
+      "asset": "shoe-bordo",
+      "description": "<p>Tênis Saygon de calce sem cadarço, com cabedal têxtil de trama aparente, gola canelada e puxador traseiro. O visual bordô combina com produções casuais do dia a dia.</p><ul><li>Marca: Saygon.</li><li>Modelo identificado na caixa: 1800.</li><li>Cor: bordô.</li><li>Numeração deste cadastro: 34.</li><li>Fechamento: sem cadarço.</li></ul><p>Venda por par. Este código corresponde exclusivamente à numeração 34.</p>",
+      "stock": 2,
+      "brand": "Saygon",
+      "price": 72.18,
+      "producer_price": 72.18,
+      "consumer_price": 72.18,
+      "options": [
+        {
+          "id": "8ece04c4-56c8-5b2a-ac14-1c0196b79783",
+          "name": "Numeração",
+          "values": [
+            {
+              "id": "128004b7-c649-54f7-868e-757c4adc9947",
+              "label": "34"
+            }
+          ]
+        }
+      ],
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d"
+    },
+    {
+      "code": "051926",
+      "name": "Tênis slip-on Saygon 1800 bordô — Nº 35",
+      "asset": "shoe-bordo",
+      "description": "<p>Tênis Saygon de calce sem cadarço, com cabedal têxtil de trama aparente, gola canelada e puxador traseiro. O visual bordô combina com produções casuais do dia a dia.</p><ul><li>Marca: Saygon.</li><li>Modelo identificado na caixa: 1800.</li><li>Cor: bordô.</li><li>Numeração deste cadastro: 35.</li><li>Fechamento: sem cadarço.</li></ul><p>Venda por par. Este código corresponde exclusivamente à numeração 35.</p>",
+      "stock": 1,
+      "brand": "Saygon",
+      "price": 72.18,
+      "producer_price": 72.18,
+      "consumer_price": 72.18,
+      "options": [
+        {
+          "id": "65275a39-7e8e-5d3c-b845-c6ea2bbb6705",
+          "name": "Numeração",
+          "values": [
+            {
+              "id": "2d804724-e29f-590e-a99f-34eb85b33777",
+              "label": "35"
+            }
+          ]
+        }
+      ],
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d"
+    },
+    {
+      "code": "051845",
+      "name": "Tênis slip-on Saygon 1800 preto/cinza — Nº 34",
+      "asset": "shoe-gray",
+      "description": "<p>Tênis Saygon de calce sem cadarço, com cabedal têxtil de trama aparente, gola canelada e puxador traseiro. O visual preto/cinza combina com produções casuais do dia a dia.</p><ul><li>Marca: Saygon.</li><li>Modelo identificado na caixa: 1800.</li><li>Cor: preto/cinza.</li><li>Numeração deste cadastro: 34.</li><li>Fechamento: sem cadarço.</li></ul><p>Venda por par. Este código corresponde exclusivamente à numeração 34.</p>",
+      "stock": 3,
+      "brand": "Saygon",
+      "price": 72.18,
+      "producer_price": 72.18,
+      "consumer_price": 72.18,
+      "options": [
+        {
+          "id": "799d16e3-ffbb-5432-ac56-ff946fe664d2",
+          "name": "Numeração",
+          "values": [
+            {
+              "id": "5108fb7a-150a-58bb-9d14-5633fbc42a72",
+              "label": "34"
+            }
+          ]
+        }
+      ],
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d"
+    },
+    {
+      "code": "051837",
+      "name": "Tênis slip-on Saygon 1800 preto/preto — Nº 43",
+      "asset": "shoe-black",
+      "description": "<p>Tênis Saygon de calce sem cadarço, com cabedal têxtil de trama aparente, gola canelada e puxador traseiro. O visual preto/preto combina com produções casuais do dia a dia.</p><ul><li>Marca: Saygon.</li><li>Modelo identificado na caixa: 1800.</li><li>Cor: preto/preto.</li><li>Numeração deste cadastro: 43.</li><li>Fechamento: sem cadarço.</li></ul><p>Venda por par. Este código corresponde exclusivamente à numeração 43.</p>",
+      "stock": 1,
+      "brand": "Saygon",
+      "price": 72.18,
+      "producer_price": 72.18,
+      "consumer_price": 72.18,
+      "options": [
+        {
+          "id": "0f229df9-8380-5b0c-a0c7-a0ce4cb58b63",
+          "name": "Numeração",
+          "values": [
+            {
+              "id": "be3744fb-e188-5f77-9a99-80f61f4c5332",
+              "label": "43"
+            }
+          ]
+        }
+      ],
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d"
+    },
+    {
+      "code": "049611",
+      "name": "Bota Saygon 7042 café com zíper lateral — Nº 38",
+      "asset": null,
+      "description": "<p>Bota Saygon 7042 em tom café, com cadarço, zíper lateral, ilhoses metálicos, gola acolchoada e solado preto de desenho robusto. O fechamento lateral complementa o ajuste por cadarço.</p><ul><li>Marca: Saygon.</li><li>Referência: 7042.</li><li>Cor cadastrada: café.</li><li>Numeração: 38.</li></ul><p>Venda por par. Este código corresponde exclusivamente à numeração 38.</p>",
+      "stock": 1,
+      "brand": "Saygon",
+      "price": 81.78,
+      "producer_price": 81.78,
+      "consumer_price": 81.78,
+      "options": [
+        {
+          "id": "c49c052e-01bf-5f29-824d-c92339de8464",
+          "name": "Numeração",
+          "values": [
+            {
+              "id": "88bebcb7-0ce4-5bc9-a13a-dc69d2ab8136",
+              "label": "38"
+            }
+          ]
+        }
+      ],
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d"
+    },
+    {
+      "code": "062812",
+      "name": "Cama pet Europa Alvorada PP (1) — cores sortidas",
+      "asset": "bed-alvorada",
+      "description": "<p>Cama pet Europa Alvorada, tamanho PP (1), para criar um espaço de descanso para o seu cão. Possui formato oval, área acolchoada e borda elevada, como nos modelos apresentados pela loja.</p><ul><li>Linha cadastrada: Europa Alvorada.</li><li>Tamanho comercial: PP (1).</li><li>Venda por unidade.</li><li>Cores e estampas sortidas, conforme disponibilidade.</li></ul><p>A imagem mostra um exemplo de cor e estampa do modelo. Consulte a loja para conferir a opção disponível e as medidas antes da compra; o tamanho comercial não representa uma medida em centímetros.</p>",
+      "stock": 1,
+      "brand": "Europa",
+      "price": 31.97,
+      "producer_price": 31.97,
+      "consumer_price": 31.97,
+      "options": [],
+      "category_id": "683bc2b2-7454-40eb-a1a0-ac42b2675aaa",
+      "catalog_id": "bfe4d1d0-5f8f-469d-8277-35ccc40dee8b"
+    },
+    {
+      "code": "062189",
+      "name": "Cama pet Europa Alvorada P (2) — cores sortidas",
+      "asset": "bed-alvorada",
+      "description": "<p>Cama pet Europa Alvorada, tamanho P (2), para criar um espaço de descanso para o seu cão. Possui formato oval, área acolchoada e borda elevada, como nos modelos apresentados pela loja.</p><ul><li>Linha cadastrada: Europa Alvorada.</li><li>Tamanho comercial: P (2).</li><li>Venda por unidade.</li><li>Cores e estampas sortidas, conforme disponibilidade.</li></ul><p>A imagem mostra um exemplo de cor e estampa do modelo. Consulte a loja para conferir a opção disponível e as medidas antes da compra; o tamanho comercial não representa uma medida em centímetros.</p>",
+      "stock": 1,
+      "brand": "Europa",
+      "price": 43.4,
+      "producer_price": 43.4,
+      "consumer_price": 43.4,
+      "options": [],
+      "category_id": "683bc2b2-7454-40eb-a1a0-ac42b2675aaa",
+      "catalog_id": "bfe4d1d0-5f8f-469d-8277-35ccc40dee8b"
+    },
+    {
+      "code": "062820",
+      "name": "Cama pet Europa Alvorada M (3) — cores sortidas",
+      "asset": "bed-alvorada",
+      "description": "<p>Cama pet Europa Alvorada, tamanho M (3), para criar um espaço de descanso para o seu cão. Possui formato oval, área acolchoada e borda elevada, como nos modelos apresentados pela loja.</p><ul><li>Linha cadastrada: Europa Alvorada.</li><li>Tamanho comercial: M (3).</li><li>Venda por unidade.</li><li>Cores e estampas sortidas, conforme disponibilidade.</li></ul><p>A imagem mostra um exemplo de cor e estampa do modelo. Consulte a loja para conferir a opção disponível e as medidas antes da compra; o tamanho comercial não representa uma medida em centímetros.</p>",
+      "stock": 2,
+      "brand": "Europa",
+      "price": 54.82,
+      "producer_price": 54.82,
+      "consumer_price": 54.82,
+      "options": [],
+      "category_id": "683bc2b2-7454-40eb-a1a0-ac42b2675aaa",
+      "catalog_id": "bfe4d1d0-5f8f-469d-8277-35ccc40dee8b"
+    },
+    {
+      "code": "062839",
+      "name": "Cama pet Europa Alvorada G (4) — cores sortidas",
+      "asset": "bed-alvorada",
+      "description": "<p>Cama pet Europa Alvorada, tamanho G (4), para criar um espaço de descanso para o seu cão. Possui formato oval, área acolchoada e borda elevada, como nos modelos apresentados pela loja.</p><ul><li>Linha cadastrada: Europa Alvorada.</li><li>Tamanho comercial: G (4).</li><li>Venda por unidade.</li><li>Cores e estampas sortidas, conforme disponibilidade.</li></ul><p>A imagem mostra um exemplo de cor e estampa do modelo. Consulte a loja para conferir a opção disponível e as medidas antes da compra; o tamanho comercial não representa uma medida em centímetros.</p>",
+      "stock": 3,
+      "brand": "Europa",
+      "price": 67.38,
+      "producer_price": 67.38,
+      "consumer_price": 67.38,
+      "options": [],
+      "category_id": "683bc2b2-7454-40eb-a1a0-ac42b2675aaa",
+      "catalog_id": "bfe4d1d0-5f8f-469d-8277-35ccc40dee8b"
+    },
+    {
+      "code": "062847",
+      "name": "Cama pet Europa Alvorada GG (5) — cores sortidas",
+      "asset": "bed-alvorada",
+      "description": "<p>Cama pet Europa Alvorada, tamanho GG (5), para criar um espaço de descanso para o seu cão. Possui formato oval, área acolchoada e borda elevada, como nos modelos apresentados pela loja.</p><ul><li>Linha cadastrada: Europa Alvorada.</li><li>Tamanho comercial: GG (5).</li><li>Venda por unidade.</li><li>Cores e estampas sortidas, conforme disponibilidade.</li></ul><p>A imagem mostra um exemplo de cor e estampa do modelo. Consulte a loja para conferir a opção disponível e as medidas antes da compra; o tamanho comercial não representa uma medida em centímetros.</p>",
+      "stock": 2,
+      "brand": "Europa",
+      "price": 108.9,
+      "producer_price": 108.9,
+      "consumer_price": 108.9,
+      "options": [],
+      "category_id": "683bc2b2-7454-40eb-a1a0-ac42b2675aaa",
+      "catalog_id": "bfe4d1d0-5f8f-469d-8277-35ccc40dee8b"
+    },
+    {
+      "code": "062855",
+      "name": "Cama pet Europa Nylon P (2) — cores sortidas",
+      "asset": "bed-nylon",
+      "description": "<p>Cama pet Europa Nylon, tamanho P (2), para criar um espaço de descanso para o seu cão. Possui formato oval, área acolchoada e borda elevada, como nos modelos apresentados pela loja.</p><ul><li>Linha cadastrada: Europa Nylon.</li><li>Tamanho comercial: P (2).</li><li>Venda por unidade.</li><li>Cores e estampas sortidas, conforme disponibilidade.</li></ul><p>A imagem mostra um exemplo de cor e estampa do modelo. Consulte a loja para conferir a opção disponível e as medidas antes da compra; o tamanho comercial não representa uma medida em centímetros.</p>",
+      "stock": 1,
+      "brand": "Europa",
+      "price": 20.55,
+      "producer_price": 20.55,
+      "consumer_price": 20.55,
+      "options": [],
+      "category_id": "683bc2b2-7454-40eb-a1a0-ac42b2675aaa",
+      "catalog_id": "bfe4d1d0-5f8f-469d-8277-35ccc40dee8b"
+    },
+    {
+      "code": "062880",
+      "name": "Cama pet Europa Nylon GG (5) — cores sortidas",
+      "asset": "bed-nylon",
+      "description": "<p>Cama pet Europa Nylon, tamanho GG (5), para criar um espaço de descanso para o seu cão. Possui formato oval, área acolchoada e borda elevada, como nos modelos apresentados pela loja.</p><ul><li>Linha cadastrada: Europa Nylon.</li><li>Tamanho comercial: GG (5).</li><li>Venda por unidade.</li><li>Cores e estampas sortidas, conforme disponibilidade.</li></ul><p>A imagem mostra um exemplo de cor e estampa do modelo. Consulte a loja para conferir a opção disponível e as medidas antes da compra; o tamanho comercial não representa uma medida em centímetros.</p>",
+      "stock": 3,
+      "brand": "Europa",
+      "price": 71.02,
+      "producer_price": 71.02,
+      "consumer_price": 71.02,
+      "options": [],
+      "category_id": "683bc2b2-7454-40eb-a1a0-ac42b2675aaa",
+      "catalog_id": "bfe4d1d0-5f8f-469d-8277-35ccc40dee8b"
+    }
+  ],
+  "pending": [
+    {
+      "code": "049131",
+      "name": "COTURNO DE COURO C/ ZIPER REF.7041",
+      "stock": 1,
+      "price": 72.15,
+      "reason": "Falta foto que identifique inequivocamente o coturno referência 7041."
+    },
+    {
+      "code": "051853",
+      "name": "TENIS NYLON SAYGON PRETO/CINZA REF.",
+      "stock": 1,
+      "price": 72.18,
+      "reason": "Numeração truncada no ERP e na tabela; caixa desse código não legível no vídeo."
+    },
+    {
+      "code": "051977",
+      "name": "TENIS LONA BORDO C/STRASS SAYGON RE",
+      "stock": 2,
+      "price": 50.48,
+      "reason": "Foto do modelo e numeração não confirmadas nos arquivos enviados."
+    },
+    {
+      "code": "052019",
+      "name": "TENIS LONA BORDO C/STRASS SAYGON RE",
+      "stock": 1,
+      "price": 50.48,
+      "reason": "Foto do modelo e numeração não confirmadas nos arquivos enviados."
+    },
+    {
+      "code": "052027",
+      "name": "TENIS LONA BORDO C/STRASS SAYGON RE",
+      "stock": 2,
+      "price": 50.48,
+      "reason": "Foto do modelo e numeração não confirmadas nos arquivos enviados."
+    },
+    {
+      "code": "052035",
+      "name": "TENIS LONA MARINHO/STRASS SAYGON RE",
+      "stock": 1,
+      "price": 50.48,
+      "reason": "Foto do modelo e numeração não confirmadas nos arquivos enviados."
+    },
+    {
+      "code": "052086",
+      "name": "TENIS LONA MARINHO/STRASS SAYGON RE",
+      "stock": 2,
+      "price": 50.48,
+      "reason": "Foto do modelo e numeração não confirmadas nos arquivos enviados."
+    },
+    {
+      "code": "052094",
+      "name": "TENIS LONA ROSE C/STRASS SAYGON REF",
+      "stock": 1,
+      "price": 50.48,
+      "reason": "Foto do modelo e numeração não confirmadas nos arquivos enviados."
+    },
+    {
+      "code": "052124",
+      "name": "TENIS LONA ROSE C/STRASS SAYGON REF",
+      "stock": 1,
+      "price": 50.48,
+      "reason": "Foto do modelo e numeração não confirmadas nos arquivos enviados."
+    },
+    {
+      "code": "052140",
+      "name": "TENIS LONA ROSE C/STRASS SAYGON REF",
+      "stock": 2,
+      "price": 50.48,
+      "reason": "Foto do modelo e numeração não confirmadas nos arquivos enviados."
+    },
+    {
+      "code": "052167",
+      "name": "TENIS LONA CAMURCA PRETO SAYGON REF",
+      "stock": 1,
+      "price": 50.48,
+      "reason": "Foto do modelo e numeração não confirmadas nos arquivos enviados."
+    },
+    {
+      "code": "052221",
+      "name": "TENIS LONA CAMURCA MARINHO SAYGON R",
+      "stock": 2,
+      "price": 50.48,
+      "reason": "Foto do modelo e numeração não confirmadas nos arquivos enviados."
+    }
+  ]
+}

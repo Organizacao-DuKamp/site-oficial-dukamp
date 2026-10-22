@@ -1,0 +1,175 @@
+{
+  "date": "2026-10-22",
+  "reason": "Estado anterior dos produtos atualizados nesta importação",
+  "products": [
+    {
+      "id": "c58b08cc-5b57-4a6d-aeb0-532b8567fe3e",
+      "code": "049611",
+      "name": "Bota Saygon 7042 café com zíper lateral — Nº 38",
+      "slug": "bota-saygon-7042-cafe-com-ziper-lateral-no-38-049611",
+      "stock": 1,
+      "active": true,
+      "price": "81.78",
+      "producer_price": "81.78",
+      "consumer_price": "81.78",
+      "description": "<p>Bota de cano curto em tom café, fechamento com cadarço e zíper lateral, ilhoses metálicos, gola acolchoada e solado preto de desenho robusto. Referência 7042, cor 342 café.</p><p><strong>Numeração deste item: 38.</strong> Venda por par.</p>",
+      "images": [
+        "https://raw.githubusercontent.com/Organizacao-DuKamp/site-oficial-dukamp/6b433312d15d511757e6003a917d3494b88e7781/public/products/novos-20261020/49611-bota-saygon-cafe.webp"
+      ],
+      "options": [
+        {
+          "id": "c49c052e-01bf-5f29-824d-c92339de8464",
+          "name": "Numeração",
+          "values": [
+            {
+              "id": "88bebcb7-0ce4-5bc9-a13a-dc69d2ab8136",
+              "label": "38"
+            }
+          ]
+        }
+      ],
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "updated_at": "2026-10-20 12:20:11.875533+00"
+    },
+    {
+      "id": "fa127428-e4d1-435d-87bf-f4bdd4c8690e",
+      "code": "051837",
+      "name": "Tênis slip-on Saygon 1800 preto/preto — Nº 43",
+      "slug": "tenis-slip-on-saygon-1800-preto-preto-no-43-051837",
+      "stock": 1,
+      "active": true,
+      "price": "72.18",
+      "producer_price": "72.18",
+      "consumer_price": "72.18",
+      "description": "<p>Tênis sem cadarço, com cabedal têxtil preto de trama aparente, gola canelada e puxador traseiro. Solado escuro. Cor 08 preto/preto.</p><p><strong>Numeração deste item: 43.</strong> Venda por par.</p>",
+      "images": [
+        "https://raw.githubusercontent.com/Organizacao-DuKamp/site-oficial-dukamp/6b433312d15d511757e6003a917d3494b88e7781/public/products/novos-20261020/51837-tenis-saygon-preto.webp"
+      ],
+      "options": [
+        {
+          "id": "0f229df9-8380-5b0c-a0c7-a0ce4cb58b63",
+          "name": "Numeração",
+          "values": [
+            {
+              "id": "be3744fb-e188-5f77-9a99-80f61f4c5332",
+              "label": "43"
+            }
+          ]
+        }
+      ],
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "updated_at": "2026-10-20 12:20:11.875533+00"
+    },
+    {
+      "id": "c006c7a2-c90e-4ce0-9b5d-24b44b85d9fd",
+      "code": "051845",
+      "name": "Tênis slip-on Saygon 1800 preto/cinza — Nº 34",
+      "slug": "tenis-slip-on-saygon-1800-preto-cinza-no-34-051845",
+      "stock": 3,
+      "active": true,
+      "price": "72.18",
+      "producer_price": "72.18",
+      "consumer_price": "72.18",
+      "description": "<p>Tênis sem cadarço com cabedal têxtil de trama aparente, gola canelada, puxador traseiro e solado branco com detalhe preto na ponta. Cor identificada na caixa: preto/cinza, código de cor 256.</p><p><strong>Numeração deste item: 34.</strong> Venda por par.</p>",
+      "images": [
+        "https://raw.githubusercontent.com/Organizacao-DuKamp/site-oficial-dukamp/6b433312d15d511757e6003a917d3494b88e7781/public/products/novos-20261020/51845-tenis-saygon-preto-cinza.webp"
+      ],
+      "options": [
+        {
+          "id": "799d16e3-ffbb-5432-ac56-ff946fe664d2",
+          "name": "Numeração",
+          "values": [
+            {
+              "id": "5108fb7a-150a-58bb-9d14-5633fbc42a72",
+              "label": "34"
+            }
+          ]
+        }
+      ],
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "updated_at": "2026-10-20 12:20:11.875533+00"
+    },
+    {
+      "id": "3b045a85-ebc0-4b35-bae7-c84fab49f848",
+      "code": "051918",
+      "name": "Tênis slip-on Saygon 1800 bordô — Nº 34",
+      "slug": "tenis-slip-on-saygon-1800-bordo-no-34-051918",
+      "stock": 2,
+      "active": true,
+      "price": "72.18",
+      "producer_price": "72.18",
+      "consumer_price": "72.18",
+      "description": "<p>Tênis de calce sem cadarço, cabedal têxtil bordô com diferentes tramas, gola canelada e puxador traseiro. Solado branco com detalhe preto na ponta. Cor 310 bordô.</p><p><strong>Numeração deste item: 34.</strong> Venda por par.</p>",
+      "images": [
+        "https://raw.githubusercontent.com/Organizacao-DuKamp/site-oficial-dukamp/6b433312d15d511757e6003a917d3494b88e7781/public/products/novos-20261020/51918-51926-tenis-saygon-bordo.webp"
+      ],
+      "options": [
+        {
+          "id": "8ece04c4-56c8-5b2a-ac14-1c0196b79783",
+          "name": "Numeração",
+          "values": [
+            {
+              "id": "128004b7-c649-54f7-868e-757c4adc9947",
+              "label": "34"
+            }
+          ]
+        }
+      ],
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "updated_at": "2026-10-20 12:20:11.875533+00"
+    },
+    {
+      "id": "3b38e3dd-bdf7-4048-a364-6325cc4f2d61",
+      "code": "051926",
+      "name": "Tênis slip-on Saygon 1800 bordô — Nº 35",
+      "slug": "tenis-slip-on-saygon-1800-bordo-no-35-051926",
+      "stock": 1,
+      "active": true,
+      "price": "72.18",
+      "producer_price": "72.18",
+      "consumer_price": "72.18",
+      "description": "<p>Tênis de calce sem cadarço, cabedal têxtil bordô com diferentes tramas, gola canelada e puxador traseiro. Solado branco com detalhe preto na ponta. Cor 310 bordô.</p><p><strong>Numeração deste item: 35.</strong> Venda por par.</p>",
+      "images": [
+        "https://raw.githubusercontent.com/Organizacao-DuKamp/site-oficial-dukamp/6b433312d15d511757e6003a917d3494b88e7781/public/products/novos-20261020/51918-51926-tenis-saygon-bordo.webp"
+      ],
+      "options": [
+        {
+          "id": "65275a39-7e8e-5d3c-b845-c6ea2bbb6705",
+          "name": "Numeração",
+          "values": [
+            {
+              "id": "2d804724-e29f-590e-a99f-34eb85b33777",
+              "label": "35"
+            }
+          ]
+        }
+      ],
+      "category_id": "a44a31f5-ff01-4ae1-be60-c68b2fccd49f",
+      "catalog_id": "8b79a91f-68d6-41fb-8c8f-7720ba77775d",
+      "updated_at": "2026-10-20 12:20:11.875533+00"
+    },
+    {
+      "id": "1352caea-8697-42e6-bff2-e37c4fb490ff",
+      "code": "062839",
+      "name": "Cama pet oval rosa com estampa de patinhas",
+      "slug": "cama-pet-oval-rosa-com-estampa-de-patinhas-062839",
+      "stock": 3,
+      "active": true,
+      "price": "67.38",
+      "producer_price": "67.38",
+      "consumer_price": "67.38",
+      "description": "<p>Cama oval com borda elevada rosa-clara e almofada central rosa estampada com patinhas azuis, amarelas, brancas e pretas.</p>",
+      "images": [
+        "https://raw.githubusercontent.com/Organizacao-DuKamp/site-oficial-dukamp/6b433312d15d511757e6003a917d3494b88e7781/public/products/novos-20261020/62839-cama-pet-rosa.webp"
+      ],
+      "options": [],
+      "category_id": "683bc2b2-7454-40eb-a1a0-ac42b2675aaa",
+      "catalog_id": "bfe4d1d0-5f8f-469d-8277-35ccc40dee8b",
+      "updated_at": "2026-10-20 12:20:11.875533+00"
+    }
+  ]
+}
