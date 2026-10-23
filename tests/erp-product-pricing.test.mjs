@@ -51,8 +51,8 @@ test("changing the first margin updates the other table margins and gross margin
     ["20", "19.00", "18.00", "17.00"]);
   assert.equal(changed.percentual_margens[0].comissao_interna, "3.00");
   assert.ok(Number(changed.faixas[0].tabela.preco) > 0.83);
-  assert.equal(changed.percentual_margens[0].margem_bruta,
-    ((Number(changed.faixas[0].tabela.preco) / 0.67 - 1) * 100).toFixed(2));
+  // The legacy DBF rule truncates the gross margin instead of rounding it.
+  assert.equal(changed.percentual_margens[0].margem_bruta, "28.35");
   assert.equal(product.percentual_margens[0].margem_configurada, "18.00");
   assert.equal(product.faixas[0].tabela.preco, "0.83");
 });

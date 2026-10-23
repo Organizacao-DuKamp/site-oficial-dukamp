@@ -1,0 +1,29 @@
+name: Node.js runtime checks
+
+on:
+  push:
+    branches: [main, codex/node-24-22-1]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.22.1"
+          cache: npm
+      - run: npm ci --include=dev
+      - run: npm test
+      - name: Verify Node.js version
+        run: node -e "if (process.versions.node !== '24.22.1') process.exit(1)"
+      - name: Build
+        env:
+          NITRO_PRESET: netlify
+        run: npm run build
