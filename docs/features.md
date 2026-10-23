@@ -41,7 +41,7 @@ O layout em `src/routes/admin.tsx` renderiza uma sidebar com as seções:
 | `/admin/produtos` | CRUD de produtos. |
 | `/admin/categorias` | Categorias. |
 | `/admin/estoque` | Ajuste de estoque. |
-| `/admin/atualizar-valores` | Atualização em massa de preços. |
+| `/admin/atualizar-valores` | Importação PROD.web/TXT de preços, estoque e dados do ERP. A opção “Atualizar apenas produtos ativos” vem ligada; desligada, inclui inativos já cadastrados, preservando o status. Não cria produtos. |
 | `/admin/banners`, `/admin/anuncios` | Banners e anúncios da home. |
 | `/admin/catalogos` | Catálogos institucionais. |
 | `/admin/contas` | Contas e aprovação de produtores. |
