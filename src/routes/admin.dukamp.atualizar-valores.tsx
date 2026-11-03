@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
-import { PROTECTED_ADMIN_EMAIL } from "@/lib/constants";
+import { isDukampMasterAdminUserId } from "@/lib/constants";
 import { supabase } from "@/integrations/supabase/client";
 import { readFinancialReportFile } from "@/lib/financial-report-file";
 import type { FinancialReportKind } from "@/lib/financial-report-import";
@@ -70,7 +70,7 @@ function FinancialReportUpload() {
   const money = (cents: number) =>
     (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   if (loading) return <p role="status">Carregando...</p>;
-  if (!isMasterAdmin || user?.email?.toLowerCase() !== PROTECTED_ADMIN_EMAIL)
+  if (!isMasterAdmin || !isDukampMasterAdminUserId(user?.id))
     return <p role="alert">Área restrita à conta-mestre DuKamp.</p>;
   return (
     <div className="mx-auto max-w-4xl space-y-5">

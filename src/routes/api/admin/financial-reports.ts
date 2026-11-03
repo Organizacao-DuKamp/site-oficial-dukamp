@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { parseFinancialReport } from "@/lib/financial-report-import";
-import { isMasterAdminUserId, PROTECTED_ADMIN_EMAIL } from "@/lib/constants";
+import { isDukampMasterAdminUserId } from "@/lib/constants";
 
 export const Route = createFileRoute("/api/admin/financial-reports")({
   server: {
@@ -12,8 +12,7 @@ export const Route = createFileRoute("/api/admin/financial-reports")({
         const reply = (data: unknown, status = 200) =>
           Response.json(data, { status, headers: { "Cache-Control": "no-store" } });
         if (
-          !isMasterAdminUserId(auth.user.id) ||
-          auth.user.email?.toLowerCase() !== PROTECTED_ADMIN_EMAIL
+          !isDukampMasterAdminUserId(auth.user.id)
         )
           return reply({ error: "Acesso restrito à conta-mestre DuKamp." }, 403);
         try {

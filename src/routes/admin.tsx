@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { adminPendingPartnerSales } from "@/lib/partners.functions";
 import { useAuth } from "@/lib/auth";
-import { PROTECTED_ADMIN_EMAIL } from "@/lib/constants";
+import { isDukampMasterAdminUserId } from "@/lib/constants";
 import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard, Package, Tag, FolderTree, Image as ImageIcon,
@@ -289,7 +289,7 @@ function AdminLayout() {
   return (
     <div className="min-h-screen flex bg-muted/30">
       <aside className="hidden lg:flex w-60 bg-sidebar border-r flex-col shrink-0">
-        <SidebarContent pathname={pathname} currentSearch={currentSearch} signOut={signOut} isMaster={isMasterAdmin} isDukampMaster={isMasterAdmin && user.email?.toLowerCase() === PROTECTED_ADMIN_EMAIL} pendingRequests={pendingRequestCount} pendingPartnerSales={pendingPartnerSales.data ?? 0} />
+        <SidebarContent pathname={pathname} currentSearch={currentSearch} signOut={signOut} isMaster={isMasterAdmin} isDukampMaster={isMasterAdmin && isDukampMasterAdminUserId(user.id)} pendingRequests={pendingRequestCount} pendingPartnerSales={pendingPartnerSales.data ?? 0} />
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -306,7 +306,7 @@ function AdminLayout() {
                 currentSearch={currentSearch}
                 onNavigate={() => setMobileOpen(false)}
                 signOut={signOut}
-                isMaster={isMasterAdmin} isDukampMaster={isMasterAdmin && user.email?.toLowerCase() === PROTECTED_ADMIN_EMAIL}
+                isMaster={isMasterAdmin} isDukampMaster={isMasterAdmin && isDukampMasterAdminUserId(user.id)}
                 pendingRequests={pendingRequestCount}
                 pendingPartnerSales={pendingPartnerSales.data ?? 0}
               />

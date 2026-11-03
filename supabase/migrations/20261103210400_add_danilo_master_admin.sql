@@ -1,0 +1,1 @@
+create or replace function public.is_master_admin(_user_id uuid) returns boolean language sql stable security definer set search_path = public, auth as $$ select _user_id in ('fd53c206-dd10-4b36-aa7b-28e4d12ad85b'::uuid,'d73787af-d738-494d-a6bb-07c984b80cae'::uuid,'0434fa07-9744-4d40-ac76-a07148c61477'::uuid) $$;

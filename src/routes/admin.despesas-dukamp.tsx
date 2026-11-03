@@ -31,7 +31,7 @@ import {
 } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { PROTECTED_ADMIN_EMAIL } from "@/lib/constants";
+import { isDukampMasterAdminUserId } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { BankRecordsPanel } from "@/components/admin/BankRecordsPanel";
@@ -237,7 +237,7 @@ function ExpensesSidebar({
       </div>
 
       <nav aria-label="Categorias de despesas" className="min-h-0 flex-1 overflow-y-scroll overscroll-contain p-2 [scrollbar-gutter:stable]">
-        {isMasterAdmin && user?.email?.toLowerCase() === PROTECTED_ADMIN_EMAIL && <Link to="/admin/dukamp/atualizar-valores" onClick={onNavigate} className="mb-1 flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-accent"><WalletCards className="h-4 w-4" />Atualizar valores</Link>}
+        {isMasterAdmin && isDukampMasterAdminUserId(user?.id) && <Link to="/admin/dukamp/atualizar-valores" onClick={onNavigate} className="mb-1 flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-accent"><WalletCards className="h-4 w-4" />Atualizar valores</Link>}
         <button
           onClick={() => {
             onSelectCategory(null);

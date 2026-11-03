@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PROTECTED_ADMIN_EMAIL } from "@/lib/constants";
+import { isDukampMasterAdminUserId } from "@/lib/constants";
 
 function validInteger(value: string | null, minimum: number, maximum: number): number | null {
   const parsed = Number(value);
@@ -16,7 +16,7 @@ export const Route = createFileRoute("/api/admin/seller-margin-report")({
         if ("response" in authorization) return authorization.response;
 
         const { supabaseAdmin, user } = authorization;
-        if (user.email?.toLowerCase() !== PROTECTED_ADMIN_EMAIL.toLowerCase()) {
+        if (!isDukampMasterAdminUserId(user.id)) {
           return errorResponse("Apenas o Administrador Mestre pode consultar este relatório.", 403);
         }
 
