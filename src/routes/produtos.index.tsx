@@ -1,6 +1,8 @@
 import { seoHead, PUBLIC_PAGES } from "@/lib/seo";
 import { activeCatalogs, listedProducts } from "@/lib/catalog-queries";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { ProductCard } from "@/components/site/ProductCard";
 import { Button } from "@/components/ui/button";
@@ -61,30 +63,63 @@ function ProductsPending() {
 function Page() {
   const { q, categoria, page = 1 } = Route.useSearch();
   const initial = Route.useLoaderData();
-  const products = initial.products;
-  const total = products.count;
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+  const { data, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage, isFetchNextPageError } = useInfiniteQuery({
+    queryKey: ["products", "infinite", { q, categoria, catId: initial.category?.id, page }],
+    queryFn: ({ pageParam }) => listedProducts({ q, catId: initial.category?.id, page: pageParam }),
+    initialPageParam: page,
+    initialData: { pages: [initial.products], pageParams: [page] },
+    enabled: !categoria || Boolean(initial.category),
+    getNextPageParam: (lastPage, _pages, lastPageNumber) =>
+      lastPage.rows.length > 0 && lastPageNumber * PAGE_SIZE < lastPage.count
+        ? lastPageNumber + 1
+        : undefined,
+  });
+  const seen = new Set<string>();
+  const products = data.pages.flatMap(batch => batch.rows).filter(product => {
+    if (seen.has(product.id)) return false;
+    seen.add(product.id);
+    return true;
+  });
+
+  useEffect(() => {
+    const target = loadMoreRef.current;
+    if (!target || !hasNextPage || isFetching || isFetchNextPageError || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry?.isIntersecting) void fetchNextPage({ cancelRefetch: false });
+    }, { rootMargin: "600px 0px" });
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetching, isFetchNextPageError]);
 
   return (
     <SiteLayout>
       <h1 className="text-2xl font-bold mb-2">{initial.category?.name || "Produtos Veterinários, Rações e Suplementos"}</h1>
       {q && <p className="text-sm text-muted-foreground mb-4">Resultados para "{q}"</p>}
       {categoria && <p className="text-sm text-muted-foreground mb-4">Categoria: {categoria}</p>}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-        {products.rows.map((p) => <ProductCard key={p.id} p={p as any} />)}
+      <div aria-busy={isFetchingNextPage} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+        {products.map((p) => <ProductCard key={p.id} p={p as any} />)}
       </div>
-      {products.rows.length === 0 && (
+      {products.length === 0 && (
         <p className="text-muted-foreground">Nenhum produto encontrado.</p>
       )}
-      {totalPages > 1 && (
-        <div className="mt-8 flex items-center justify-center gap-2">
-          {page > 1 ? <Button asChild variant="outline" size="sm"><Link to="/produtos" search={{ q, categoria, page: page - 1 }} rel="prev">Anterior</Link></Button> : <Button variant="outline" size="sm" disabled>Anterior</Button>}
-          <span className="text-sm text-muted-foreground">
-            Página {page} de {totalPages} · {total} produtos
-          </span>
-          {page < totalPages ? <Button asChild variant="outline" size="sm"><Link to="/produtos" search={{ q, categoria, page: page + 1 }} rel="next">Próxima</Link></Button> : <Button variant="outline" size="sm" disabled>Próxima</Button>}
-        </div>
-      )}
+      <div ref={loadMoreRef} className="mt-8 flex min-h-16 flex-col items-center justify-center gap-3 text-center">
+        {isFetchingNextPage ? (
+          <div role="status" className="flex items-center gap-2 text-sm text-muted-foreground">
+            <LoaderCircle aria-hidden="true" className="h-5 w-5 animate-spin text-primary" />
+            Carregando mais produtos...
+          </div>
+        ) : isFetchNextPageError ? (
+          <>
+            <p role="alert" className="text-sm text-muted-foreground">Não foi possível carregar mais produtos.</p>
+            <Button variant="outline" size="sm" disabled={isFetching} onClick={() => void fetchNextPage({ cancelRefetch: false })}>Tentar novamente</Button>
+          </>
+        ) : hasNextPage ? (
+          <Button variant="outline" size="sm" disabled={isFetching} onClick={() => void fetchNextPage({ cancelRefetch: false })}>Carregar mais produtos</Button>
+        ) : products.length > 0 ? (
+          <p className="text-sm text-muted-foreground">Todos os produtos foram exibidos.</p>
+        ) : null}
+      </div>
     </SiteLayout>
   );
 }
