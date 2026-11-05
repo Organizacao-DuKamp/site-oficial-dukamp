@@ -91,10 +91,12 @@ import { Route as ApiAdminAccountTypeRouteImport } from './routes/api/admin/acco
 import { Route as ApiAdminAuditRouteImport } from './routes/api/admin/audit'
 import { Route as ApiAdminErpMarginVendaRouteImport } from './routes/api/admin/erp-margin-venda'
 import { Route as ApiAdminFinancialReportsRouteImport } from './routes/api/admin/financial-reports'
+import { Route as ApiAdminMercadoLivreRouteImport } from './routes/api/admin/mercado-livre'
 import { Route as ApiAdminPasswordRecoveryRouteImport } from './routes/api/admin/password-recovery'
 import { Route as ApiAdminSellerMarginReportRouteImport } from './routes/api/admin/seller-margin-report'
 import { Route as ApiAdminSellerMarginReportsRouteImport } from './routes/api/admin/seller-margin-reports'
 import { Route as ApiAdminSupportTicketsRouteImport } from './routes/api/admin/support-tickets'
+import { Route as ApiMercadoLivreNotificationsRouteImport } from './routes/api/mercado-livre/notifications'
 import { Route as ApiPartnerStoreOauthRouteImport } from './routes/api/partner-store/oauth'
 import { Route as ApiPartnerStoreWebhookRouteImport } from './routes/api/partner-store/webhook'
 import { Route as ApiPublicInitAdminRouteImport } from './routes/api/public/init-admin'
@@ -114,6 +116,7 @@ import { Route as ParceiroVendasIdRouteImport } from './routes/parceiro.vendas.$
 import { Route as VendedorOrcamentosIndexRouteImport } from './routes/vendedor.orcamentos.index'
 import { Route as VendedorOrcamentosQuoteIdRouteImport } from './routes/vendedor.orcamentos.$quoteId'
 import { Route as VendedorOrcamentosNovoRouteImport } from './routes/vendedor.orcamentos.novo'
+import { Route as ApiMercadoLivreOauthCallbackRouteImport } from './routes/api/mercado-livre/oauth/callback'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -530,6 +533,11 @@ const ApiAdminFinancialReportsRoute =
     path: '/api/admin/financial-reports',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiAdminMercadoLivreRoute = ApiAdminMercadoLivreRouteImport.update({
+  id: '/api/admin/mercado-livre',
+  path: '/api/admin/mercado-livre',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminPasswordRecoveryRoute =
   ApiAdminPasswordRecoveryRouteImport.update({
     id: '/api/admin/password-recovery',
@@ -553,6 +561,12 @@ const ApiAdminSupportTicketsRoute = ApiAdminSupportTicketsRouteImport.update({
   path: '/api/admin/support-tickets',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMercadoLivreNotificationsRoute =
+  ApiMercadoLivreNotificationsRouteImport.update({
+    id: '/api/mercado-livre/notifications',
+    path: '/api/mercado-livre/notifications',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPartnerStoreOauthRoute = ApiPartnerStoreOauthRouteImport.update({
   id: '/api/partner-store/oauth',
   path: '/api/partner-store/oauth',
@@ -652,6 +666,12 @@ const VendedorOrcamentosNovoRoute = VendedorOrcamentosNovoRouteImport.update({
   path: '/orcamentos/novo',
   getParentRoute: () => VendedorRoute,
 } as any)
+const ApiMercadoLivreOauthCallbackRoute =
+  ApiMercadoLivreOauthCallbackRouteImport.update({
+    id: '/api/mercado-livre/oauth/callback',
+    path: '/api/mercado-livre/oauth/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -734,10 +754,12 @@ export interface FileRoutesByFullPath {
   '/api/admin/audit': typeof ApiAdminAuditRoute
   '/api/admin/erp-margin-venda': typeof ApiAdminErpMarginVendaRoute
   '/api/admin/financial-reports': typeof ApiAdminFinancialReportsRoute
+  '/api/admin/mercado-livre': typeof ApiAdminMercadoLivreRoute
   '/api/admin/password-recovery': typeof ApiAdminPasswordRecoveryRoute
   '/api/admin/seller-margin-report': typeof ApiAdminSellerMarginReportRoute
   '/api/admin/seller-margin-reports': typeof ApiAdminSellerMarginReportsRoute
   '/api/admin/support-tickets': typeof ApiAdminSupportTicketsRoute
+  '/api/mercado-livre/notifications': typeof ApiMercadoLivreNotificationsRoute
   '/api/partner-store/oauth': typeof ApiPartnerStoreOauthRoute
   '/api/partner-store/webhook': typeof ApiPartnerStoreWebhookRoute
   '/api/public/init-admin': typeof ApiPublicInitAdminRoute
@@ -759,6 +781,7 @@ export interface FileRoutesByFullPath {
   '/parceiro/site/': typeof ParceiroSiteIndexRoute
   '/parceiro/vendas/': typeof ParceiroVendasIndexRoute
   '/vendedor/orcamentos/': typeof VendedorOrcamentosIndexRoute
+  '/api/mercado-livre/oauth/callback': typeof ApiMercadoLivreOauthCallbackRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -833,10 +856,12 @@ export interface FileRoutesByTo {
   '/api/admin/audit': typeof ApiAdminAuditRoute
   '/api/admin/erp-margin-venda': typeof ApiAdminErpMarginVendaRoute
   '/api/admin/financial-reports': typeof ApiAdminFinancialReportsRoute
+  '/api/admin/mercado-livre': typeof ApiAdminMercadoLivreRoute
   '/api/admin/password-recovery': typeof ApiAdminPasswordRecoveryRoute
   '/api/admin/seller-margin-report': typeof ApiAdminSellerMarginReportRoute
   '/api/admin/seller-margin-reports': typeof ApiAdminSellerMarginReportsRoute
   '/api/admin/support-tickets': typeof ApiAdminSupportTicketsRoute
+  '/api/mercado-livre/notifications': typeof ApiMercadoLivreNotificationsRoute
   '/api/partner-store/oauth': typeof ApiPartnerStoreOauthRoute
   '/api/partner-store/webhook': typeof ApiPartnerStoreWebhookRoute
   '/api/public/init-admin': typeof ApiPublicInitAdminRoute
@@ -858,6 +883,7 @@ export interface FileRoutesByTo {
   '/parceiro/site': typeof ParceiroSiteIndexRoute
   '/parceiro/vendas': typeof ParceiroVendasIndexRoute
   '/vendedor/orcamentos': typeof VendedorOrcamentosIndexRoute
+  '/api/mercado-livre/oauth/callback': typeof ApiMercadoLivreOauthCallbackRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -941,10 +967,12 @@ export interface FileRoutesById {
   '/api/admin/audit': typeof ApiAdminAuditRoute
   '/api/admin/erp-margin-venda': typeof ApiAdminErpMarginVendaRoute
   '/api/admin/financial-reports': typeof ApiAdminFinancialReportsRoute
+  '/api/admin/mercado-livre': typeof ApiAdminMercadoLivreRoute
   '/api/admin/password-recovery': typeof ApiAdminPasswordRecoveryRoute
   '/api/admin/seller-margin-report': typeof ApiAdminSellerMarginReportRoute
   '/api/admin/seller-margin-reports': typeof ApiAdminSellerMarginReportsRoute
   '/api/admin/support-tickets': typeof ApiAdminSupportTicketsRoute
+  '/api/mercado-livre/notifications': typeof ApiMercadoLivreNotificationsRoute
   '/api/partner-store/oauth': typeof ApiPartnerStoreOauthRoute
   '/api/partner-store/webhook': typeof ApiPartnerStoreWebhookRoute
   '/api/public/init-admin': typeof ApiPublicInitAdminRoute
@@ -966,6 +994,7 @@ export interface FileRoutesById {
   '/parceiro/site/': typeof ParceiroSiteIndexRoute
   '/parceiro/vendas/': typeof ParceiroVendasIndexRoute
   '/vendedor/orcamentos/': typeof VendedorOrcamentosIndexRoute
+  '/api/mercado-livre/oauth/callback': typeof ApiMercadoLivreOauthCallbackRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1050,10 +1079,12 @@ export interface FileRouteTypes {
     | '/api/admin/audit'
     | '/api/admin/erp-margin-venda'
     | '/api/admin/financial-reports'
+    | '/api/admin/mercado-livre'
     | '/api/admin/password-recovery'
     | '/api/admin/seller-margin-report'
     | '/api/admin/seller-margin-reports'
     | '/api/admin/support-tickets'
+    | '/api/mercado-livre/notifications'
     | '/api/partner-store/oauth'
     | '/api/partner-store/webhook'
     | '/api/public/init-admin'
@@ -1075,6 +1106,7 @@ export interface FileRouteTypes {
     | '/parceiro/site/'
     | '/parceiro/vendas/'
     | '/vendedor/orcamentos/'
+    | '/api/mercado-livre/oauth/callback'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1149,10 +1181,12 @@ export interface FileRouteTypes {
     | '/api/admin/audit'
     | '/api/admin/erp-margin-venda'
     | '/api/admin/financial-reports'
+    | '/api/admin/mercado-livre'
     | '/api/admin/password-recovery'
     | '/api/admin/seller-margin-report'
     | '/api/admin/seller-margin-reports'
     | '/api/admin/support-tickets'
+    | '/api/mercado-livre/notifications'
     | '/api/partner-store/oauth'
     | '/api/partner-store/webhook'
     | '/api/public/init-admin'
@@ -1174,6 +1208,7 @@ export interface FileRouteTypes {
     | '/parceiro/site'
     | '/parceiro/vendas'
     | '/vendedor/orcamentos'
+    | '/api/mercado-livre/oauth/callback'
   id:
     | '__root__'
     | '/'
@@ -1256,10 +1291,12 @@ export interface FileRouteTypes {
     | '/api/admin/audit'
     | '/api/admin/erp-margin-venda'
     | '/api/admin/financial-reports'
+    | '/api/admin/mercado-livre'
     | '/api/admin/password-recovery'
     | '/api/admin/seller-margin-report'
     | '/api/admin/seller-margin-reports'
     | '/api/admin/support-tickets'
+    | '/api/mercado-livre/notifications'
     | '/api/partner-store/oauth'
     | '/api/partner-store/webhook'
     | '/api/public/init-admin'
@@ -1281,6 +1318,7 @@ export interface FileRouteTypes {
     | '/parceiro/site/'
     | '/parceiro/vendas/'
     | '/vendedor/orcamentos/'
+    | '/api/mercado-livre/oauth/callback'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1318,10 +1356,12 @@ export interface RootRouteChildren {
   ApiAdminAuditRoute: typeof ApiAdminAuditRoute
   ApiAdminErpMarginVendaRoute: typeof ApiAdminErpMarginVendaRoute
   ApiAdminFinancialReportsRoute: typeof ApiAdminFinancialReportsRoute
+  ApiAdminMercadoLivreRoute: typeof ApiAdminMercadoLivreRoute
   ApiAdminPasswordRecoveryRoute: typeof ApiAdminPasswordRecoveryRoute
   ApiAdminSellerMarginReportRoute: typeof ApiAdminSellerMarginReportRoute
   ApiAdminSellerMarginReportsRoute: typeof ApiAdminSellerMarginReportsRoute
   ApiAdminSupportTicketsRoute: typeof ApiAdminSupportTicketsRoute
+  ApiMercadoLivreNotificationsRoute: typeof ApiMercadoLivreNotificationsRoute
   ApiPartnerStoreOauthRoute: typeof ApiPartnerStoreOauthRoute
   ApiPartnerStoreWebhookRoute: typeof ApiPartnerStoreWebhookRoute
   ApiPublicInitAdminRoute: typeof ApiPublicInitAdminRoute
@@ -1334,6 +1374,7 @@ export interface RootRouteChildren {
   ApiSellerChatRoute: typeof ApiSellerChatRoute
   ApiSellerClientsRoute: typeof ApiSellerClientsRoute
   ApiSellerQuotesRoute: typeof ApiSellerQuotesRoute
+  ApiMercadoLivreOauthCallbackRoute: typeof ApiMercadoLivreOauthCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1912,6 +1953,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminFinancialReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/mercado-livre': {
+      id: '/api/admin/mercado-livre'
+      path: '/api/admin/mercado-livre'
+      fullPath: '/api/admin/mercado-livre'
+      preLoaderRoute: typeof ApiAdminMercadoLivreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/password-recovery': {
       id: '/api/admin/password-recovery'
       path: '/api/admin/password-recovery'
@@ -1938,6 +1986,13 @@ declare module '@tanstack/react-router' {
       path: '/api/admin/support-tickets'
       fullPath: '/api/admin/support-tickets'
       preLoaderRoute: typeof ApiAdminSupportTicketsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/mercado-livre/notifications': {
+      id: '/api/mercado-livre/notifications'
+      path: '/api/mercado-livre/notifications'
+      fullPath: '/api/mercado-livre/notifications'
+      preLoaderRoute: typeof ApiMercadoLivreNotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/partner-store/oauth': {
@@ -2072,6 +2127,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/vendedor/orcamentos/novo'
       preLoaderRoute: typeof VendedorOrcamentosNovoRouteImport
       parentRoute: typeof VendedorRoute
+    }
+    '/api/mercado-livre/oauth/callback': {
+      id: '/api/mercado-livre/oauth/callback'
+      path: '/api/mercado-livre/oauth/callback'
+      fullPath: '/api/mercado-livre/oauth/callback'
+      preLoaderRoute: typeof ApiMercadoLivreOauthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -2297,10 +2359,12 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminAuditRoute: ApiAdminAuditRoute,
   ApiAdminErpMarginVendaRoute: ApiAdminErpMarginVendaRoute,
   ApiAdminFinancialReportsRoute: ApiAdminFinancialReportsRoute,
+  ApiAdminMercadoLivreRoute: ApiAdminMercadoLivreRoute,
   ApiAdminPasswordRecoveryRoute: ApiAdminPasswordRecoveryRoute,
   ApiAdminSellerMarginReportRoute: ApiAdminSellerMarginReportRoute,
   ApiAdminSellerMarginReportsRoute: ApiAdminSellerMarginReportsRoute,
   ApiAdminSupportTicketsRoute: ApiAdminSupportTicketsRoute,
+  ApiMercadoLivreNotificationsRoute: ApiMercadoLivreNotificationsRoute,
   ApiPartnerStoreOauthRoute: ApiPartnerStoreOauthRoute,
   ApiPartnerStoreWebhookRoute: ApiPartnerStoreWebhookRoute,
   ApiPublicInitAdminRoute: ApiPublicInitAdminRoute,
@@ -2313,6 +2377,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSellerChatRoute: ApiSellerChatRoute,
   ApiSellerClientsRoute: ApiSellerClientsRoute,
   ApiSellerQuotesRoute: ApiSellerQuotesRoute,
+  ApiMercadoLivreOauthCallbackRoute: ApiMercadoLivreOauthCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

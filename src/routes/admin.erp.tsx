@@ -20,8 +20,16 @@ import { ErpProductUnitMaintenance } from "@/components/admin/ErpProductUnitMain
 import { ErpProductAreaMaintenance } from "@/components/admin/ErpProductAreaMaintenance";
 import { ErpDeliveryRouteMaintenance } from "@/components/admin/ErpDeliveryRouteMaintenance";
 import { ErpSalesMargin } from "@/components/admin/ErpSalesMargin";
+import { MercadoLivreIntegration } from "@/components/admin/MercadoLivreIntegration";
 
 const modules = [
+  {
+    id: "mercado-livre",
+    title: "Mercado Livre",
+    description: "Conecte sua conta e acompanhe os eventos da integração.",
+    group: "Integrações",
+    icon: ShoppingCart,
+  },
   {
     id: "produtos",
     title: "Produtos e preços",
@@ -95,6 +103,8 @@ export const Route = createFileRoute("/admin/erp")({
 
 function ModuleContent({ id }: { id: ModuleId }) {
   switch (id) {
+    case "mercado-livre":
+      return <MercadoLivreIntegration />;
     case "produtos":
       return <ErpProductMaintenance />;
     case "fornecedores":
@@ -197,7 +207,7 @@ function ErpPage() {
         </>
       ) : (
         <div className="space-y-7">
-          {(["Cadastros", "Consultas"] as const).map((group) => (
+          {(["Cadastros", "Consultas", "Integrações"] as const).map((group) => (
             <section key={group} aria-labelledby={"erp-" + group}>
               <h2 id={"erp-" + group} className="mb-3 text-lg font-semibold">
                 {group}
@@ -235,4 +245,5 @@ function ErpPage() {
     </div>
   );
 }
+
 

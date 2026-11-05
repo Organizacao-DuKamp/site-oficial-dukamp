@@ -1,0 +1,31 @@
+name: Mercado Livre production endpoints
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/lib/mercado-livre.server.ts"
+      - "src/routes/api/mercado-livre/**"
+      - "src/routes/api/admin/mercado-livre.ts"
+      - "netlify/functions/mercado-livre-worker.mts"
+      - "scripts/mercado-livre-smoke.mjs"
+      - ".github/workflows/mercado-livre-production.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-production:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.22.1"
+      - name: Verify the published commit and exercise public endpoints
+        env:
+          ML_SMOKE_BASE_URL: https://dukamp.netlify.app
+          ML_SMOKE_EXPECTED_COMMIT: ${{ github.sha }}
+        run: node scripts/mercado-livre-smoke.mjs

@@ -1,2 +1,7 @@
 [build.environment]
   NODE_VERSION = "24.22.1"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+

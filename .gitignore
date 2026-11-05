@@ -8,6 +8,7 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+.netlify/
 dist
 dist-ssr
 .output
@@ -40,3 +41,4 @@ echo example-env>>.gitignore
 
 # Supabase CLI cache
 supabase/.temp/
+
