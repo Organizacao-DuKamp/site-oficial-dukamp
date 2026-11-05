@@ -18,6 +18,8 @@ const SUPABASE_PUBLISHABLE_KEY =
 export default defineConfig({
   vite: {
     define: {
+      // Netlify exposes COMMIT_REF at build time, rather than in the function runtime.
+      __DUKAMP_BUILD_COMMIT__: JSON.stringify(process.env.COMMIT_REF || null),
       "import.meta.env.VITE_SUPABASE_URL": JSON.stringify(SUPABASE_URL),
       "import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY": JSON.stringify(SUPABASE_PUBLISHABLE_KEY),
     },
@@ -28,3 +30,4 @@ export default defineConfig({
     server: { entry: "server" },
   },
 });
+
