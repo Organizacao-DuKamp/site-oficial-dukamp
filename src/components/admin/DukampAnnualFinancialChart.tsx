@@ -18,6 +18,14 @@ import { loadStatistics } from "@/components/admin/SellerStatisticsDialog";
 import { loadStatisticsExpenses, statisticsExpensesInRange } from "@/lib/statistics-expenses";
 import { netProfit } from "@/lib/net-profit";
 
+const indicators = {
+  expenses: "Despesas",
+  profit: "Lucro líquido",
+  revenue: "Faturamento",
+} as const;
+
+type Indicator = keyof typeof indicators;
+
 function barDateLabel(props: unknown) {
   const label = props as Record<string, unknown>;
   const { value } = label;
@@ -57,17 +65,21 @@ function barColor(value: number | null, previous = false) {
 }
 
 export function DukampAnnualFinancialChart({ year }: { year: number }) {
-  const [mode, setMode] = useState("expenses");
+  const [mode, setMode] = useState<Indicator>("expenses");
+  const indicator = indicators[mode];
+  const needsExpenses = mode !== "revenue";
+  const needsStatistics = mode !== "expenses";
   const expenses = useQuery({
     queryKey: ["admin", "dukamp-statistics-expenses"],
     queryFn: () => loadStatisticsExpenses(supabase),
     staleTime: 0,
+    enabled: needsExpenses,
   });
   const statistics = useQuery({
     queryKey: ["admin-sales-statistics", "dukamp", "year", `${year}-01-01`, `${year}-12-31`],
     queryFn: () => loadStatistics(null, "year", `${year}-01-01`, `${year}-12-31`),
     staleTime: 0,
-    enabled: mode === "profit",
+    enabled: needsStatistics,
   });
   const previousStatistics = useQuery({
     queryKey: [
@@ -78,7 +90,7 @@ export function DukampAnnualFinancialChart({ year }: { year: number }) {
       `${year - 1}-12-31`,
     ],
     queryFn: () => loadStatistics(null, "year", `${year - 1}-01-01`, `${year - 1}-12-31`),
-    enabled: mode === "profit",
+    enabled: needsStatistics,
     staleTime: 0,
   });
   const expense = (y: number, m: number) =>
@@ -89,27 +101,32 @@ export function DukampAnnualFinancialChart({ year }: { year: number }) {
           `${y}-${String(m).padStart(2, "0")}-${new Date(Date.UTC(y, m, 0)).getUTCDate()}`,
         ).amount
       : null;
-  const profit = (y: number, month: number) => {
+  const monthlyValue = (y: number, month: number) => {
+    if (mode === "expenses") return expense(y, month);
+
     const source = y === year ? statistics.data : previousStatistics.data;
     const row = source?.annualSeries?.find((r) => r.month === month);
-    return row?.hasData ? netProfit(row.margem_bruta, expense(y, month)) : null;
+    if (!row?.hasData) return null;
+    if (mode === "revenue") return row.total_venda;
+    return netProfit(row.margem_bruta, expense(y, month));
   };
   const rows = Array.from({ length: 12 }, (_, i) => ({
     atualDate: `${String(i + 1).padStart(2, "0")}/${String(year).slice(-2)}`,
     anteriorDate: `${String(i + 1).padStart(2, "0")}/${String(year - 1).slice(-2)}`,
     month: new Intl.DateTimeFormat("pt-BR", { month: "short" }).format(new Date(year, i, 1)),
-    atual: mode === "expenses" ? expense(year, i + 1) : profit(year, i + 1),
-    anterior: mode === "expenses" ? expense(year - 1, i + 1) : profit(year - 1, i + 1),
+    atual: monthlyValue(year, i + 1),
+    anterior: monthlyValue(year - 1, i + 1),
   })).map((row) => ({
     ...row,
     atualMagnitude: row.atual === null ? null : Math.abs(row.atual),
     anteriorMagnitude: row.anterior === null ? null : Math.abs(row.anterior),
   }));
   const pending =
-    expenses.isPending ||
-    (mode === "profit" && (statistics.isPending || previousStatistics.isPending));
+    (needsExpenses && expenses.isPending) ||
+    (needsStatistics && (statistics.isPending || previousStatistics.isPending));
   const error =
-    expenses.isError || (mode === "profit" && (statistics.isError || previousStatistics.isError));
+    (needsExpenses && expenses.isError) ||
+    (needsStatistics && (statistics.isError || previousStatistics.isError));
   const money = (v: unknown) =>
     Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   return (
@@ -117,21 +134,26 @@ export function DukampAnnualFinancialChart({ year }: { year: number }) {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="font-semibold">
-            {mode === "expenses" ? "Despesas" : "Lucro líquido"} · {year}
+            {indicator} · {year}
           </h2>
           <p className="text-xs text-muted-foreground">
-            Cada mês comparado ao mesmo mês do ano anterior. Despesas com as exclusões das
-            Estatísticas DuKamp.
+            Cada mês comparado ao mesmo mês do ano anterior.{" "}
+            {mode === "revenue"
+              ? "Total de vendas das Estatísticas DuKamp."
+              : "Despesas com as exclusões das Estatísticas DuKamp."}
           </p>
         </div>
         <select
           aria-label="Indicador do gráfico anual"
           value={mode}
-          onChange={(e) => setMode(e.target.value)}
+          onChange={(e) => setMode(e.target.value as Indicator)}
           className="h-10 rounded-lg border bg-background px-3 text-sm"
         >
-          <option value="expenses">Despesas</option>
-          <option value="profit">Lucro líquido</option>
+          {Object.entries(indicators).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
         </select>
       </div>
       <div className="h-[350px] overflow-x-auto">
@@ -143,9 +165,11 @@ export function DukampAnnualFinancialChart({ year }: { year: number }) {
             <button
               className="underline"
               onClick={() => {
-                void expenses.refetch();
-                void statistics.refetch();
-                void previousStatistics.refetch();
+                if (needsExpenses) void expenses.refetch();
+                if (needsStatistics) {
+                  void statistics.refetch();
+                  void previousStatistics.refetch();
+                }
               }}
             >
               Tentar novamente
@@ -172,25 +196,14 @@ export function DukampAnnualFinancialChart({ year }: { year: number }) {
                       <span style={{ color: barColor(original, previous) }}>
                         {money(original)}
                       </span>,
-                      `${mode === "expenses" ? "Despesas" : "Lucro líquido"} · ${date}`,
+                      `${indicator} · ${date}`,
                     ];
                   }}
                 />
                 <Legend />
                 <Bar
-                  dataKey="atualMagnitude"
-                  name={`${mode === "expenses" ? "Despesas" : "Lucro líquido"} · ${year}`}
-                  fill="#159447"
-                  radius={[5, 5, 0, 0]}
-                >
-                  {rows.map((row) => (
-                    <Cell key={row.month} fill={barColor(row.atual)} />
-                  ))}
-                  <LabelList dataKey="atualDate" content={barDateLabel} />
-                </Bar>
-                <Bar
                   dataKey="anteriorMagnitude"
-                  name={`${mode === "expenses" ? "Despesas" : "Lucro líquido"} · ${year - 1}`}
+                  name={`${indicator} · ${year - 1}`}
                   fill="#166534"
                   radius={[5, 5, 0, 0]}
                 >
@@ -199,16 +212,28 @@ export function DukampAnnualFinancialChart({ year }: { year: number }) {
                   ))}
                   <LabelList dataKey="anteriorDate" content={barDateLabel} />
                 </Bar>
+                <Bar
+                  dataKey="atualMagnitude"
+                  name={`${indicator} · ${year}`}
+                  fill="#159447"
+                  radius={[5, 5, 0, 0]}
+                >
+                  {rows.map((row) => (
+                    <Cell key={row.month} fill={barColor(row.atual)} />
+                  ))}
+                  <LabelList dataKey="atualDate" content={barDateLabel} />
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
         )}
       </div>
       <p className="mt-2 text-xs text-muted-foreground">
-        Meses sem relatório ficam sem valor; lucro líquido exige margem bruta e despesas
-        disponíveis. As barras crescem para cima pela magnitude do valor. O sinal original aparece
-        ao passar o cursor: negativos em vermelho; zero ou positivos em verde. Tons escuros
-        representam o ano anterior.
+        Meses sem relatório ficam sem valor.{" "}
+        {mode === "profit" && "O lucro líquido exige margem bruta e despesas disponíveis. "}
+        As barras crescem para cima pela magnitude do valor. O sinal original aparece ao passar o
+        cursor: negativos em vermelho; zero ou positivos em verde. Tons escuros representam o ano
+        anterior.
       </p>
     </section>
   );
